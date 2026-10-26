@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dsm_client/pages/dashborad/applications.dart';
-import 'package:dsm_client/pages/packages/program_page.dart';
 import 'package:dsm_client/pages/packages/torrent_program.dart';
 import 'package:dsm_client/pages/setting/about.dart';
 import 'package:dsm_client/pages/setting/privacy.dart';
@@ -75,13 +74,19 @@ void main() {
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(
       drawer:
-          ApplicationList(['SYNO.SDS.StorageManager.Instance'], {}, [], [], {},
+          ApplicationList(['SYNO.SDS.StorageManager.Instance', 'SYNO.SDS.AdminCenter.Application'], {}, [], [], {},
               packageLoader: () async => {
                     'success': true,
                     'data': {
                       'packages': [
                         {'id': 'StorageManager', 'name': '存储空间管理员'},
                         {'id': 'FileStation', 'name': 'File Station'},
+                        {'id': 'AudioStation', 'name': 'Audio Station'},
+                        {'id': 'CloudSync', 'name': 'Cloud Sync'},
+                        {'id': 'HybridShare', 'name': 'Hybrid Share'},
+                        {'id': 'HyperBackup', 'name': 'Hyper Backup'},
+                        {'id': 'rr-manager', 'name': 'RR Manager'},
+                        {'id': 'SynologyDrive', 'name': 'Synology Drive'},
                         {
                           'id': 'Node.js_v22',
                           'name': 'Node.js v22',
@@ -111,6 +116,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('NAS 应用'), findsNothing);
     expect(find.text('存储空间管理员'), findsOneWidget);
+    expect(find.text('控制面板'), findsOneWidget);
+    for (final name in ['Audio Station','Cloud Sync','Hybrid Share','Hyper Backup','RR Manager','Synology Drive','Drive 控制台']) {
+      expect(find.text(name), findsOneWidget);
+    }
     expect(find.text('File Station'), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'qbittorrent');
     await tester.pumpAndSettle();
@@ -124,11 +133,11 @@ void main() {
   });
 
   testWidgets(
-      'Unsupported programs describe their scope without a web fallback',
+      'Runtime dependencies and placeholder workspaces are hidden from the menu',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-      drawer: ApplicationList([], {}, [], [], {},
+      drawer: ApplicationList(['SYNO.SDS.PkgManApp.Instance'], {}, [], [], {},
           packageLoader: () async => {
                 'success': true,
                 'data': {
@@ -138,6 +147,10 @@ void main() {
                       'name': 'Node.js v22',
                       'version': '22.0'
                     },
+                    {'id': 'git', 'name': 'Git'},
+                    {'id': 'python311', 'name': 'Python 3.11'},
+                    {'id': 'CodecPack', 'name': 'Codec Pack'},
+                    {'id': 'UnknownApp', 'name': 'Unknown App'},
                   ]
                 }
               },
@@ -152,12 +165,13 @@ void main() {
     )));
     await tester.tap(find.text('打开菜单'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Node');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Node.js v22'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ProgramPage), findsOneWidget);
-    expect(find.textContaining('专用业务功能尚未接入'), findsOneWidget);
+    expect(find.text('套件中心'), findsOneWidget);
+    expect(find.text('Node.js v22'), findsNothing);
+    expect(find.text('Git'), findsNothing);
+    expect(find.text('Python 3.11'), findsNothing);
+    expect(find.text('Codec Pack'), findsNothing);
+    expect(find.text('Unknown App'), findsNothing);
+    expect(find.textContaining('未接入'), findsNothing);
     expect(find.textContaining('打开 DSM'), findsNothing);
     expect(tester.takeException(), isNull);
   });

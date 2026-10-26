@@ -986,7 +986,7 @@ class Api {
   static Future<Map> nasPackages() async {
     return await Util.post('entry.cgi', data: {
       'api': 'SYNO.Core.Package', 'version': 2, 'method': 'list',
-      'additional': jsonEncode(['status', 'dsm_apps', 'url', 'description']),
+      'additional': jsonEncode(['status', 'dsm_apps', 'url', 'description', 'startable']),
       '_sid': Util.sid,
     });
   }

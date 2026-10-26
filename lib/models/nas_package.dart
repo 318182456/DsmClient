@@ -7,6 +7,7 @@ class NasPackage {
   final String status;
   final String description;
   final List<String> appIds;
+  final bool canControl;
 
   NasPackage.fromJson(Map source)
       : id = '${source['id'] ?? ''}',
@@ -14,7 +15,8 @@ class NasPackage {
         version = '${source['version'] ?? ''}',
         status = '${(source['additional'] ?? {})['status'] ?? 'unknown'}',
         description = '${(source['additional'] ?? {})['description'] ?? ''}',
-        appIds = parseAppIds((source['additional'] ?? {})['dsm_apps']);
+        appIds = parseAppIds((source['additional'] ?? {})['dsm_apps']),
+        canControl = (source['additional'] ?? {})['startable'] == true;
 
   static List<String> parseAppIds(dynamic source) {
     final values = source is List ? source : '$source'.split(RegExp(r'\s+'));

@@ -2,7 +2,7 @@ import 'package:dsm_client/models/shortcut_item_model.dart';
 import 'package:dsm_client/pages/packages/program_launcher.dart';
 import 'package:dsm_client/pages/packages/package_shortcut.dart';
 import 'package:dsm_client/pages/control_panel/control_panel.dart';
-import 'package:dsm_client/pages/docker/docker.dart';
+import 'package:dsm_client/pages/docker/workspace.dart';
 import 'package:dsm_client/pages/download_station/download_station.dart';
 import 'package:dsm_client/pages/log_center/log_center.dart';
 import 'package:dsm_client/pages/moments/moments.dart';
@@ -103,13 +103,11 @@ class ShortcutList extends StatelessWidget {
         if ((validAppViewOrder ?? []).contains("SYNO.SDS.ContainerManager.Application")) {
           icon = "assets/applications/container_manager.png";
           name = "Container Manager";
-          page = Docker(
-            title: "Container Manager",
-          );
+          page = DockerWorkspace();
         } else {
           icon = "assets/applications/docker.png";
           name = "Docker";
-          page = Docker();
+          page = DockerWorkspace();
         }
 
         routerName = "docker";
@@ -123,7 +121,7 @@ class ShortcutList extends StatelessWidget {
         }
         final containerName = shortcut.param?.data?.name ?? '';
         name = containerName.isEmpty ? (shortcut.title ?? '容器') : containerName;
-        page = containerName.isEmpty ? Docker(title: 'Container Manager') : nativeContainer(containerName);
+        page = containerName.isEmpty ? DockerWorkspace() : nativeContainer(containerName);
         routerName = "container_program";
 
         break;

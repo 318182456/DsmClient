@@ -1,7 +1,11 @@
 import 'package:dsm_client/models/nas_package.dart';
-import 'package:dsm_client/pages/docker/docker.dart';
+import 'package:dsm_client/pages/docker/workspace.dart';
 import 'package:dsm_client/pages/docker/detail.dart';
 import 'package:dsm_client/pages/download_station/download_station.dart';
+import 'package:dsm_client/pages/control_panel/file_service/file_service.dart';
+import 'package:dsm_client/pages/packages/packages.dart';
+import 'package:dsm_client/models/program_capabilities.dart';
+import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/pages/file/file.dart';
 import 'package:dsm_client/pages/photos/photos.dart';
 import 'package:dsm_client/pages/storage_manager/storage_manager.dart';
@@ -12,9 +16,11 @@ import 'drive.dart';
 import 'program_page.dart';
 import 'snapshots.dart';
 import 'torrent_program.dart';
+import 'rr_program.dart';
 
 Widget nativeContainer(String name, {String image = ''}) {
   final service = '$name $image'.toLowerCase();
+  if (service.contains('dockhand')) return DockerWorkspace(initialBackend: 'dockhand');
   if (service.contains('qbittorrent')) return TorrentProgram(name);
   if (service.contains('transmission'))
     return TorrentProgram(name, transmission: true);
@@ -23,7 +29,12 @@ Widget nativeContainer(String name, {String image = ''}) {
 
 /// Every installed package has a native route. No WebView fallback.
 Widget nativeProgram(NasPackage package) {
+  if (!ProgramCapabilities.hasWorkspace(package.id)) return ProgramPage(package);
   switch (package.id) {
+    case 'rr-manager':
+      return RrProgram();
+    case 'SMBService':
+      return FileService();
     case 'FileStation':
       return Files();
     case 'SynologyPhotos':
@@ -31,9 +42,9 @@ Widget nativeProgram(NasPackage package) {
     case 'StorageManager':
       return StorageManager();
     case 'ContainerManager':
-      return Docker(title: 'Container Manager');
+      return DockerWorkspace();
     case 'Docker':
-      return Docker();
+      return DockerWorkspace();
     case 'DownloadStation':
       return DownloadStation();
     case 'AudioStation':

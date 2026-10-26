@@ -4,6 +4,7 @@ import 'package:dsm_client/pages/file/file.dart';
 import 'package:dsm_client/pages/terminal/select_server.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/util/program_api.dart';
+import 'package:dsm_client/widgets/nas_app_icon.dart';
 import 'package:flutter/material.dart';
 
 /// Native package workspace: requests business APIs and renders Flutter widgets.
@@ -32,13 +33,13 @@ class ProgramPage extends StatelessWidget {
             ...sections.map((s) => ProgramDataView(s, packageId: package.id)),
             ListView(padding: EdgeInsets.all(20), children: [
               ListTile(
-                  leading: Icon(Icons.apps),
+                  leading: NasAppIcon(package, size: 40),
                   title: Text(package.name),
                   subtitle: Text(
                       '${package.version} · ${package.status == 'running' ? '运行中' : package.status}')),
               Text(package.description.replaceAll(RegExp(r'<[^>]*>'), '')),
+              NativePackageControls(package),
               SizedBox(height: 20),
-              if (sections.isEmpty) Text('当前支持版本、运行状态和相关工具。此程序的专用业务功能尚未接入。'),
               ListTile(
                   leading: Icon(Icons.folder_outlined),
                   title: Text('文件管理'),
@@ -54,6 +55,56 @@ class ProgramPage extends StatelessWidget {
           ]),
         ));
   }
+}
+
+class NativePackageControls extends StatefulWidget {
+  final NasPackage package;
+  const NativePackageControls(this.package);
+  @override State<NativePackageControls> createState() => _NativePackageControlsState();
+}
+class _NativePackageControlsState extends State<NativePackageControls> {
+  NasPackage package;
+  bool busy = false;
+  String error = '';
+  @override void initState() { super.initState(); package = widget.package; }
+  Future<void> refresh() async {
+    if (busy) return;
+    setState(() { busy = true; error = ''; });
+    try {
+      final r = await Api.nasPackages();
+      if (r['success'] != true) throw StateError(ProgramApi.error(r));
+      final items = ((r['data'] ?? {})['packages'] as List ?? []).whereType<Map>()
+        .where((p) => p['id'] == package.id);
+      if (mounted && items.isNotEmpty) setState(() => package = NasPackage.fromJson(items.first));
+    } catch (_) { if (mounted) setState(() => error = '无法刷新套件状态，请重试'); }
+    finally { if (mounted) setState(() => busy = false); }
+  }
+  Future<void> control() async {
+    final action = package.status == 'running' ? 'stop' : 'start';
+    final yes = await showDialog<bool>(context: context, builder: (dialog) => AlertDialog(
+      title: Text(action == 'stop' ? '停止 ${package.name}' : '启动 ${package.name}'),
+      content: Text('此操作会更改套件及依赖服务的运行状态，是否继续？'),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text('取消')),
+        TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text('确认'))]));
+    if (yes != true || !mounted || busy) return;
+    setState(() { busy = true; error = ''; });
+    String failure;
+    try {
+      final r = await Api.launchPackage(package.id, package.appIds.isEmpty ? '' : package.appIds.first, action);
+      if (r['success'] != true) failure = ProgramApi.error(r);
+    } catch (_) { failure = '连接失败，请刷新确认套件状态'; }
+    finally { if (mounted) setState(() => busy = false); }
+    if (mounted) await refresh();
+    if (mounted && failure != null) setState(() => error = failure);
+  }
+  @override Widget build(BuildContext context) => Column(children: [
+    if (busy) LinearProgressIndicator(),
+    ListTile(title: Text('套件运行管理'), subtitle: Text(package.status == 'running' ? '运行中' : package.status),
+      trailing: IconButton(icon: Icon(Icons.refresh), onPressed: busy ? null : refresh)),
+    if (package.canControl) TextButton(onPressed: busy ? null : control,
+      child: Text(package.status == 'running' ? '停止套件' : '启动套件')),
+    if (error.isNotEmpty) Padding(padding: EdgeInsets.all(12), child: Text(error)),
+  ]);
 }
 
 class ProgramDataView extends StatefulWidget {
@@ -332,6 +383,16 @@ class NativeProperties extends StatelessWidget {
     'client_ip': '设备地址',
     'client_name': '设备名称',
     'client_version': '客户端版本',
+    'currentVersion': '当前 RR 版本', 'currentPackageVersion': 'RR Manager 版本',
+    'latestVersion': '最新版本', 'publishedAt': '发布时间', 'releaseLogs': '版本说明',
+    'hardware': '硬件', 'boot': '引导', 'updateState': '更新状态',
+    'updateMessage': '状态说明', 'updateRunning': '更新任务运行中',
+    'dmiVendor': '主板厂商', 'dmiProduct': '主板型号', 'biosVersion': 'BIOS 版本',
+    'firmwareMode': '固件模式', 'cpuModel': '处理器', 'cpuCores': '核心数',
+    'cpuThreads': '线程数', 'ramTotal': '内存', 'kernel': '内核',
+    'arch': '架构', 'pciDevices': 'PCI 设备', 'usbDevices': 'USB 设备',
+    'mountStatus': '引导分区挂载状态', 'mountMessage': '挂载说明',
+    'accessMethod': '访问方式', 'bootType': '引导类型', 'model': '机型',
   };
   @override
   Widget build(BuildContext context) {

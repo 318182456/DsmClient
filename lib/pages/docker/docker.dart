@@ -1,6 +1,5 @@
 import 'package:dsm_client/pages/docker/detail.dart';
 import 'package:dsm_client/util/function.dart';
-import 'package:dsm_client/util/log.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
 import 'package:dsm_client/widgets/animation_progress_bar.dart';
 import 'package:dsm_client/widgets/label.dart';
@@ -12,7 +11,8 @@ import 'package:neumorphic/neumorphic.dart';
 
 class Docker extends StatefulWidget {
   final String title;
-  Docker({this.title: 'Docker'});
+  final VoidCallback onChooseBackend;
+  Docker({this.title: 'Docker', this.onChooseBackend});
   @override
   _DockerState createState() => _DockerState();
 }
@@ -34,8 +34,15 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   getContainer() async {
     var res = await Api.dockerContainerInfo();
+    if (!mounted) return;
     setState(() {
       containerLoading = false;
     });
@@ -79,7 +86,7 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
 
   getImage() async {
     var res = await Api.dockerImageInfo();
-    Log.logger.info(res);
+    if (!mounted) return;
     setState(() {
       imageLoading = false;
     });
@@ -153,6 +160,7 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                 powerLoading[container['id']] = true;
                               });
                               var res = await Api.dockerPower(container['name'], action, preserveProfile: preserveProfile);
+                              if (!mounted) return;
                               if (res['success']) {
                                 Util.toast("请求发送成功");
                                 getContainer();
@@ -212,6 +220,7 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
         powerLoading[container['id']] = true;
       });
       var res = await Api.dockerPower(container['name'], action);
+      if (!mounted) return;
       if (res['success']) {
         Util.toast("请求发送成功");
         getContainer();
@@ -616,9 +625,14 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
       appBar: AppBar(
         leading: AppBackButton(context),
         title: Text(widget.title),
+        actions: [if (widget.onChooseBackend != null) IconButton(icon: Icon(Icons.tune),
+          tooltip: '选择容器管理方式', onPressed: powerLoading.values.any((v) => v) ? null : widget.onChooseBackend)],
       ),
       body: Column(
         children: [
+          if (!containerLoading && utilization == null)
+            ListTile(title: Text('群晖资源信息加载失败，可刷新或切换管理方式'),
+              trailing: IconButton(icon: Icon(Icons.refresh), onPressed: getContainer)),
           NeuCard(
             width: double.infinity,
             decoration: NeumorphicDecoration(
@@ -721,7 +735,7 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                             changeColorValue: 90,
                                             changeProgressColor: Colors.red,
                                             progressColor: Colors.blue,
-                                            currentValue: utilization['cpu']['user_load'] + utilization['cpu']['system_load'],
+                                            currentValue: (((utilization ?? {})['cpu'] ?? {})['user_load'] ?? 0) + (((utilization ?? {})['cpu'] ?? {})['system_load'] ?? 0),
                                             displayText: '%',
                                           ),
                                         ),
@@ -776,7 +790,7 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                             changeColorValue: 90,
                                             changeProgressColor: Colors.red,
                                             progressColor: Colors.blue,
-                                            currentValue: utilization['memory']['real_usage'],
+                                            currentValue: ((utilization ?? {})['memory'] ?? {})['real_usage'] ?? 0,
                                             displayText: '%',
                                           ),
                                         ),

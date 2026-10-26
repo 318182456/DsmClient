@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:dsm_client/util/update_download.dart';
+import 'package:dsm_client/util/update_route.dart';
+import 'package:flutter/services.dart';
 import 'package:dsm_client/themes/app_theme.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/animation_progress_bar.dart';
@@ -26,12 +28,49 @@ class _UpdateState extends State<Update> {
   String statusText = '可在应用内下载并安装更新';
   String localApk;
   final updater = UpdateDownload();
+  String route = UpdateRoute.domestic;
+  bool routeReady = false;
+  String get downloadUrl => UpdateRoute.download(widget.data['downloadURL'], route);
 
   @override
   void initState() {
     super.initState();
     fileName = "DsmClient-${widget.data['buildVersionNo']}.apk";
-    if (widget.direct) Future.microtask(download);
+    loadRoute();
+  }
+
+  Future<void> loadRoute() async {
+    try {
+      final saved = await Util.getStorage('update_proxy_prefix');
+      if (saved != null) {
+        UpdateRoute.download(widget.data['downloadURL'], saved);
+        route = saved;
+      }
+    } catch (_) { route = UpdateRoute.domestic; }
+    if (!mounted) return;
+    setState(() => routeReady = true);
+    if (widget.direct) download();
+  }
+
+  Future<void> chooseRoute(String value) async {
+    if (downloading) return;
+    if (value == 'custom') {
+      final text = TextEditingController(text: route);
+      final entered = await showDialog<String>(context: context, builder: (dialog) => AlertDialog(
+        title: Text('自定义更新代理'), content: TextField(controller: text,
+          decoration: InputDecoration(hintText: 'https://proxy.example.com/')),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text('取消')),
+          TextButton(onPressed: () {
+            try { UpdateRoute.download(widget.data['downloadURL'], text.text.trim()); }
+            catch (_) { Util.toast('请输入有效的 HTTPS 代理前缀'); return; }
+            Navigator.pop(dialog, text.text.trim());
+          }, child: Text('保存'))]));
+      Future.delayed(Duration(milliseconds: 400), text.dispose);
+      if (entered == null || !mounted) return;
+      value = entered;
+    }
+    setState(() => route = value);
+    await Util.setStorage('update_proxy_prefix', value);
   }
 
   @override
@@ -41,7 +80,7 @@ class _UpdateState extends State<Update> {
   }
 
   Future<void> download() async {
-    if (downloading) return;
+    if (downloading || !routeReady) return;
     if (!Platform.isAndroid) {
       Util.toast('当前平台暂不支持应用内安装');
       return;
@@ -59,7 +98,7 @@ class _UpdateState extends State<Update> {
     try {
       final directory = await getApplicationSupportDirectory();
       final file = await updater.fetch(
-        url: widget.data['downloadURL'],
+        url: downloadUrl,
         path: '${directory.path}/updates/$fileName',
         size: size,
         digest: digest,
@@ -132,6 +171,18 @@ class _UpdateState extends State<Update> {
                 SizedBox(
                   height: 30,
                 ),
+                Padding(padding: EdgeInsets.symmetric(horizontal: 24), child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(labelText: '更新下载线路'),
+                      value: route == UpdateRoute.domestic || route.isEmpty ? route : 'custom',
+                      items: [DropdownMenuItem(value: UpdateRoute.domestic, child: Text('国内加速（EdgeOne）')),
+                        DropdownMenuItem(value: '', child: Text('GitHub 直连')),
+                        DropdownMenuItem(value: 'custom', child: Text('自定义 HTTPS 代理'))],
+                      onChanged: downloading || !routeReady ? null : chooseRoute),
+                    SizedBox(height: 8),
+                    Text(route.isEmpty ? '应用内与浏览器均使用 GitHub 直连' : '应用内与浏览器均使用所选代理，应用内下载仍校验 SHA-256'),
+                  ])),
                 Column(
                   children: [
                     Text(
@@ -182,9 +233,9 @@ class _UpdateState extends State<Update> {
                   mode: LaunchMode.externalApplication),
               child: Text('查看版本说明'),
             ),
-          GestureDetector(
-            onTap: () {
-              launchUrlString(widget.data['downloadURL'],
+          TextButton(
+            onPressed: !routeReady ? null : () {
+              launchUrlString(downloadUrl,
                   mode: LaunchMode.externalApplication);
             },
             child: Text(
@@ -195,9 +246,10 @@ class _UpdateState extends State<Update> {
                   fontSize: 14),
             ),
           ),
-          SizedBox(
-            height: 20,
-          ),
+          TextButton(onPressed: !routeReady ? null : () async {
+            await Clipboard.setData(ClipboardData(text: downloadUrl));
+            Util.toast('下载链接已复制');
+          }, child: Text('复制下载链接')),
           if (!downloading)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),

@@ -86,12 +86,15 @@ jobs:
         run: |
           dart --no-sound-null-safety test/dsm_compatibility_test.dart
           dart --no-sound-null-safety test/program_section_test.dart
+          dart --no-sound-null-safety test/update_route_test.dart
+          dart --no-sound-null-safety test/rr_icons_test.dart
+          dart --no-sound-null-safety test/dockhand_client_test.dart
           dart --no-sound-null-safety test/torrent_client_test.dart
           dart --no-sound-null-safety test/update_release_test.dart
           dart --no-sound-null-safety test/update_download_test.dart
 
       - name: Test native program navigation
-        run: flutter test --no-sound-null-safety test/native_program_widget_test.dart
+        run: flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart
 
       - name: Analyze native program pages
         run: >-
@@ -104,6 +107,10 @@ jobs:
           lib/pages/packages/snapshots.dart
           lib/pages/setting/about.dart lib/pages/setting/license.dart lib/pages/setting/privacy.dart
           lib/pages/dashborad/shortcut_list.dart lib/pages/packages/package_shortcut.dart
+          lib/models/program_capabilities.dart lib/util/update_route.dart lib/pages/update/update.dart
+          lib/models/rr_protocol.dart lib/models/dsm_icons.dart lib/models/docker_connection.dart
+          lib/util/rr_api.dart lib/util/dockhand_client.dart lib/widgets/nas_app_icon.dart
+          lib/pages/packages/rr_program.dart lib/pages/docker/workspace.dart lib/pages/docker/dockhand.dart
 
       - name: Prepare signing
         env:
