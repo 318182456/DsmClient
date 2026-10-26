@@ -1,0 +1,79 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Android debug APK
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Android uses the checked-in AAR files; the LFS framework is iOS-only.
+      - name: Install Android SDK packages
+        run: JAVA_HOME="$JAVA_HOME_17_X64" sdkmanager "platforms;android-33" "build-tools;30.0.3"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.7.12'
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # The inherited Gradle file requires key.properties for debug builds too.
+      # Generate a disposable test key instead of using a production secret.
+      - name: Prepare CI test signing
+        shell: bash
+        run: |
+          keytool -genkeypair -noprompt \
+            -keystore "$RUNNER_TEMP/dsmclient-ci.jks" \
+            -storetype JKS -storepass android -keypass android \
+            -alias androiddebugkey -keyalg RSA -keysize 2048 \
+            -validity 2 -dname "CN=DsmClient CI"
+          cat > android/key.properties <<EOF
+          storeFile=$RUNNER_TEMP/dsmclient-ci.jks
+          storePassword=android
+          keyPassword=android
+          keyAlias=androiddebugkey
+          EOF
+
+      - name: Build debug APK
+        run: flutter build apk --debug --target-platform android-arm64
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DsmClient-debug-arm64-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Remove CI signing files
+        if: always()
+        shell: bash
+        run: rm -f android/key.properties "$RUNNER_TEMP/dsmclient-ci.jks"

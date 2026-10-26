@@ -99,6 +99,16 @@ flutter build ios --release
 
 Android applicationId、iOS Bundle ID、分享扩展关联配置及下载路径目前沿用原项目；后续独立发行时需统一规划应用标识与签名。
 
+## GitHub Actions
+
+[Android CI](https://github.com/318182456/DsmClient/actions/workflows/android.yml) 在推送到 `main`、向 `main` 提交 Pull Request 或手动运行时触发。
+
+工作流使用 Flutter 3.7.12 和 JDK 11，安装依赖后构建 ARM64 debug APK。成功后可在对应运行的 Artifacts 中下载 `DsmClient-debug-arm64` 成果，保留 7 天。
+
+CI 自动生成临时测试签名，无需配置签名 Secrets。每次运行的签名不同，安装时可能需要先卸载旧测试包；该成果用于开发验证。正式签名、Release 发布及 iOS 构建尚未接入。
+
+当前测试目录仅有占位入口，工作流以 APK 构建作为检查，尚未覆盖设备上的功能测试。
+
 ## 代码结构
 
 ```text
