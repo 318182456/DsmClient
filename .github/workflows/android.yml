@@ -26,8 +26,17 @@ jobs:
           persist-credentials: false
 
       # Android uses the checked-in AAR files; the LFS framework is iOS-only.
+      - name: Set up Java for Android SDK tools
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Install Android SDK packages
-        run: JAVA_HOME="$JAVA_HOME_17_X64" sdkmanager "platforms;android-33" "build-tools;30.0.3"
+        uses: android-actions/setup-android@v4
+        with:
+          cmdline-tools-version: '11479570'
+          packages: 'platform-tools platforms;android-33 build-tools;30.0.3'
 
       - name: Set up Java
         uses: actions/setup-java@v4
