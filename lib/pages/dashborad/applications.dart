@@ -1,6 +1,5 @@
 import 'package:dsm_client/models/nas_package.dart';
 import 'package:dsm_client/pages/control_panel/control_panel.dart';
-import 'package:dsm_client/pages/docker/detail.dart';
 import 'package:dsm_client/pages/docker/docker.dart';
 import 'package:dsm_client/pages/download_station/download_station.dart';
 import 'package:dsm_client/pages/file/file.dart';
@@ -8,7 +7,6 @@ import 'package:dsm_client/pages/log_center/log_center.dart';
 import 'package:dsm_client/pages/moments/moments.dart';
 import 'package:dsm_client/pages/packages/packages.dart';
 import 'package:dsm_client/pages/packages/program_launcher.dart';
-import 'package:dsm_client/pages/packages/torrent_program.dart';
 import 'package:dsm_client/pages/photos/photos.dart';
 import 'package:dsm_client/pages/resource_monitor/resource_monitor.dart';
 import 'package:dsm_client/pages/security_scan/security_scan.dart';
@@ -168,16 +166,8 @@ class _ApplicationListState extends State<ApplicationList> {
           Icons.view_in_ar, () => Docker(title: 'Container Manager')));
     for (final container in containers) {
       final name = '${container['name']}';
-      final service = '$name ${container['image'] ?? ''}'.toLowerCase();
-      result.add(_MenuApp(
-          'container:$name',
-          name,
-          Icons.view_in_ar_outlined,
-          () => service.contains('qbittorrent')
-              ? TorrentProgram(name)
-              : service.contains('transmission')
-                  ? TorrentProgram(name, transmission: true)
-                  : ContainerDetail(name)));
+      result.add(_MenuApp('container:$name', name, Icons.view_in_ar_outlined,
+          () => nativeContainer(name, image: '${container['image'] ?? ''}')));
     }
     return result;
   }

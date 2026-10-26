@@ -1,5 +1,6 @@
 import 'package:dsm_client/models/nas_package.dart';
 import 'package:dsm_client/pages/docker/docker.dart';
+import 'package:dsm_client/pages/docker/detail.dart';
 import 'package:dsm_client/pages/download_station/download_station.dart';
 import 'package:dsm_client/pages/file/file.dart';
 import 'package:dsm_client/pages/photos/photos.dart';
@@ -10,6 +11,15 @@ import 'audio_station.dart';
 import 'drive.dart';
 import 'program_page.dart';
 import 'snapshots.dart';
+import 'torrent_program.dart';
+
+Widget nativeContainer(String name, {String image = ''}) {
+  final service = '$name $image'.toLowerCase();
+  if (service.contains('qbittorrent')) return TorrentProgram(name);
+  if (service.contains('transmission'))
+    return TorrentProgram(name, transmission: true);
+  return ContainerDetail(name);
+}
 
 /// Every installed package has a native route. No WebView fallback.
 Widget nativeProgram(NasPackage package) {

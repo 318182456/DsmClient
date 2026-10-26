@@ -6,9 +6,36 @@ import 'package:dsm_client/pages/packages/program_page.dart';
 import 'package:dsm_client/pages/packages/torrent_program.dart';
 import 'package:dsm_client/pages/setting/about.dart';
 import 'package:dsm_client/pages/setting/privacy.dart';
+import 'package:dsm_client/models/shortcut_item_model.dart';
+import 'package:dsm_client/pages/dashborad/shortcut_list.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 void main() {
+  testWidgets('URL container shortcuts use the native program route',
+      (tester) async {
+    final shortcut = ShortcutItemModel.fromJson({
+      'className': 'SYNO.SDS.ContainerManager.ContainerDetail.Instance',
+      'param': {
+        'data': {'name': 'qbittorrent'}
+      },
+      'title': 'qbittorrent',
+      'type': 'url',
+      'url': 'https://untrusted.invalid/web',
+    });
+    await tester.pumpWidget(MaterialApp(
+        home: Builder(
+            builder: (context) => Scaffold(
+                  body: ShortcutList([shortcut], {}, [], [], {}, context,
+                      validAppViewOrder: [
+                        'SYNO.SDS.ContainerManager.Application'
+                      ]),
+                ))));
+    await tester.tap(find.text('qbittorrent'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TorrentProgram), findsOneWidget);
+    expect(find.text('连接 qBittorrent API'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
       'About opens local privacy and license pages without promotion links',
       (tester) async {

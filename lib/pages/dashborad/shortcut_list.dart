@@ -1,7 +1,7 @@
 import 'package:dsm_client/models/shortcut_item_model.dart';
-import 'package:dsm_client/pages/common/browser.dart';
+import 'package:dsm_client/pages/packages/program_launcher.dart';
+import 'package:dsm_client/pages/packages/package_shortcut.dart';
 import 'package:dsm_client/pages/control_panel/control_panel.dart';
-import 'package:dsm_client/pages/docker/detail.dart';
 import 'package:dsm_client/pages/docker/docker.dart';
 import 'package:dsm_client/pages/download_station/download_station.dart';
 import 'package:dsm_client/pages/log_center/log_center.dart';
@@ -23,8 +23,11 @@ List supportedShortcuts = [
   "SYNO.SDS.AdminCenter.Application",
   "SYNO.SDS.StorageManager.Instance",
   "SYNO.SDS.Docker.Application",
+  "SYNO.SDS.ContainerManager.Application",
+  "SYNO.SDS.ContainerManager.ContainerDetail.Instance",
   "SYNO.SDS.Docker.ContainerDetail.Instance",
   "SYNO.SDS.LogCenter.Instance",
+  "SYNO.SDS.LogCenter.BuiltIn",
   "SYNO.SDS.ResourceMonitor.Instance",
   "SYNO.SDS.Virtualization.Application",
   "SYNO.SDS.DownloadStation.Application",
@@ -118,17 +121,10 @@ class ShortcutList extends StatelessWidget {
         } else {
           icon = "assets/applications/docker.png";
         }
-        name = "${shortcut.param.data.name}";
-        if (shortcut.type == 'url') {
-          page = Browser(
-            url: shortcut.url,
-            title: name,
-          );
-          routerName = "browser";
-        } else {
-          page = ContainerDetail(name);
-          routerName = "docker_container_detail";
-        }
+        final containerName = shortcut.param?.data?.name ?? '';
+        name = containerName.isEmpty ? (shortcut.title ?? '容器') : containerName;
+        page = containerName.isEmpty ? Docker(title: 'Container Manager') : nativeContainer(containerName);
+        routerName = "container_program";
 
         break;
       case "SYNO.SDS.LogCenter.BuiltIn":
@@ -175,10 +171,7 @@ class ShortcutList extends StatelessWidget {
       case "SYNO.SDS.XLPan.Application":
         icon = "assets/applications/xunlei.png";
         name = "迅雷";
-        page = Browser(
-          title: "迅雷-远程设备",
-          url: "https://pan.xunlei.com/yc/?fromApp=paipai",
-        );
+        page = PackageShortcut('XLPan', title: '迅雷');
         routerName = "xunlei";
         break;
     }
