@@ -57,7 +57,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '任务计划');
     await tester.pumpAndSettle();
-    expect(find.text('任务计划'), findsOneWidget);
+    expect(
+        find.byWidgetPredicate(
+            (widget) => widget is Text && widget.data == '任务计划'),
+        findsOneWidget);
     expect(find.text('硬件和电源'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(SizedBox());
