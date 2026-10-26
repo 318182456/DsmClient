@@ -1,0 +1,57 @@
+buildscript {
+    ext.kotlin_version = '1.8.0'
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://repo1.maven.org/maven2/' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
+//        maven { url "https://download.flutter.io" }
+//        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.bouncycastle' &&
+                        details.requested.name == 'bcprov-jdk18on') {
+                    details.useTarget 'org.bouncycastle:bcprov-jdk15to18:1.70'
+                    details.because 'Replace bcprov-jdk18on with bcprov-jdk15to18 for Java 11 compatibility'
+                }
+            }
+        }
+    }
+    repositories {
+        google()
+        mavenCentral()
+        flatDir {
+            dirs "$rootProject.projectDir/aars"
+        }
+        maven { url 'https://repo1.maven.org/maven2/' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
+//        maven { url "https://download.flutter.io" }
+//        jcenter()
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
