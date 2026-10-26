@@ -176,6 +176,12 @@ class _UpdateState extends State<Update> {
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Text(statusText, textAlign: TextAlign.center),
           ),
+          if (widget.data['releaseURL'] != null)
+            TextButton(
+              onPressed: () => launchUrlString(widget.data['releaseURL'],
+                  mode: LaunchMode.externalApplication),
+              child: Text('查看版本说明'),
+            ),
           GestureDetector(
             onTap: () {
               launchUrlString(widget.data['downloadURL'],

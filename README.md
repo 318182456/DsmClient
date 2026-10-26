@@ -128,6 +128,7 @@ Android applicationId、iOS Bundle ID、分享扩展关联配置及下载路径�
 Android 在进入主页时检查本仓库的 GitHub Releases，也可通过“设置 → 关于 → 检查更新”手动检查。
 
 - 更新从本仓库发布的 `update-arm64.json` 读取版本、安装包大小和 SHA-256，支持开发预发布。
+- GitHub API 受限或不可用时，自动读取本仓库的官方 Releases 订阅源，再核对对应发布清单。
 - 只有更高的 Android build number 才会提示更新，手动检查也不会降级或重复安装当前版本。
 - 应用内显示下载进度，支持暂停、继续和断点续传；已下载且通过校验的安装包直接复用。
 - 安装前核对安装包大小和 SHA-256，然后调用 Android 系统安装器；无需手动前往 GitHub 下载。

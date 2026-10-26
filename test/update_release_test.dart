@@ -1,5 +1,6 @@
 // @dart=2.10
 import '../lib/models/app_release.dart';
+import '../lib/util/github_updates.dart';
 
 void expect(bool value, String message) {
   if (!value) throw StateError(message);
@@ -32,6 +33,19 @@ void main() {
         ],
       };
   final update = AppRelease.fromManifest(manifest(), release());
+  final published = AppRelease.fromPublishedManifest(
+      manifest()..['downloadURL'] = 'https://evil.invalid/app.apk', 'dev-7');
+  expect(published.downloadUrl == update.downloadUrl,
+      'Feed fallback derives the APK URL from this repository and tag');
+  final feed = '''<feed>
+    <link href="https://github.com/318182456/DsmClient/releases/tag/dev-7"/>
+    <link href="https://github.com/318182456/DsmClient/releases/tag/dev-7"/>
+    <link href="https://github.com/another/repo/releases/tag/dev-99"/>
+    <content>&lt;link href=&quot;https://github.com/318182456/DsmClient/releases/tag/evil&quot;/&gt;</content>
+    <link href="https://github.com/318182456/DsmClient/releases/tag/%2e%2e%2fevil"/>
+  </feed>''';
+  expect(GithubUpdates.tagsFromFeed(feed).join(',') == 'dev-7',
+      'Accept only valid, unique release links in this repository feed');
   expect(update.newerThan('10006'), 'Offer a newer build');
   expect(!update.newerThan('10007'), 'Do not offer the same build repeatedly');
   expect(

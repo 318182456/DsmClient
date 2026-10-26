@@ -1,10 +1,9 @@
 // @dart=2.10
 
-/// Update metadata is bound to an APK asset in this repository's release.
+/// Metadata from a published manifest, optionally cross-checked with GitHub's API.
 class AppRelease {
   static const repository = '318182456/DsmClient';
   static const packageId = 'fit.flutter.dsm_helper';
-
   final int buildNumber;
   final String version;
   final String apkName;
@@ -30,43 +29,56 @@ class AppRelease {
             '/$repository/releases/download/${Uri.encodeComponent(tag)}/');
   }
 
-  static AppRelease fromManifest(Map manifest, Map release) {
-    if (release['draft'] == true) throw FormatException('Draft release');
-    final tag = '${release['tag_name'] ?? ''}';
-    if (tag.isEmpty || tag.contains('/') || tag.contains('..')) {
+  /// The caller fetches this manifest from this repository's published release.
+  /// Derive URLs locally, never accept a download host supplied by the manifest.
+  static AppRelease fromPublishedManifest(Map manifest, String tag,
+      {String notes = ''}) {
+    if (tag.isEmpty ||
+        !RegExp(r'^[A-Za-z0-9_.-]+$').hasMatch(tag) ||
+        tag.contains('..')) {
       throw FormatException('Invalid release tag');
     }
     final build = int.tryParse('${manifest['buildNumber']}') ?? 0;
     final size = int.tryParse('${manifest['size']}') ?? 0;
     final name = '${manifest['apkName'] ?? ''}';
     final digest = '${manifest['sha256'] ?? ''}'.toLowerCase();
+    final version = '${manifest['version'] ?? ''}';
     if (manifest['packageId'] != packageId ||
         manifest['abi'] != 'arm64-v8a' ||
         build <= 0 ||
         size <= 0 ||
+        version.isEmpty ||
         !RegExp(r'^[A-Za-z0-9_.-]+\.apk$').hasMatch(name) ||
         name.contains('..') ||
         !RegExp(r'^[0-9a-f]{64}$').hasMatch(digest)) {
       throw FormatException('Invalid update manifest');
     }
-    final assets = (release['assets'] as List ?? []).whereType<Map>();
-    final asset =
-        assets.firstWhere((item) => item['name'] == name, orElse: () => null);
-    if (asset == null ||
-        asset['state'] != 'uploaded' ||
-        int.tryParse('${asset['size']}') != size ||
-        !trustedAssetUrl(asset['browser_download_url'], tag)) {
-      throw FormatException('APK asset does not match manifest');
-    }
     return AppRelease._(
         build,
-        '${manifest['version'] ?? ''}',
+        version,
         name,
-        asset['browser_download_url'],
+        'https://github.com/$repository/releases/download/${Uri.encodeComponent(tag)}/${Uri.encodeComponent(name)}',
         digest,
         size,
-        '${release['body'] ?? ''}',
+        notes,
         'https://github.com/$repository/releases/tag/${Uri.encodeComponent(tag)}');
+  }
+
+  static AppRelease fromManifest(Map manifest, Map release) {
+    if (release['draft'] == true) throw FormatException('Draft release');
+    final tag = '${release['tag_name'] ?? ''}';
+    final parsed =
+        fromPublishedManifest(manifest, tag, notes: '${release['body'] ?? ''}');
+    final assets = (release['assets'] as List ?? []).whereType<Map>();
+    final asset = assets.firstWhere((item) => item['name'] == parsed.apkName,
+        orElse: () => null);
+    if (asset == null ||
+        asset['state'] != 'uploaded' ||
+        int.tryParse('${asset['size']}') != parsed.size ||
+        asset['browser_download_url'] != parsed.downloadUrl) {
+      throw FormatException('APK asset does not match manifest');
+    }
+    return parsed;
   }
 
   bool newerThan(String installedBuild) =>
