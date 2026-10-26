@@ -90,6 +90,9 @@ jobs:
           dart --no-sound-null-safety test/update_release_test.dart
           dart --no-sound-null-safety test/update_download_test.dart
 
+      - name: Test native program navigation
+        run: flutter test --no-sound-null-safety test/native_program_widget_test.dart
+
       - name: Analyze native program pages
         run: >-
           flutter analyze --no-fatal-infos --no-fatal-warnings

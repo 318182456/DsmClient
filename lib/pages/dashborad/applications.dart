@@ -23,9 +23,10 @@ class ApplicationList extends StatefulWidget {
   final Map system;
   final List volumes, disks;
   final Map appNotify;
+  final Future<Map> Function() packageLoader, containerLoader;
   const ApplicationList(
       this.applications, this.system, this.volumes, this.disks, this.appNotify,
-      {Key key})
+      {Key key, this.packageLoader, this.containerLoader})
       : super(key: key);
   @override
   State<ApplicationList> createState() => _ApplicationListState();
@@ -73,8 +74,10 @@ class _ApplicationListState extends State<ApplicationList> {
       packages = [];
       containers = [];
     });
-    final result =
-        await Future.wait([safe(Api.nasPackages()), safe(Api.nasContainers())]);
+    final result = await Future.wait([
+      safe((widget.packageLoader ?? Api.nasPackages)()),
+      safe((widget.containerLoader ?? Api.nasContainers)()),
+    ]);
     if (!mounted ||
         generation != current ||
         connection != '${Util.baseUrl}|${Util.sid}') return;
