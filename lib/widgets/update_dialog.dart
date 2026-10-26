@@ -3,7 +3,6 @@ import 'package:dsm_client/util/function.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:wave/config.dart';
 import 'package:wave/wave.dart';
 
 class UpdateDialog extends StatelessWidget {
