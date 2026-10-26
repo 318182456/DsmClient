@@ -82,7 +82,7 @@ class _ControlPanelState extends State<ControlPanel> {
   Widget tile(_ControlEntry entry, double width) {
     final theme = Theme.of(context);
     final unread = entry.route == 'update_reset'
-        ? (widget.notify?['SYNO.SDS.AdminCenter.Update_Reset.Main'] ??
+        ? ((widget.notify ?? {})['SYNO.SDS.AdminCenter.Update_Reset.Main'] ??
             {})['unread']
         : null;
     return SizedBox(
