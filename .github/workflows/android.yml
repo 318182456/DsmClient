@@ -94,7 +94,7 @@ jobs:
           dart --no-sound-null-safety test/update_download_test.dart
 
       - name: Test native program navigation
-        run: flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart
+        run: flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart
 
       - name: Analyze native program pages
         run: >-
@@ -111,6 +111,8 @@ jobs:
           lib/models/rr_protocol.dart lib/models/dsm_icons.dart lib/models/docker_connection.dart
           lib/util/rr_api.dart lib/util/dockhand_client.dart lib/widgets/nas_app_icon.dart
           lib/pages/packages/rr_program.dart lib/pages/docker/workspace.dart lib/pages/docker/dockhand.dart
+          lib/themes/app_theme.dart lib/themes/light.dart lib/themes/dark.dart
+          lib/widgets/workspace.dart lib/util/dockhand_credentials.dart lib/pages/common/audio_player.dart
 
       - name: Prepare signing
         env:

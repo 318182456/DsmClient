@@ -9,7 +9,7 @@ class Privacy extends StatelessWidget {
         Text('本机数据', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 8),
         Text(
-            'NAS 地址、账号、你选择记住的登录信息及界面偏好保存在本机应用数据中。NAS 账号和第三方程序账号分别使用，新增的下载程序连接凭据仅在当前页面会话内保留。'),
+            'NAS 地址、账号、你选择记住的登录信息及界面偏好保存在本机应用数据中。NAS 账号和第三方程序账号分别使用。Dockhand 可选择记住登录信息，密码或 Token 使用系统安全存储加密保存，按 NAS 和服务地址隔离；验证码不保存，可在连接页清除。下载程序的连接凭据仅在当前页面会话内保留。'),
         SizedBox(height: 24),
         Text('NAS 与程序连接', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 8),

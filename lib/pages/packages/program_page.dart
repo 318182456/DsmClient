@@ -6,6 +6,7 @@ import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/util/program_api.dart';
 import 'package:dsm_client/widgets/nas_app_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:dsm_client/widgets/workspace.dart';
 
 /// Native package workspace: requests business APIs and renders Flutter widgets.
 /// Packages without a business adapter explicitly show their supported scope.
@@ -31,14 +32,11 @@ class ProgramPage extends StatelessWidget {
                   : null),
           body: TabBarView(children: [
             ...sections.map((s) => ProgramDataView(s, packageId: package.id)),
-            ListView(padding: EdgeInsets.all(20), children: [
-              ListTile(
-                  leading: NasAppIcon(package, size: 40),
-                  title: Text(package.name),
-                  subtitle: Text(
-                      '${package.version} · ${package.status == 'running' ? '运行中' : package.status}')),
+            ListView(padding: EdgeInsets.all(16), children: [
+              WorkspaceHeader(title: package.name, leading: NasAppIcon(package, size: 48),
+                subtitle: '${package.version} · ${package.status == 'running' ? '运行中' : package.status}'),
               Text(package.description.replaceAll(RegExp(r'<[^>]*>'), '')),
-              NativePackageControls(package),
+              SizedBox(height: 16), Card(child: NativePackageControls(package)),
               SizedBox(height: 20),
               ListTile(
                   leading: Icon(Icons.folder_outlined),
@@ -328,11 +326,12 @@ class _ProgramDataViewState extends State<ProgramDataView>
             physics: AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.all(16),
             children: [
+              Padding(padding: EdgeInsets.only(bottom: 16), child: Text(widget.section.title, style: Theme.of(context).textTheme.headline6)),
               if (widget.section.listKey != null)
-                TextField(
+                Padding(padding: EdgeInsets.only(bottom: 16), child: TextField(
                     onChanged: (v) => setState(() => query = v),
                     decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.search), hintText: '筛选已加载的项目')),
+                        prefixIcon: Icon(Icons.search), hintText: '搜索已加载的项目'))),
               if (error.isNotEmpty)
                 ListTile(
                     title: Text(error),
@@ -341,9 +340,9 @@ class _ProgramDataViewState extends State<ProgramDataView>
               if (error.isEmpty &&
                   widget.section.listKey != null &&
                   rows.isEmpty)
-                Padding(padding: EdgeInsets.all(24), child: Text('暂无记录')),
+                WorkspaceEmpty('暂无记录', detail: '下拉刷新，查看最新状态。'),
               if (widget.section.listKey == null && data != null)
-                NativeProperties(data),
+                Card(child: NativeProperties(data)),
               ...shown.map(row),
               if (more)
                 TextButton(
@@ -409,10 +408,10 @@ class NativeProperties extends StatelessWidget {
                     child: NativeProperties(e.value))
               ]);
             return ListTile(
-                title: Text(name),
+                title: Text(name, style: Theme.of(context).textTheme.caption),
                 subtitle: SelectableText(e.value is bool
                     ? (e.value ? '是' : '否')
-                    : '${e.value ?? '—'}'));
+                    : '${e.value ?? '—'}', style: Theme.of(context).textTheme.bodyText1));
           }).toList());
     if (safe is List)
       return Column(children: [

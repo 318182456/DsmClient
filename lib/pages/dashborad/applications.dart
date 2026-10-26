@@ -17,7 +17,6 @@ import 'package:dsm_client/pages/storage_manager/storage_manager.dart';
 import 'package:dsm_client/pages/virtual_machine/virtual_machine.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
 
 class ApplicationList extends StatefulWidget {
   final List applications;
@@ -185,6 +184,7 @@ class _ApplicationListState extends State<ApplicationList> {
           Icons.view_in_ar, () => DockerWorkspace(), asset: 'assets/applications/container_manager.png'));
     for (final container in containers) {
       final name = '${container['name']}';
+      if (!ProgramCapabilities.hasContainerWorkspace(name, '${container['image'] ?? ''}')) continue;
       final managers = packages.where((p) => p.id == 'ContainerManager' || p.id == 'Docker');
       result.add(_MenuApp('container:$name', name, Icons.view_in_ar_outlined,
           () => nativeContainer(name, image: '${container['image'] ?? ''}'),
@@ -239,18 +239,17 @@ class _ApplicationListState extends State<ApplicationList> {
                                       builder: (_) => app.page(),
                                       settings: RouteSettings(name: app.id)));
                                 },
-                                child: NeuCard(
+                                child: Container(
                                   width:
                                       (MediaQuery.of(context).size.width * .8 -
                                               60) /
                                           2,
                                   padding: EdgeInsets.symmetric(
                                       vertical: 20, horizontal: 8),
-                                  curveType: CurveType.flat,
-                                  bevel: 20,
-                                  decoration: NeumorphicDecoration(
+                                  decoration: BoxDecoration(
+                                      border: Border.all(color: Theme.of(context).dividerColor),
                                       color: Theme.of(context)
-                                          .scaffoldBackgroundColor,
+                                          .cardColor,
                                       borderRadius: BorderRadius.circular(20)),
                                   child: Column(children: [
                                     app.package != null ? NasAppIcon(app.package, appIds: app.iconApps,

@@ -104,6 +104,8 @@ void main() {
                     'data': {
                       'containers': [
                         {'name': 'qbittorrent', 'image': 'qbittorrent:latest'},
+                          {'name': 'dockhand-postgres', 'image': 'postgres:17'},
+                          {'name': 'redis', 'image': 'redis:alpine'},
                       ]
                     }
                   }),
@@ -121,6 +123,9 @@ void main() {
       expect(find.text(name), findsOneWidget);
     }
     expect(find.text('File Station'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'postgres');
+    await tester.pumpAndSettle();
+    expect(find.text('没有匹配的程序'), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'qbittorrent');
     await tester.pumpAndSettle();
     expect(find.text('Node.js v22'), findsNothing);

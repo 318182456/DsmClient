@@ -47,11 +47,11 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 | SAN Manager | LUN 与 Target 列表及详情 |
 | WebDAV Server | HTTP/HTTPS 开关状态、端口与连接参数查看 |
 | Hybrid Share | 共享信息查看 |
-| 容器 | 可按 NAS 选择群晖 Container Manager 或 Dockhand；Dockhand 支持独立账号/MFA/API Token、环境选择、容器/镜像/Compose 项目/网络/卷、日志/配置/资源/进程及启停重启。每个容器仍有独立入口 |
+| 容器 | 可按 NAS 选择群晖 Container Manager 或 Dockhand；Dockhand 支持独立账号/MFA/API Token、环境选择、容器/镜像/Compose 项目/网络/卷、日志/配置/资源/进程及启停重启。菜单仅展示 Dockhand、qBittorrent、Transmission 等已支持独立页面的容器；全部容器可在管理器查看 |
 | RR Manager 4.x | 概览、引导配置编辑、Addons/Modules 选择、在线/本地 RR 与 RR Manager 更新、日志；修改操作须在应用内确认，本客户端不发送重启请求 |
 | 其他桌面套件 | 保留 NAS 原生图标和套件运行管理；纯运行库仅在套件中心显示 |
 
-以上为当前实现范围，尚未覆盖每个程序的完整功能。Drive 历史版本/回收站浏览、备份任务创建与恢复、云盘授权与任务创建、Office 在线编辑等仍待开发。新增读取接口已在 DSM 7.4.1 上进行只读验证；写操作按接口实现，未在用户 NAS 上执行破坏性或状态变更测试。音频流端点也已验证；移动端交互与音频解码仍需 Android 实机验证。qBittorrent 4/5 命令切换及 Transmission CSRF 协商已通过本地 HTTP 服务集成测试，尚未使用用户程序账号做真实任务变更。快照恢复/删除、第三方媒体库原生业务与 Tailscale 管理也尚未实现。套件运行管理不代表已实现对应程序全部业务功能。RR 只读日志已在 NAS 验证，未对用户引导执行写配置、升级或重启测试。Dockhand 使用独立认证，仅保存服务地址与环境，密码/Token 不落盘。
+以上为当前实现范围，尚未覆盖每个程序的完整功能。Drive 历史版本/回收站浏览、备份任务创建与恢复、云盘授权与任务创建、Office 在线编辑等仍待开发。新增读取接口已在 DSM 7.4.1 上进行只读验证；写操作按接口实现，未在用户 NAS 上执行破坏性或状态变更测试。音频流端点也已验证；移动端交互与音频解码仍需 Android 实机验证。qBittorrent 4/5 命令切换及 Transmission CSRF 协商已通过本地 HTTP 服务集成测试，尚未使用用户程序账号做真实任务变更。快照恢复/删除、第三方媒体库原生业务与 Tailscale 管理也尚未实现。套件运行管理不代表已实现对应程序全部业务功能。RR 只读日志已在 NAS 验证，未对用户引导执行写配置、升级或重启测试。Dockhand 使用独立认证；可选择记住账号密码或 API Token，使用 Android Keystore / iOS Keychain 加密保存，按 NAS 和服务地址隔离，验证码不保存，可随时清除。
 
 认证流程参考 [Synology DSM Login Web API Guide](https://global.download.synology.com/download/Document/Software/DeveloperGuide/Os/DSM/All/enu/DSM_Login_Web_API_Guide_enu.pdf)。
 
