@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'audio_station.dart';
 import 'drive.dart';
 import 'program_page.dart';
+import 'snapshots.dart';
 
 /// Every installed package has a native route. No WebView fallback.
 Widget nativeProgram(NasPackage package) {
@@ -29,6 +30,8 @@ Widget nativeProgram(NasPackage package) {
       return AudioStation();
     case 'Virtualization':
       return VirtualMachine();
+    case 'SnapshotReplication':
+      return SnapshotProgram();
     case 'SynologyDrive':
       return DrivePage(package);
     default:

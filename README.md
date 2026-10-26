@@ -42,13 +42,15 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 | Audio Station | 歌曲、专辑、歌手、播放列表、文件夹、曲库搜索、分页加载、音频播放 |
 | Hyper Backup | 任务、存储库、备份日志、实时任务状态；立即备份、取消任务（操作前确认） |
 | Cloud Sync | 云端连接、同步任务、日志、连接设置、同步中文件、最近同步；暂停与恢复（操作前确认） |
+| Snapshot Replication | 共享文件夹快照列表、说明及锁定状态、创建普通快照、复制任务查看 |
+| qBittorrent / Transmission | 原生任务、进度速度、文件与 Tracker、添加磁力/种子链接、开始/暂停/校验、移除任务并保留文件；需在页面输入对应程序的地址与账号，凭据仅保留在本次页面会话 |
 | SAN Manager | LUN 与 Target 列表及详情 |
 | WebDAV Server | HTTP/HTTPS 开关状态、端口与连接参数查看 |
 | Hybrid Share | 共享信息查看 |
 | 容器 | 每个容器独立入口，进入原生详情、进程与日志页面 |
 | 其他套件及后台组件 | 版本、状态、说明、相关文件工具和 SSH 入口；未接入的专用功能明确标示 |
 
-以上为当前实现范围，尚未覆盖每个程序的完整功能。Drive 历史版本/回收站浏览、备份任务创建与恢复、云盘授权与任务创建、Office 在线编辑等仍待开发。新增读取接口已在 DSM 7.4.1 上进行只读验证；写操作按接口实现，未在用户 NAS 上执行破坏性或状态变更测试。移动端交互与音频解码仍需 Android 实机验证。不会将通用套件信息页视为已完成整个程序的原生适配。
+以上为当前实现范围，尚未覆盖每个程序的完整功能。Drive 历史版本/回收站浏览、备份任务创建与恢复、云盘授权与任务创建、Office 在线编辑等仍待开发。新增读取接口已在 DSM 7.4.1 上进行只读验证；写操作按接口实现，未在用户 NAS 上执行破坏性或状态变更测试。音频流端点也已验证；移动端交互与音频解码仍需 Android 实机验证。qBittorrent 4/5 命令切换及 Transmission CSRF 协商已通过本地 HTTP 服务集成测试，尚未使用用户程序账号做真实任务变更。快照恢复/删除、第三方媒体库原生业务与 Tailscale 管理也尚未实现。不会将通用套件信息页视为已完成整个程序的原生适配。
 
 认证流程参考 [Synology DSM Login Web API Guide](https://global.download.synology.com/download/Document/Software/DeveloperGuide/Os/DSM/All/enu/DSM_Login_Web_API_Guide_enu.pdf)。
 

@@ -159,9 +159,13 @@ class _ProgramDataViewState extends State<ProgramDataView>
 
   Widget row(Map item) {
     final title =
-        '${item['title'] ?? item['name'] ?? item['task_display_name'] ?? item['client_name'] ?? item['s1'] ?? item['share'] ?? item['path'] ?? item['id'] ?? '详细信息'}';
+        '${item['title'] ?? item['name'] ?? item['task_display_name'] ?? item['client_name'] ?? item['file_name'] ?? item['local_sync_path'] ?? item['s1'] ?? item['share'] ?? item['path'] ?? item['time'] ?? item['id'] ?? '详细信息'}';
     final subtitle = [
-      item['status'] ?? item['state'] ?? item['last_bkp_result'],
+      item['status'] ??
+          item['state'] ??
+          item['sync_status'] ??
+          item['last_bkp_result'] ??
+          item['desc'],
       item['last_bkp_time'] ??
           item['client_ip'] ??
           item['user_name'] ??

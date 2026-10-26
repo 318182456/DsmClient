@@ -86,6 +86,7 @@ jobs:
         run: |
           dart --no-sound-null-safety test/dsm_compatibility_test.dart
           dart --no-sound-null-safety test/program_section_test.dart
+          dart --no-sound-null-safety test/torrent_client_test.dart
           dart --no-sound-null-safety test/update_release_test.dart
           dart --no-sound-null-safety test/update_download_test.dart
 
@@ -96,6 +97,8 @@ jobs:
           lib/pages/packages/program_page.dart lib/pages/packages/program_launcher.dart
           lib/pages/packages/audio_station.dart lib/pages/packages/drive.dart
           lib/pages/dashborad/applications.dart
+          lib/pages/packages/torrent_program.dart lib/util/torrent_client.dart
+          lib/pages/packages/snapshots.dart
 
       - name: Prepare signing
         env:

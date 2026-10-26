@@ -27,7 +27,8 @@ class _AudioPlayerState extends State<AudioPlayer> {
     player = audioPlayerProvider.player;
     if (widget.url != null) {
       title = widget.name ?? "";
-      if (audioPlayerProvider.url != widget.url) {
+      if (audioPlayerProvider.url != widget.url ||
+          player.processingState == ja.ProcessingState.idle) {
         audioPlayerProvider.setUrl(widget.url, title);
         setSource();
       }
@@ -44,10 +45,12 @@ class _AudioPlayerState extends State<AudioPlayer> {
   }
 
   setSource() async {
+    final provider = context.read<AudioPlayerProvider>();
     try {
       await player.setUrl(widget.url);
       await player.play();
     } catch (_) {
+      if (provider.url == widget.url) provider.setUrl(null, title);
       if (mounted) setState(() => playbackError = '无法播放此音频，请检查连接、访问权限或音频格式');
     }
   }
