@@ -14,6 +14,7 @@ import 'package:dsm_client/util/api.dart';
 import 'package:dsm_client/util/log.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show AlertDialog, TextButton, showDialog;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
