@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      ui_preview:
+        description: 'Render temporary UI review previews in the build artifact'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -94,7 +99,15 @@ jobs:
           dart --no-sound-null-safety test/update_download_test.dart
 
       - name: Test native program navigation
-        run: flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart
+        env:
+          DSM_UI_PREVIEW_DIR: ${{ github.event.inputs.ui_preview == 'true' && format('{0}/dsmclient-artifacts', runner.temp) || '' }}
+        shell: bash
+        run: |
+          if [[ -n "$DSM_UI_PREVIEW_DIR" ]]; then
+            curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
+              https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
+          fi
+          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart
 
       - name: Analyze native program pages
         run: >-
