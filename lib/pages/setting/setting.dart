@@ -4,7 +4,6 @@ import 'package:dsm_client/pages/backup/backup.dart';
 import 'package:dsm_client/pages/control_panel/ssh/ssh.dart';
 import 'package:dsm_client/pages/login/accounts.dart';
 import 'package:dsm_client/pages/login/confirm_logout.dart';
-import 'package:dsm_client/pages/setting/vip.dart';
 import 'package:dsm_client/providers/dark_mode.dart';
 import 'package:dsm_client/pages/setting/feedback.dart';
 import 'package:dsm_client/pages/setting/helper_setting.dart';
@@ -960,25 +959,6 @@ class _SettingState extends State<Setting> {
                   }
                 },
               ),
-              if (Util.notReviewAccount && Util.vipExpireTime.difference(DateTime.now()).inDays < 7 && !Util.vipForever)
-                SettingButton(
-                  name: "关闭广告",
-                  icon: "no_ad",
-                  onPressed: () async {
-                    Navigator.of(context)
-                        .push(
-                      CupertinoPageRoute(
-                        builder: (context) {
-                          return Vip();
-                        },
-                        settings: RouteSettings(name: "vip"),
-                      ),
-                    )
-                        .then((value) {
-                      setState(() {});
-                    });
-                  },
-                )
             ],
           ),
         ],

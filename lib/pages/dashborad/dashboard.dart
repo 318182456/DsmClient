@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dsm_client/models/api_model.dart';
-import 'package:dsm_client/models/setting/group_model.dart';
 import 'package:dsm_client/models/shortcut_item_model.dart';
 import 'package:dsm_client/models/wallpaper_model.dart';
 import 'package:dsm_client/pages/control_panel/external_device/external_device.dart';
@@ -27,11 +26,9 @@ import 'package:extended_image/extended_image.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:neumorphic/neumorphic.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 class Dashboard extends StatefulWidget {
   Dashboard({key}) : super(key: key);
@@ -82,7 +79,6 @@ class DashboardState extends State<Dashboard> {
   String msg = "";
   @override
   void initState() {
-    getGroups();
     networks = List.generate(20, (i) => {"tx": 0, "rx": 0});
     getNotifyStrings();
     ApiModel.fetch().then((apis) {
@@ -98,188 +94,9 @@ class DashboardState extends State<Dashboard> {
     return _scaffoldKey.currentState.isDrawerOpen;
   }
 
-  getGroups() async {
-    Util.groups = await GroupsModel.fetch();
-    if (Util.notReviewAccount) {
-      showFirstLaunchDialog();
-    }
-  }
-
   closeDrawer() {
     if (_scaffoldKey.currentState.isDrawerOpen) {
       Navigator.of(context).pop();
-    }
-  }
-
-  showFirstLaunchDialog() async {
-    bool firstLaunch = await Util.getStorage("first_launch_channel") == null;
-    if (firstLaunch) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) {
-          return Material(
-            color: Colors.transparent,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                NeuCard(
-                  width: double.infinity,
-                  margin: EdgeInsets.symmetric(horizontal: 50),
-                  curveType: CurveType.emboss,
-                  bevel: 5,
-                  decoration: NeumorphicDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        Text(
-                          "温馨提示",
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-                        ),
-                        SizedBox(
-                          height: 16,
-                        ),
-                        NeuCard(
-                          decoration: NeumorphicDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          bevel: 20,
-                          curveType: CurveType.flat,
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                          child: Text("前往'设置-关闭广告'页面，即可关闭开屏广告。"),
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        NeuCard(
-                          decoration: NeumorphicDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          curveType: CurveType.flat,
-                          child: Padding(
-                              padding: EdgeInsets.all(15),
-                              child: Column(
-                                children: Util.groups.channel.map((e) {
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 5),
-                                    child: Row(
-                                      children: [
-                                        Image.asset(
-                                          "assets/icons/qq.png",
-                                          width: 20,
-                                        ),
-                                        SizedBox(
-                                          width: 10,
-                                        ),
-                                        Text(
-                                          "${e.displayName}",
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                        Spacer(),
-                                        NeuButton(
-                                          decoration: NeumorphicDecoration(
-                                            color: Theme.of(context).scaffoldBackgroundColor,
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                                          onPressed: () {
-                                            launchUrlString(e.key, mode: LaunchMode.externalApplication);
-                                          },
-                                          child: Text("加入"),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              )),
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        NeuCard(
-                          decoration: NeumorphicDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          curveType: CurveType.flat,
-                          child: Padding(
-                              padding: EdgeInsets.all(15),
-                              child: Column(
-                                children: Util.groups.wechat.map((e) {
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 5),
-                                    child: Row(
-                                      children: [
-                                        Image.asset(
-                                          "assets/icons/wechat.png",
-                                          width: 20,
-                                        ),
-                                        SizedBox(
-                                          width: 10,
-                                        ),
-                                        Text(
-                                          "${e.displayName}",
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                        Spacer(),
-                                        NeuButton(
-                                          decoration: NeumorphicDecoration(
-                                            color: Theme.of(context).scaffoldBackgroundColor,
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                                          onPressed: () {
-                                            ClipboardData data = new ClipboardData(text: e.name);
-                                            Clipboard.setData(data);
-                                            Util.toast("已复制到剪贴板");
-                                          },
-                                          child: Text("复制"),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              )),
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: NeuButton(
-                                onPressed: () async {
-                                  Navigator.of(context).pop();
-                                  Util.setStorage("first_launch_channel", "0");
-                                },
-                                decoration: NeumorphicDecoration(
-                                  color: Theme.of(context).scaffoldBackgroundColor,
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
-                                bevel: 20,
-                                padding: EdgeInsets.symmetric(vertical: 10),
-                                child: Text(
-                                  "我知道了",
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
     }
   }
 

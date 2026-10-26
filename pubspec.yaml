@@ -75,7 +75,6 @@ dependencies:
   xml2json: 5.3.6 # 6.0.0起不支持 flutter 3.7
 #  wake_on_lan: ^3.0.0
   dartssh2: ^2.8.2
-  pangle_flutter: 1.9.7  # 穿山甲广告 2.0.0起不支持 flutter 3.7
   xterm: ^3.5.0
   draggable_scrollbar:
     git: https://gitee.com/apaipai/draggable_scrollbar.git

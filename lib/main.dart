@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:cool_ui/cool_ui.dart';
@@ -16,7 +15,6 @@ import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/util/log.dart';
 import 'package:dsm_client/widgets/keyboard_dismisser.dart';
 import 'package:extended_image/extended_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -24,7 +22,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:fluwx/fluwx.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pangle_flutter/pangle_flutter.dart';
 import 'package:provider/provider.dart';
 import '/providers/dark_mode.dart';
 
@@ -34,22 +31,6 @@ void main() async {
     return true;
   };
 
-  Future<String> getBestDomain(List<String> domains) async {
-    final completer = Completer<String>();
-    for (String domain in domains) {
-      try {
-        Util.get(domain).then((res) {
-          if (res != null && res['code'] == 1) {
-            if (!completer.isCompleted) {
-              completer.complete("http://${res['data']}");
-            }
-          }
-        });
-      } catch (e) {}
-    }
-    return completer.future;
-  }
-
   WidgetsFlutterBinding.ensureInitialized();
   String agreement = await Util.getStorage("agreement");
   Log.init();
@@ -57,75 +38,7 @@ void main() async {
     registerWxApi(appId: "wxabdf23571f34b49b", universalLink: "https://dsm.apaipai.top/app/").then((value) {
       stopLog();
     });
-    // print("初始化穿山甲");
-    await pangle.init(
-      iOS: IOSConfig(
-        appId: '5215470',
-        logLevel: PangleLogLevel.error,
-      ),
-      android: AndroidConfig(
-        appId: '5215463',
-        debug: false,
-        allowShowNotify: true,
-        allowShowPageWhenScreenLock: false,
-      ),
-    );
-    // 域名优选
-    Util.appUrl = await getBestDomain(['http://dsm.apaipai.top/index/check', 'http://dsm.flutter.fit/index/check']);
-    // 是否关闭广告
-    // 判断是否登录
-    bool isForever = false;
-    DateTime noAdTime;
     Util.isWechatInstalled = await isWeChatInstalled;
-    String userToken = await Util.getStorage("user_token");
-    String noAdTimeStr = await Util.getStorage("no_ad_time");
-    String vipExpireTimeStr = await Util.getStorage("vip_expire_time");
-    String isForeverVip = await Util.getStorage("is_forever_vip");
-    if (noAdTimeStr.isNotBlank) {
-      noAdTime = DateTime.parse(noAdTimeStr);
-    }
-
-    // 如果缓存中无会员过期时间或会员已过期，则重新检测是否开通会员
-    if(isForeverVip == '1'){
-      Util.vipForever = isForever = true;
-    }else if(vipExpireTimeStr.isNotBlank && DateTime.parse(vipExpireTimeStr).isAfter(DateTime.now())){
-      Util.vipExpireTime = noAdTime = DateTime.parse(vipExpireTimeStr);
-    }else{
-      if (userToken.isNotBlank && Util.appUrl.isNotBlank) {
-        var res = await Util.post("${Util.appUrl}/vip/info", data: {"token": userToken});
-        if (res['code'] == 1) {
-          isForever = Util.vipForever = res['data']['is_forever'] == 1;
-          Util.setStorage("is_forever_vip", res['data']['is_forever'].toString());
-          if (res['data']['vip_expire_time'] != null) {
-            DateTime vipExpireTime = DateTime.parse(res['data']['vip_expire_time']);
-            Util.setStorage("vip_expire_time", res['data']['vip_expire_time']);
-            Util.vipExpireTime = vipExpireTime;
-            if (noAdTime == null) {
-              if (vipExpireTime.isAfter(DateTime.now())) {
-                noAdTime = vipExpireTime;
-              }
-            } else {
-              if (vipExpireTime.isAfter(noAdTime)) {
-                noAdTime = vipExpireTime;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (isForever || (noAdTime != null && noAdTime.isAfter(DateTime.now()))) {
-      // 处于关闭广告有效期内
-      if (kDebugMode) {
-        debugPrint("免广告有效期内");
-      }
-    } else {
-      Util.removeStorage("no_ad_time");
-      pangle.loadSplashAd(
-        iOS: IOSSplashConfig(slotId: '887561543'),
-        android: AndroidSplashConfig(slotId: '887561531', isExpress: false),
-      );
-    }
   }
   await FlutterDownloader.initialize(debug: true, ignoreSsl: true);
 

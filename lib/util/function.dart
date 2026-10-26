@@ -71,8 +71,6 @@ class Util {
     ],
   );
   static bool isWechatInstalled = false;
-  static DateTime vipExpireTime = DateTime.now();
-  static bool vipForever = false;
   static String appUrl = "https://dsm.apaipai.top";
   static String sid = "";
   static String account = "";
