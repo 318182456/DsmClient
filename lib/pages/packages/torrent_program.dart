@@ -4,6 +4,7 @@ import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/util/torrent_client.dart';
 import 'package:flutter/material.dart';
 import 'program_page.dart';
+import 'package:dsm_client/widgets/workspace.dart';
 
 class TorrentProgram extends StatefulWidget {
   final String name;
@@ -208,42 +209,66 @@ class _TorrentProgramState extends State<TorrentProgram> {
                 child: Icon(Icons.add)),
         body: client == null
             ? ListView(padding: EdgeInsets.all(20), children: [
-                Text(
-                    widget.transmission
+                WorkspaceHeader(
+                    title: widget.transmission
                         ? '连接 Transmission RPC'
                         : '连接 qBittorrent API',
-                    style: Theme.of(context).textTheme.headline6),
-                SizedBox(height: 12),
-                Text('使用此程序自己的地址和账号。密码仅用于当前连接，关闭页面后清除。'),
-                TextField(
-                    controller: address,
-                    keyboardType: TextInputType.url,
-                    autocorrect: false,
-                    decoration: InputDecoration(
-                        labelText: '服务地址',
-                        hintText: widget.transmission
-                            ? 'https://example.com/transmission/rpc'
-                            : 'https://example.com/qbittorrent')),
-                TextField(
-                    controller: account,
-                    autocorrect: false,
-                    decoration: InputDecoration(labelText: '程序账号')),
-                TextField(
-                    controller: password,
-                    obscureText: true,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    decoration: InputDecoration(labelText: '程序密码')),
-                if (error.isNotEmpty)
-                  Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text(error)),
-                SizedBox(height: 20),
-                ElevatedButton(
-                    onPressed: busy ? null : connect,
-                    child: Text(busy ? '正在连接…' : '连接')),
+                    subtitle: '连接你的下载程序，集中管理传输任务。'),
+                Card(
+                    child: Padding(
+                        padding: EdgeInsets.all(18),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              TextField(
+                                  controller: address,
+                                  keyboardType: TextInputType.url,
+                                  autocorrect: false,
+                                  decoration: InputDecoration(
+                                      labelText: '服务地址',
+                                      prefixIcon: Icon(Icons.link),
+                                      hintText: widget.transmission
+                                          ? 'https://example.com/transmission/rpc'
+                                          : 'https://example.com/qbittorrent')),
+                              SizedBox(height: 16),
+                              TextField(
+                                  controller: account,
+                                  autocorrect: false,
+                                  decoration: InputDecoration(
+                                      labelText: '程序账号',
+                                      prefixIcon: Icon(Icons.person_outline))),
+                              SizedBox(height: 16),
+                              TextField(
+                                  controller: password,
+                                  obscureText: true,
+                                  autocorrect: false,
+                                  enableSuggestions: false,
+                                  decoration: InputDecoration(
+                                      labelText: '程序密码',
+                                      prefixIcon: Icon(Icons.lock_outline))),
+                              SizedBox(height: 20),
+                              if (error.isNotEmpty)
+                                Padding(
+                                    padding: EdgeInsets.only(bottom: 16),
+                                    child: Text(error,
+                                        style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .error))),
+                              ElevatedButton(
+                                  onPressed: busy ? null : connect,
+                                  child: Text(busy ? '正在连接…' : '连接')),
+                            ]))),
+                Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text('使用下载程序自己的账号。密码仅用于当前连接，关闭页面后清除。',
+                        style: Theme.of(context).textTheme.caption)),
               ])
             : Column(children: [
+                WorkspaceHeader(
+                    title: '下载任务',
+                    subtitle:
+                        '${tasks.length} 个任务 · ${widget.transmission ? 'Transmission' : 'qBittorrent'}'),
                 if (busy) LinearProgressIndicator(),
                 Padding(
                     padding: EdgeInsets.all(16),
@@ -262,7 +287,9 @@ class _TorrentProgramState extends State<TorrentProgram> {
                             padding: EdgeInsets.only(bottom: 90),
                             children: [
                               if (tasks.isEmpty)
-                                ListTile(title: Text('暂无下载任务')),
+                                WorkspaceEmpty('还没有下载任务',
+                                    icon: Icons.download_outlined,
+                                    detail: '点击右下角添加种子或下载链接。'),
                               ...shown.map((t) {
                                 final progress = (t['progress'] as num ?? 0)
                                     .toDouble()

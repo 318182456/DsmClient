@@ -13,7 +13,7 @@ import 'package:dsm_client/widgets/file_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 
 class DownloadInfo {

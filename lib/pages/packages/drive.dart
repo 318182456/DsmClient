@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'program_page.dart';
+import 'package:dsm_client/widgets/workspace.dart';
 
 class DrivePage extends StatefulWidget {
   final NasPackage package;
@@ -299,6 +300,11 @@ class _DrivePageState extends State<DrivePage> {
                   ]),
         ]),
         body: Column(children: [
+          WorkspaceHeader(
+              title: widget.title,
+              subtitle: widget.path == '/mydrive'
+                  ? '我的空间 · Synology Drive'
+                  : widget.path),
           if (busy && !loading) LinearProgressIndicator(),
           Padding(
               padding: EdgeInsets.all(16),
@@ -314,6 +320,7 @@ class _DrivePageState extends State<DrivePage> {
                       onRefresh: load,
                       child: ListView(
                           physics: AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.symmetric(horizontal: 16),
                           children: [
                             if (error.isNotEmpty)
                               ListTile(
@@ -327,51 +334,55 @@ class _DrivePageState extends State<DrivePage> {
                                 onTap: () =>
                                     folder(filePath(t), '${t['name']}'))),
                             if (error.isEmpty && files.isEmpty)
-                              ListTile(title: Text('文件夹为空')),
+                              WorkspaceEmpty('文件夹为空',
+                                  icon: Icons.folder_open_outlined,
+                                  detail: '使用右上角菜单上传文件或新建文件夹。'),
                             ...shown.map((f) {
                               final directory = f['type'] == 'dir' ||
                                   f['content_type'] == 'dir';
-                              return ListTile(
-                                  leading: Icon(directory
-                                      ? Icons.folder
-                                      : Icons.insert_drive_file_outlined),
-                                  title: Text('${f['name']}'),
-                                  subtitle: Text(directory
-                                      ? '文件夹'
-                                      : Util.formatSize(f['size'] as num ?? 0,
-                                          showByte: true)),
-                                  onTap: () => directory
-                                      ? folder(filePath(f), '${f['name']}')
-                                      : fileAction('info', f),
-                                  trailing: PopupMenuButton<String>(
-                                      enabled: !busy,
-                                      onSelected: (v) => fileAction(v, f),
-                                      itemBuilder: (_) => [
-                                            PopupMenuItem(
-                                                value: 'info',
-                                                child: Text('详细信息')),
-                                            if (can(f, 'can_download') &&
-                                                !directory)
-                                              PopupMenuItem(
-                                                  value: 'download',
-                                                  child: Text('下载')),
-                                            if (can(f, 'can_rename'))
-                                              PopupMenuItem(
-                                                  value: 'rename',
-                                                  child: Text('重命名')),
-                                            if (can(f, 'can_organize'))
-                                              PopupMenuItem(
-                                                  value: 'move',
-                                                  child: Text('移动')),
-                                            if (can(f, 'can_share'))
-                                              PopupMenuItem(
-                                                  value: 'share',
-                                                  child: Text('创建分享链接')),
-                                            if (can(f, 'can_delete'))
-                                              PopupMenuItem(
-                                                  value: 'delete',
-                                                  child: Text('移到回收站')),
-                                          ]));
+                              return Card(
+                                  child: ListTile(
+                                      leading: Icon(directory
+                                          ? Icons.folder
+                                          : Icons.insert_drive_file_outlined),
+                                      title: Text('${f['name']}'),
+                                      subtitle: Text(directory
+                                          ? '文件夹'
+                                          : Util.formatSize(
+                                              f['size'] as num ?? 0,
+                                              showByte: true)),
+                                      onTap: () => directory
+                                          ? folder(filePath(f), '${f['name']}')
+                                          : fileAction('info', f),
+                                      trailing: PopupMenuButton<String>(
+                                          enabled: !busy,
+                                          onSelected: (v) => fileAction(v, f),
+                                          itemBuilder: (_) => [
+                                                PopupMenuItem(
+                                                    value: 'info',
+                                                    child: Text('详细信息')),
+                                                if (can(f, 'can_download') &&
+                                                    !directory)
+                                                  PopupMenuItem(
+                                                      value: 'download',
+                                                      child: Text('下载')),
+                                                if (can(f, 'can_rename'))
+                                                  PopupMenuItem(
+                                                      value: 'rename',
+                                                      child: Text('重命名')),
+                                                if (can(f, 'can_organize'))
+                                                  PopupMenuItem(
+                                                      value: 'move',
+                                                      child: Text('移动')),
+                                                if (can(f, 'can_share'))
+                                                  PopupMenuItem(
+                                                      value: 'share',
+                                                      child: Text('创建分享链接')),
+                                                if (can(f, 'can_delete'))
+                                                  PopupMenuItem(
+                                                      value: 'delete',
+                                                      child: Text('移到回收站')),
+                                              ])));
                             }),
                             if (offset < total)
                               TextButton(

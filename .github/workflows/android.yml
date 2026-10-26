@@ -113,6 +113,7 @@ jobs:
           lib/pages/packages/rr_program.dart lib/pages/docker/workspace.dart lib/pages/docker/dockhand.dart
           lib/themes/app_theme.dart lib/themes/light.dart lib/themes/dark.dart
           lib/widgets/workspace.dart lib/util/dockhand_credentials.dart lib/pages/common/audio_player.dart
+          lib/widgets/surfaces.dart lib/widgets/label.dart lib/pages/control_panel/control_panel.dart
 
       - name: Prepare signing
         env:

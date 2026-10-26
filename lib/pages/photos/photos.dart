@@ -6,7 +6,7 @@ import 'package:dsm_client/pages/photos/timeline.dart';
 import 'package:dsm_client/widgets/neu_back_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 
 class Photos extends StatefulWidget {
   const Photos({Key key}) : super(key: key);

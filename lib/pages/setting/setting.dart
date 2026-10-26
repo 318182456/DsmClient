@@ -13,7 +13,7 @@ import 'package:dsm_client/widgets/terminal_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Feedback;
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 import 'package:provider/provider.dart';
 
 class SettingButton extends StatelessWidget {

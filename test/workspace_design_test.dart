@@ -11,11 +11,57 @@ import 'package:dsm_client/pages/packages/audio_station.dart';
 import 'package:dsm_client/pages/docker/dockhand.dart';
 import 'package:dsm_client/util/dockhand_credentials.dart';
 import 'package:dsm_client/models/program_capabilities.dart';
+import 'package:dsm_client/pages/control_panel/control_panel.dart';
+import 'package:dsm_client/widgets/surfaces.dart' as surfaces;
 
 double contrast(Color a, Color b) =>
     (max(a.computeLuminance(), b.computeLuminance()) + .05) /
     (min(a.computeLuminance(), b.computeLuminance()) + .05);
 void main() {
+  testWidgets(
+      'Shared cards retain button taps and use the current theme surface',
+      (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(MaterialApp(
+        theme: darkTheme,
+        home: Scaffold(
+            body: surfaces.NeuCard(
+                decoration: surfaces.NeumorphicDecoration(
+                    color: darkTheme.scaffoldBackgroundColor),
+                padding: EdgeInsets.all(16),
+                child: surfaces.NeuButton(
+                    onPressed: () => taps++, child: Text('测试操作'))))));
+    await tester.tap(find.text('测试操作'));
+    await tester.pumpAndSettle();
+    expect(taps, 1);
+    expect(
+        tester
+            .widgetList<Material>(find.byType(Material))
+            .where((m) => m.color == darkTheme.cardColor),
+        isNotEmpty);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+      'Control panel remains searchable with large text on a narrow screen',
+      (tester) async {
+    tester.binding.window.physicalSizeTestValue = Size(320, 760);
+    tester.binding.window.devicePixelRatioTestValue = 1;
+    tester.binding.window.textScaleFactorTestValue = 1.6;
+    addTearDown(() {
+      tester.binding.window.clearPhysicalSizeTestValue();
+      tester.binding.window.clearDevicePixelRatioTestValue();
+      tester.binding.window.clearTextScaleFactorTestValue();
+    });
+    await tester.pumpWidget(
+        MaterialApp(theme: lightTheme, home: ControlPanel({}, [], [], {})));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '任务计划');
+    await tester.pumpAndSettle();
+    expect(find.text('任务计划'), findsOneWidget);
+    expect(find.text('硬件和电源'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(SizedBox());
+  });
   test(
       'Both themes keep active tabs, inactive tabs and secondary text readable',
       () {
@@ -156,6 +202,7 @@ void main() {
     await tester.pumpAndSettle();
     final forget = find.text('清除已保存登录信息');
     await tester.ensureVisible(forget);
+    await tester.pumpAndSettle();
     await tester.tap(forget);
     await tester.pumpAndSettle();
     expect(await vault.read('test', 'https://dock.example.com'), isNull);

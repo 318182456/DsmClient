@@ -7,7 +7,7 @@ import 'package:dsm_client/widgets/hero_widget.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 
 class ImagePreview extends StatefulWidget {

@@ -3,7 +3,7 @@ import 'package:dsm_client/pages/photos/widgets/photo_item_widget.dart';
 import 'package:dsm_client/pages/photos/widgets/thumbnail_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 
 class Folder extends StatefulWidget {
   const Folder(this.isTeam, {Key key}) : super(key: key);

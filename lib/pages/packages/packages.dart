@@ -6,7 +6,7 @@ import 'package:dsm_client/widgets/label.dart';
 import 'package:dsm_client/widgets/neu_back_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 
 class Packages extends StatefulWidget {
   final String version;
@@ -604,7 +604,7 @@ class _PackagesState extends State<Packages> with TickerProviderStateMixin {
                   controller: _tabController,
                   indicatorSize: TabBarIndicatorSize.label,
                   labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                  unselectedLabelColor: Colors.grey,
+                  unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   indicator: BubbleTabIndicator(
                     indicatorColor: Theme.of(context).scaffoldBackgroundColor,
                     shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),

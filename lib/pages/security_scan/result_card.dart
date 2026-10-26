@@ -1,7 +1,7 @@
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/util/strings.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
 class ResultCard extends StatelessWidget {

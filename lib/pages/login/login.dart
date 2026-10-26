@@ -13,7 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 

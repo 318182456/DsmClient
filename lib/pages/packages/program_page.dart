@@ -30,30 +30,41 @@ class ProgramPage extends StatelessWidget {
               bottom: tabs.length > 1
                   ? TabBar(isScrollable: true, tabs: tabs)
                   : null),
-          body: TabBarView(children: [
-            ...sections.map((s) => ProgramDataView(s, packageId: package.id)),
-            ListView(padding: EdgeInsets.all(16), children: [
-              WorkspaceHeader(
-                  title: package.name,
-                  leading: NasAppIcon(package, size: 48),
-                  subtitle:
-                      '${package.version} · ${package.status == 'running' ? '运行中' : package.status}'),
-              Text(package.description.replaceAll(RegExp(r'<[^>]*>'), '')),
-              SizedBox(height: 16),
-              Card(child: NativePackageControls(package)),
-              SizedBox(height: 20),
-              ListTile(
-                  leading: Icon(Icons.folder_outlined),
-                  title: Text('文件管理'),
-                  onTap: () => Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => Files()))),
-              ListTile(
-                  leading: Icon(Icons.terminal),
-                  title: Text('SSH 终端'),
-                  subtitle: Text('连接你配置的服务器'),
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => SelectServer()))),
-            ])
+          body: Column(children: [
+            WorkspaceHeader(
+                title: const {
+                      'CloudSync': '云端同步',
+                      'HyperBackup': '备份与保护',
+                      'HybridShare': '混合云共享',
+                      'SynologyDrive': 'Drive 控制台',
+                      'ScsiTarget': 'SAN 存储',
+                      'WebDAVServer': 'WebDAV 服务'
+                    }[package.id] ??
+                    '套件管理',
+                subtitle:
+                    '${package.version} · ${package.status == 'running' ? '运行中' : package.status}',
+                leading: NasAppIcon(package, size: 44)),
+            Expanded(
+                child: TabBarView(children: [
+              ...sections.map((s) => ProgramDataView(s, packageId: package.id)),
+              ListView(padding: EdgeInsets.all(16), children: [
+                Text(package.description.replaceAll(RegExp(r'<[^>]*>'), '')),
+                SizedBox(height: 16),
+                Card(child: NativePackageControls(package)),
+                SizedBox(height: 20),
+                ListTile(
+                    leading: Icon(Icons.folder_outlined),
+                    title: Text('文件管理'),
+                    onTap: () => Navigator.push(
+                        context, MaterialPageRoute(builder: (_) => Files()))),
+                ListTile(
+                    leading: Icon(Icons.terminal),
+                    title: Text('SSH 终端'),
+                    subtitle: Text('连接你配置的服务器'),
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => SelectServer()))),
+              ])
+            ])),
           ]),
         ));
   }

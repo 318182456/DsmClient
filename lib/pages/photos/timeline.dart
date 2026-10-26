@@ -7,7 +7,7 @@ import 'package:dsm_client/widgets/cupertino_image.dart';
 import 'package:dsm_client/widgets/transparent_router.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 
 class Timeline extends StatefulWidget {
   const Timeline(this.isTeam, {this.type, this.geocodingId, this.generalTagId, this.recentlyAdd: false, Key key}) : super(key: key);

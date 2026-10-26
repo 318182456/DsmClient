@@ -20,10 +20,10 @@ class BubbleTabIndicator extends Decoration {
   final TabBarIndicatorSize tabBarIndicatorSize;
 
   const BubbleTabIndicator({
-    this.indicatorHeight: 20.0,
+    this.indicatorHeight: 30.0,
     this.indicatorColor: Colors.greenAccent,
     this.shadowColor: Colors.greenAccent,
-    this.indicatorRadius: 100.0,
+    this.indicatorRadius: 12.0,
     this.tabBarIndicatorSize = TabBarIndicatorSize.label,
     this.padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 8.0),
     this.insets: const EdgeInsets.symmetric(horizontal: 5.0),
@@ -98,16 +98,16 @@ class _BubblePainter extends BoxPainter {
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     assert(configuration != null);
     assert(configuration.size != null);
-    final Rect rect = Offset(offset.dx, (configuration.size.height / 2) - indicatorHeight / 2) & Size(configuration.size.width, indicatorHeight);
+    final Rect rect = Offset(
+            offset.dx, (configuration.size.height / 2) - indicatorHeight / 2) &
+        Size(configuration.size.width, indicatorHeight);
     final TextDirection textDirection = configuration.textDirection;
     final Rect indicator = _indicatorRectFor(rect, textDirection);
     final Paint paint = Paint();
     paint.color = indicatorColor;
     paint.style = PaintingStyle.fill;
-    final Paint result = Paint()
-      ..color = shadowColor
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10.0);
-    canvas.drawRRect(RRect.fromRectAndRadius(indicator, Radius.circular(indicatorRadius)), result);
-    canvas.drawRRect(RRect.fromRectAndRadius(indicator, Radius.circular(indicatorRadius)), paint);
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(indicator, Radius.circular(indicatorRadius)),
+        paint);
   }
 }

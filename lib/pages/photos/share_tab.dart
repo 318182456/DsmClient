@@ -3,7 +3,7 @@ import 'package:dsm_client/pages/photos/album_page.dart';
 import 'package:dsm_client/widgets/cupertino_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 
 class ShareTab extends StatefulWidget {
   const ShareTab({Key key}) : super(key: key);

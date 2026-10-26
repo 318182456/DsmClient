@@ -14,7 +14,7 @@ import 'package:dsm_client/util/badge.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:neumorphic/neumorphic.dart';
+import 'package:dsm_client/widgets/surfaces.dart';
 
 import '../photos/photos.dart';
 
