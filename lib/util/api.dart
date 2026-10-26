@@ -9,6 +9,7 @@ import 'package:dsm_client/models/api_model.dart';
 import 'package:http_parser/http_parser.dart';
 
 import 'function.dart';
+import 'dsm_compatibility.dart';
 
 class Api {
   static Map<String, ApiModel> apiList = {};
@@ -56,34 +57,53 @@ class Api {
 //    var res = await Util.post("base/update", data: {"platform": Platform.isAndroid ? "android" : "ios", "build": buildNumber});
   }
 
-  static Future<Map> api() async {
-    var res = await Util.post("query.cgi", data: {
-      "query": "all",
-      "api": "SYNO.API.Info",
-      "method": "query",
-      "version": 1,
-    });
-    if (res is String) {
-      return jsonDecode(res);
-    } else if (res is Map) {
-      return res;
-    }
+  static Future<Map> api({String host, CancelToken cancelToken, bool checkSsl}) async {
+    return await Util.get("entry.cgi", host: host, login: false,
+      cancelToken: cancelToken, checkSsl: checkSsl, cookie: '', data: {
+        "query": "all", "api": "SYNO.API.Info", "method": "query", "version": 1,
+      });
   }
 
-  static Future<Map> login({String host, String account, String password, String otpCode = "", CancelToken cancelToken, bool rememberDevice: false, String cookie}) async {
-    var data = {
+  static Future<Map<String, ApiModel>> discover({String host,
+      CancelToken cancelToken, bool checkSsl}) async {
+    final res = await api(host: host, cancelToken: cancelToken, checkSsl: checkSsl);
+    final result = <String, ApiModel>{};
+    if (res != null && res['success'] == true && res['data'] is Map) {
+      res['data'].forEach((key, value) {
+        result[key] = ApiModel.fromJson(value);
+      });
+    }
+    return result;
+  }
+
+  static Future<Map> login({String host, String account, String password,
+      String otpCode = "", CancelToken cancelToken, bool rememberDevice = false,
+      String cookie, bool checkSsl}) async {
+    final catalog = await discover(host: host, cancelToken: cancelToken, checkSsl: checkSsl);
+    final auth = catalog['SYNO.API.Auth'];
+    final version = DsmCompatibility.supportedVersion(auth, 6);
+    var data = <String, dynamic>{
       "account": account,
       "passwd": password,
       "otp_code": otpCode,
-      "version": 4,
+      "version": version,
       "api": "SYNO.API.Auth",
       "method": "login",
       "session": "FileStation",
-      "enable_device_token": rememberDevice ? "yes" : "no",
+      "format": "cookie",
       "enable_sync_token": "yes",
       "isIframeLogin": "yes",
     };
-    return await Util.get("auth.cgi", host: host, data: data, cancelToken: cancelToken, cookie: cookie);
+    if (version >= 6) {
+      data.addAll({
+        "enable_syno_token": "yes",
+        "enable_device_token": rememberDevice ? "yes" : "no",
+        "device_name": "DsmClient",
+      });
+    }
+    return await Util.get(DsmCompatibility.apiPath(auth, "auth.cgi"), host: host,
+      data: data, login: false, cancelToken: cancelToken, checkSsl: checkSsl,
+      cookie: cookie ?? '');
   }
 
   static Future<Map> shareList({List<String> additional = const ["perm", "time", "size"], CancelToken cancelToken, String sid, bool checkSsl, String cookie, String host}) async {
@@ -895,7 +915,7 @@ class Api {
     var params = {
       "api": "SYNO.FileStation.Upload",
       "method": "upload",
-      "version": min(apiList['SYNO.FileStation.Upload'].minVersion ?? 1, 3),
+      "version": DsmCompatibility.supportedVersion(apiList['SYNO.FileStation.Upload'], 3),
     };
     var data = {
       "path": uploadPath,
@@ -988,6 +1008,24 @@ class Api {
       "_sid": Util.sid,
     };
     return await Util.post("entry.cgi", data: data);
+  }
+
+  static Future<Map> nasPackages() async {
+    return await Util.post('entry.cgi', data: {
+      'api': 'SYNO.Core.Package', 'version': 2, 'method': 'list',
+      'additional': jsonEncode(['status', 'dsm_apps', 'url', 'description']),
+      '_sid': Util.sid,
+    });
+  }
+
+  static Future<Map> nasContainers() async {
+    if (apiList.isNotEmpty && !apiList.containsKey('SYNO.Docker.Container')) {
+      return {'success': false, 'error': {'code': 102}};
+    }
+    return await Util.post('entry.cgi', data: {
+      'api': 'SYNO.Docker.Container', 'version': 1, 'method': 'list',
+      'limit': -1, 'offset': 0, 'type': jsonEncode('all'), '_sid': Util.sid,
+    });
   }
 
   static Future<Map> launchedPackages() async {
@@ -2297,7 +2335,7 @@ class Api {
       {
         "api": "SYNO.Core.Network",
         "method": "get",
-        "version": min(apiList['SYNO.Core.Network'].minVersion ?? 1, 2),
+        "version": DsmCompatibility.supportedVersion(apiList['SYNO.Core.Network'], 2),
       },
       {"api": "SYNO.Core.Network.Ethernet", "method": "list", "version": 2},
       {"api": "SYNO.Core.Network.PPPoE", "method": "list", "version": 1},

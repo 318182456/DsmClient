@@ -5,6 +5,7 @@ import 'package:dsm_client/pages/download_station/download_station.dart';
 import 'package:dsm_client/pages/log_center/log_center.dart';
 import 'package:dsm_client/pages/moments/moments.dart';
 import 'package:dsm_client/pages/packages/packages.dart';
+import 'package:dsm_client/pages/packages/nas_applications.dart';
 import 'package:dsm_client/pages/photos/photos.dart';
 import 'package:dsm_client/pages/resource_monitor/resource_monitor.dart';
 import 'package:dsm_client/pages/security_scan/security_scan.dart';
@@ -46,6 +47,23 @@ class ApplicationList extends StatelessWidget {
 
   List<Widget> _buildApplicationList(BuildContext context) {
     List<Widget> apps = [];
+    apps.add(GestureDetector(
+      onTap: () {
+        Navigator.of(context).pop();
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) =>
+          NasApplications(desktopApps: applications ?? [])));
+      },
+      child: NeuCard(
+        width: (MediaQuery.of(context).size.width * 0.8 - 60) / 2,
+        padding: EdgeInsets.symmetric(vertical: 20), curveType: CurveType.flat,
+        bevel: 20,
+        decoration: NeumorphicDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(20)),
+        child: Column(children: [Icon(Icons.apps, size: 45),
+          SizedBox(height: 5), Text('NAS 应用')]),
+      ),
+    ));
     applications.forEach((application) {
       switch (application) {
         case "SYNO.SDS.AdminCenter.Application":
@@ -230,6 +248,7 @@ class ApplicationList extends StatelessWidget {
             ),
           );
           break;
+        case "SYNO.SDS.LogCenter.BuiltIn":
         case "SYNO.SDS.LogCenter.BuiltIn":
         case "SYNO.SDS.LogCenter.Instance":
           apps.add(

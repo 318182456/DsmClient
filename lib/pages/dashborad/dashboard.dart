@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dsm_client/models/api_model.dart';
 import 'package:dsm_client/models/shortcut_item_model.dart';
 import 'package:dsm_client/models/wallpaper_model.dart';
 import 'package:dsm_client/pages/control_panel/external_device/external_device.dart';
@@ -80,14 +79,26 @@ class DashboardState extends State<Dashboard> {
   @override
   void initState() {
     networks = List.generate(20, (i) => {"tx": 0, "rx": 0});
-    getNotifyStrings();
-    ApiModel.fetch().then((apis) {
-      Api.apiList = apis;
-    });
-    getInfo().then((_) {
-      getData(init: true);
-    });
+    initialize();
     super.initState();
+  }
+
+  Future<void> initialize() async {
+    try {
+      Api.apiList = await Api.discover();
+      if (!mounted) return;
+      await getInfo();
+      if (!mounted) return;
+      getNotifyStrings();
+      getData(init: true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        success = false;
+        msg = '无法加载 NAS 信息，请检查连接和账号权限';
+      });
+    }
   }
 
   bool get isDrawerOpen {
@@ -147,7 +158,7 @@ class DashboardState extends State<Dashboard> {
 
   Future<void> getInfo() async {
     var init = await Api.initData();
-    if (init['success']) {
+    if (init != null && init['success'] == true && mounted) {
       setState(() {
         if (init['data']['UserSettings'] != null) {
           if (init['data']['UserSettings']['SYNO.SDS._Widget.Instance'] != null) {
@@ -158,9 +169,21 @@ class DashboardState extends State<Dashboard> {
             applications = init['data']['UserSettings']['Desktop']['valid_appview_order'] ?? init['data']['UserSettings']['Desktop']['appview_order'] ?? [];
 
             shortcutItems = ShortcutItemModel.fromList(init['data']['UserSettings']['Desktop']['ShortcutItems']);
-            validAppViewOrder = init['data']['UserSettings']['Desktop']['valid_appview_order'];
+            validAppViewOrder = List.from(applications);
             wallpaperModel = WallpaperModel.fromJson(init['data']['UserSettings']['Desktop']['wallpaper']);
           }
+        }
+        if (widgets.isEmpty) {
+          widgets = [
+            'SYNO.SDS.SystemInfoApp.SystemHealthWidget',
+            'SYNO.SDS.ResourceMonitor.Widget',
+            'SYNO.SDS.SystemInfoApp.StorageUsageWidget',
+          ];
+        }
+        if (applications.isEmpty) {
+          applications = ['SYNO.SDS.PkgManApp.Instance',
+            'SYNO.SDS.AdminCenter.Application', 'SYNO.SDS.ResourceMonitor.Instance'];
+          validAppViewOrder = List.from(applications);
         }
         if (init['data']['Session'] != null) {
           hostname = init['data']['Session']['hostname'];
@@ -198,7 +221,8 @@ class DashboardState extends State<Dashboard> {
                 if (networks.length > 20) {
                   networks.removeAt(0);
                 }
-                networks.add(item['data']['network'][0]);
+                final networkItems = item['data']['network'] as List ?? [];
+                if (networkItems.isNotEmpty) networks.add(networkItems.first);
               });
               break;
             case "SYNO.Core.System":

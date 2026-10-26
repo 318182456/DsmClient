@@ -1,5 +1,7 @@
 # DsmClient
 
+<img src="assets/logo.png" width="112" alt="DsmClient 图标" />
+
 DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基于现有代码重新开发，逐步梳理功能、更新界面并改善维护体验。
 
 本项目以 [群晖助手 DSM helper](https://gitee.com/apaipai/dsm_helper) 为起点，保留原作者版权及开源许可。当前处于重新开发的初始阶段，现有实现及兼容性需要逐项验证。
@@ -8,9 +10,9 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 
 - 应用名称：`DsmClient`；Dart 包名：`dsm_client`。
 - 已导入原项目代码，保留现有功能作为后续开发基础。
-- 尚未完成完整编译、设备验证及 DSM 版本兼容性测试。
+- 当前适配目标为 DSM 7.4.1；基础协议与套件发现已进行 NAS 只读验证，移动端完整功能仍需逐项验证。
 - 已移除广告 SDK、广告展示、免广告付费及兑换入口，启动不再检查广告权益。
-- 暂未发布 DsmClient 安装包；原项目的安装包、交流群和商业服务不作为本项目的发布渠道。
+- Android 开发测试版通过 [GitHub Releases](https://github.com/318182456/DsmClient/releases) 分发。原项目渠道不作为本项目的发布渠道。
 
 ## 现有功能基础
 
@@ -25,6 +27,25 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 | 套件 | Docker、Virtual Machine Manager、Download Station 等 |
 | 媒体 | 照片浏览、音视频播放及本地播放器插件 |
 | 工具与设置 | SSH 终端、主题设置及相册备份相关代码 |
+
+## DSM 7 与 NAS 应用
+
+- 登录前查询 `SYNO.API.Info`，使用 NAS 返回的认证路径及兼容版本；支持 OTP 和 CSRF 会话令牌。
+- 请求按连接地址和会话 ID 隔离令牌，切换账号时恢复相应会话，上传与组合请求使用已发现的版本范围。
+- 识别 `DSM 7.4.1-90080 Update 1` 等版本格式，DSM 7 小版本沿用对应界面资源。
+- 主菜单新增“NAS 应用”：动态发现账号有权查看的全部已安装套件与容器，支持搜索、状态和版本查看。
+- File Station、Photos、Container Manager 与存储管理器可进入现有原生页面；其他套件按 NAS 返回的桌面注册信息打开 DSM 网页界面。
+- Drive 可分别打开文件、管理控制台和 ShareSync；Hyper Backup、Cloud Sync、Audio Station、Tailscale 等使用对应 DSM 入口。
+- Node.js、Python、Git 等后台组件保留版本、状态和套件中心入口，不为它们创建虚构的网页功能。
+- 所有容器均可进入详情页面；可按当前 NAS 保存各容器的网页地址，通过系统浏览器访问，网页应用自行认证。
+
+网页入口复用与完整原生客户端属于不同支持范围。当前未为所有套件及容器重写独立的原生业务界面，也未验证全部业务操作。设备、账号权限和已安装套件会影响可用功能。
+
+认证流程参考 [Synology DSM Login Web API Guide](https://global.download.synology.com/download/Document/Software/DeveloperGuide/Os/DSM/All/enu/DSM_Login_Web_API_Guide_enu.pdf)。
+
+## 图标
+
+应用使用深蓝背景、双盘位 NAS 和青绿色连接环的独立图标，主图为 `assets/logo.png`。Android 提供各密度图标、自适应图标及 Android 13 单色主题图标；iOS 提供完整 AppIcon 尺寸及启动图资源。
 
 ## 重新开发方向
 
@@ -105,11 +126,19 @@ Android applicationId、iOS Bundle ID、分享扩展关联配置及下载路径�
 
 [Android CI](https://github.com/318182456/DsmClient/actions/workflows/android.yml) 在推送到 `main`、向 `main` 提交 Pull Request 或手动运行时触发。
 
-工作流使用 Flutter 3.7.12 和 JDK 11，安装依赖后构建 ARM64 debug APK。成功后可在对应运行的 Artifacts 中下载 `DsmClient-debug-arm64` 成果，保留 7 天。
+工作流使用 Flutter 3.7.12 和 JDK 11，安装依赖后构建 ARM64 debug APK。成功后可在对应运行的 Artifacts 中下载 `DsmClient-debug-arm64` 成果，保留 7 天。`main` 分支成功构建后还会自动创建 `dev-构建序号` 开发测试预发布并附上 APK；PR 构建不发布。
 
-CI 自动生成临时测试签名，无需配置签名 Secrets。每次运行的签名不同，安装时可能需要先卸载旧测试包；该成果用于开发验证。正式签名、Release 发布及 iOS 构建尚未接入。
+CI 自动生成临时测试签名，无需配置签名 Secrets。每次运行的签名不同，安装时可能需要先卸载旧测试包；该成果用于开发验证。正式签名、稳定版发布及 iOS 构建尚未接入。
 
-当前测试目录仅有占位入口，工作流以 APK 构建作为检查，尚未覆盖设备上的功能测试。
+工作流复用 Flutter SDK 与 Pub 缓存，并缓存 Android SDK 平台、构建工具及 Gradle 依赖；Android SDK 安装成功后立即保存，编译失败也能保留该缓存。
+
+协议回归测试不依赖 Flutter 或 NAS，可使用兼容的 Dart 2 SDK 运行：
+
+```sh
+dart --no-sound-null-safety test/dsm_compatibility_test.dart
+```
+
+工作流执行这些回归测试和 APK 构建。它们不等同于移动设备上的完整功能测试。
 
 ## 代码结构
 
@@ -126,7 +155,7 @@ android/          Android 原生工程
 ios/              iOS 原生工程与分享扩展
 fplayer/          本地播放器插件及原生依赖
 assets/           图片、图标等资源
-test/             测试目录（当前仅有占位入口）
+test/             DSM 协议与套件元数据回归测试
 ```
 
 ## 开发注意事项

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dsm_client/util/dsm_compatibility.dart';
 
 import 'package:dio/dio.dart';
 import 'package:dsm_client/pages/common/browser.dart';
@@ -105,6 +106,7 @@ class _LoginState extends State<Login> {
         });
         Util.cookie = widget.server['cookie'];
         Util.sid = widget.server['sid'];
+        Util.sessionTokens.remember(widget.server['base_url'], Util.sid, widget.server['synotoken']);
         if (widget.server['action'] == "login") {
           _login();
         }
@@ -312,6 +314,7 @@ class _LoginState extends State<Login> {
     String rememberPasswordString = await Util.getStorage("remember_password");
     String checkSslString = await Util.getStorage("check_ssl");
     Util.cookie = smid;
+    Util.sessionTokens.remember(baseUrl, sid, await Util.getStorage('synotoken'));
 
     if (httpsString.isNotBlank) {
       setState(() {
@@ -474,7 +477,10 @@ class _LoginState extends State<Login> {
   }
 
   doLogin(String baseUri) async {
-    var res = await Api.login(host: baseUri, account: account, password: password, otpCode: otpCode, cancelToken: cancelToken, rememberDevice: rememberDevice);
+    var res = await Api.login(host: baseUri, account: account, password: password, otpCode: otpCode, cancelToken: cancelToken, rememberDevice: rememberDevice,
+      cookie: widget.server != null ? widget.server['cookie'] :
+        (DsmCompatibility.sameConnection(baseUri, Util.baseUrl) ? Util.cookie : ''),
+      checkSsl: checkSsl);
     setState(() {
       login = false;
     });
@@ -491,6 +497,10 @@ class _LoginState extends State<Login> {
       Util.setStorage("auto_login", autoLogin ? "1" : "0");
       Util.setStorage("check_ssl", checkSsl ? "1" : "0");
       Util.sid = res['data']['sid'];
+      Util.cookie = res['data']['cookie'] ?? '';
+      Util.setStorage('smid', Util.cookie);
+      Util.setStorage('synotoken', res['data']['synotoken'] ?? '');
+      Api.apiList.clear();
       if (rememberPassword) {
         Util.setStorage("password", password);
       } else {
@@ -519,6 +529,7 @@ class _LoginState extends State<Login> {
           servers[i]['check_ssl'] = checkSsl;
           servers[i]['cookie'] = Util.cookie;
           servers[i]['sid'] = res['data']['sid'];
+          servers[i]['synotoken'] = res['data']['synotoken'] ?? '';
           servers[i]['base_url'] = baseUri;
           exist = true;
         }
@@ -537,6 +548,7 @@ class _LoginState extends State<Login> {
           "check_ssl": checkSsl,
           "cookie": Util.cookie,
           "sid": res['data']['sid'],
+          "synotoken": res['data']['synotoken'] ?? '',
         };
         if (rememberPassword) {
           server['password'] = password;
@@ -555,7 +567,7 @@ class _LoginState extends State<Login> {
       Util.vibrate(FeedbackType.warning);
       if (res['error']['code'] == 400) {
         Util.toast("用户名/密码有误");
-      } else if (res['error']['code'] == 403) {
+      } else if (res['error']['code'] == 403 || res['error']['code'] == 406) {
         Util.toast("请输入二次验证代码");
         setState(() {
           needOtp = true;

@@ -1,3 +1,5 @@
+import 'package:dsm_client/util/function.dart';
+import 'package:dsm_client/util/dsm_compatibility.dart';
 import 'package:dsm_client/widgets/neu_back_button.dart';
 import 'package:flutter/material.dart';
 import 'package:neumorphic/neumorphic.dart';
@@ -7,7 +9,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 class Browser extends StatefulWidget {
   final String url;
   final String title;
-  Browser({this.url, this.title});
+  final bool useNasSession;
+  Browser({this.url, this.title, this.useNasSession = false});
   @override
   _BrowserState createState() => _BrowserState();
 }
@@ -17,7 +20,6 @@ class _BrowserState extends State<Browser> {
   @override
   void initState() {
     _webviewController
-      ..loadRequest(Uri.parse(widget.url))
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -27,7 +29,7 @@ class _BrowserState extends State<Browser> {
           },
           onPageFinished: (_) {
             debugPrint("onPageFinished");
-            setState(() {});
+            if (mounted) setState(() {});
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('''
@@ -41,6 +43,27 @@ Page resource error:
         ),
       );
     super.initState();
+    loadPage();
+  }
+
+  Future<void> loadPage() async {
+    // Explicit opt-in: never inject NAS cookies into third-party app links.
+    if (widget.useNasSession &&
+        DsmCompatibility.sameConnection(widget.url, Util.baseUrl)) {
+      final uri = Uri.parse(Util.baseUrl);
+      final cookies = <String, String>{};
+      for (final item in (Util.cookie ?? '').split(';')) {
+        final index = item.indexOf('=');
+        if (index > 0) cookies[item.substring(0, index).trim()] = item.substring(index + 1).trim();
+      }
+      if ((Util.sid ?? '').isNotEmpty) cookies.putIfAbsent('id', () => Util.sid);
+      final manager = WebViewCookieManager();
+      for (final cookie in cookies.entries) {
+        await manager.setCookie(WebViewCookie(name: cookie.key, value: cookie.value,
+          domain: uri.host, path: uri.path.isEmpty ? '/' : uri.path));
+      }
+    }
+    if (mounted) await _webviewController.loadRequest(Uri.parse(widget.url));
   }
 
   @override

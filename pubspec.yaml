@@ -1,5 +1,5 @@
 name: dsm_client
-description: 适用于群辉6.x的手机助手。采用新拟态设计风格
+description: DsmClient，面向群晖 DSM 6/7 的移动管理客户端，以 DSM 7.4.1 为当前适配目标。
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `pub publish`. This is preferred for private packages.

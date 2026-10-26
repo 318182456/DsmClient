@@ -84,6 +84,9 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
+      - name: Test DSM protocol compatibility
+        run: dart --no-sound-null-safety test/dsm_compatibility_test.dart
+
       # The inherited Gradle file requires key.properties for debug builds too.
       # Generate a disposable test key instead of using a production secret.
       - name: Prepare CI test signing
@@ -116,3 +119,45 @@ jobs:
         if: always()
         shell: bash
         run: rm -f android/key.properties "$RUNNER_TEMP/dsmclient-ci.jks"
+
+  publish:
+    name: Publish development APK
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: DsmClient-debug-arm64-${{ github.run_number }}
+          path: ${{ runner.temp }}/dsmclient-release
+
+      - name: Publish development prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          release_dir="$RUNNER_TEMP/dsmclient-release"
+          release_tag="dev-$GITHUB_RUN_NUMBER"
+          apk="$release_dir/DsmClient-$release_tag-arm64.apk"
+          mv "$release_dir/app-debug.apk" "$apk"
+          cat > "$release_dir/notes.md" <<EOF
+          DsmClient Android ARM64 开发测试版。
+
+          提交：$GITHUB_SHA
+          构建记录：https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          本 APK 使用临时测试签名。不同构建的签名不同，覆盖安装时可能需要先卸载旧测试版。正式签名和稳定版发布尚未接入。
+          EOF
+          if gh release view "$release_tag" >/dev/null 2>&1; then
+            gh release upload "$release_tag" "$apk" --clobber
+          else
+            gh release create "$release_tag" "$apk" \
+              --target "$GITHUB_SHA" \
+              --title "DsmClient 开发测试版 $release_tag" \
+              --prerelease --notes-file "$release_dir/notes.md"
+          fi

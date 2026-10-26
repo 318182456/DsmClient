@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'dsm_compatibility.dart';
+
 import 'package:cool_ui/cool_ui.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -76,7 +78,8 @@ class Util {
   static String account = "";
   static String baseUrl = "https://dsm.apaipai.top";
   static String hostname = "";
-  static int version = 6;
+  static int version = 7;
+  static final sessionTokens = DsmSessionTokens();
   static bool checkSsl = true;
   static bool vibrateOn = true;
   static bool vibrateWarning = true;
@@ -96,11 +99,56 @@ class Util {
     showToast(text ?? "", dismissOtherToast: true, textPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 8));
   }
 
-  static String systemVersion(String version) {
-    int index = version.indexOf("DSM");
-    version = version.substring(index + 4);
-    Util.version = int.parse(version.split(".").first);
-    return version;
+  static String systemVersion(String value) {
+    final firmware = DsmCompatibility.firmwareVersion(value);
+    version = DsmCompatibility.firmwareMajor(value) >= 7 ? 7 : 6;
+    return firmware;
+  }
+
+  static Map<String, dynamic> dsmParameters(String url, Map<String, dynamic> source,
+      {String host, bool login = true}) {
+    if (url.startsWith('http')) return Map<String, dynamic>.from(source ?? {});
+    final target = host ?? baseUrl;
+    final same = DsmCompatibility.sameConnection(target, baseUrl);
+    final result = DsmCompatibility.prepareParameters(source, same ? Api.apiList : {});
+    final api = DsmCompatibility.apiName(result['api']);
+    if (login && api != 'SYNO.API.Auth' && api != 'SYNO.API.Info') {
+      final sid = result['_sid'] ?? (same ? Util.sid : '');
+      if ('$sid'.isNotEmpty) {
+        result.putIfAbsent('_sid', () => sid);
+        final token = sessionTokens.tokenFor(target, '$sid');
+        if (token.isNotEmpty) result.putIfAbsent('SynoToken', () => token);
+      }
+    }
+    return result;
+  }
+
+  static String dsmPath(String url, Map<String, dynamic> data, {String host}) {
+    if (url.startsWith('http') || !DsmCompatibility.sameConnection(host ?? baseUrl, baseUrl)) return url;
+    final name = DsmCompatibility.apiName(data['api']);
+    if (name == 'SYNO.API.Auth' || name == 'SYNO.API.Info') return url;
+    return DsmCompatibility.apiPath(Api.apiList[name], url);
+  }
+
+  static String requestCookie(String url, String host, String explicitCookie) {
+    if (explicitCookie != null) return explicitCookie;
+    final target = url.startsWith('http') ? Uri.parse(url).origin : (host ?? baseUrl);
+    return DsmCompatibility.sameConnection(target, baseUrl) ? (cookie ?? '') : '';
+  }
+
+  static String mergeCookies(List<String> setCookies, String existing) {
+    final values = <String, String>{};
+    for (final part in (existing ?? '').split(';')) {
+      final index = part.indexOf('=');
+      if (index > 0) values[part.substring(0, index).trim()] = part.substring(index + 1).trim();
+    }
+    for (final value in setCookies ?? <String>[]) {
+      try {
+        final parsed = Cookie.fromSetCookieValue(value);
+        values[parsed.name] = parsed.value;
+      } catch (_) {}
+    }
+    return values.entries.map((item) => '${item.key}=${item.value}').join('; ');
   }
 
   static vibrate(FeedbackType type) async {
@@ -289,14 +337,16 @@ class Util {
 
   static Future<dynamic> get(String url, {Map<String, dynamic> data, bool login: true, String host, Map<String, dynamic> headers, CancelToken cancelToken, bool checkSsl, String cookie, int timeout = 20, bool decode: true}) async {
     headers = headers ?? {};
-    headers['Cookie'] = cookie ?? Util.cookie;
+    data = dsmParameters(url, data, host: host, login: login);
+    url = dsmPath(url, data, host: host);
+    headers['Cookie'] = requestCookie(url, host, cookie);
 
     headers["Accept-Language"] = "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5";
     headers['origin'] = host ?? baseUrl;
     headers['referer'] = host ?? baseUrl;
     Dio dio = new Dio(
       BaseOptions(
-        baseUrl: url.startsWith("http") ? "" : ((host ?? baseUrl) + "/webapi/"),
+        baseUrl: url.startsWith("http") ? "" : ((host ?? baseUrl).replaceFirst(RegExp(r'/+$'), '') + "/webapi/"),
         headers: headers,
         // connectTimeout: timeout,
       ),
@@ -322,36 +372,14 @@ class Util {
     Response response;
     try {
       response = await dio.get(url, queryParameters: data, cancelToken: cancelToken);
-      if (url == "auth.cgi") {
-        if (response.headers.map['set-cookie'] != null && response.headers.map['set-cookie'].length > 0) {
-          List cookies = [];
-          //从原始cookie中提取did
-          String did = "";
-          if (Util.cookie != null && Util.cookie != '') {
-            List originCookies = Util.cookie.split("; ");
-            for (int i = 0; i < originCookies.length; i++) {
-              Cookie cookie = Cookie.fromSetCookieValue(originCookies[i]);
-              if (cookie.name == "did") {
-                did = cookie.value;
-              }
-            }
-          }
-          bool haveDid = false;
-          for (int i = 0; i < response.headers.map['set-cookie'].length; i++) {
-            Cookie cookie = Cookie.fromSetCookieValue(response.headers.map['set-cookie'][i]);
-            cookies.add("${cookie.name}=${cookie.value}");
-            if (cookie.name == "did") {
-              haveDid = true;
-            }
-          }
-          //如果新cookie中不含did
-          if (!haveDid && did != "") {
-            cookies.add("did=$did");
-          }
-
-          Util.cookie = cookies.join("; ");
-          setStorage("smid", Util.cookie);
+      if (DsmCompatibility.apiName(data['api']) == 'SYNO.API.Auth' &&
+          data['method'] == 'login') {
+        final result = response.data is String ? jsonDecode(response.data) : response.data;
+        if (result is Map && result['success'] == true && result['data'] is Map) {
+          result['data']['cookie'] = mergeCookies(response.headers.map['set-cookie'], cookie);
+          sessionTokens.remember(host ?? baseUrl, result['data']['sid'], result['data']['synotoken']);
         }
+        return result;
       }
 
       if (response.data is String && decode) {
@@ -396,14 +424,16 @@ class Util {
 
   static Future<dynamic> post(String url, {Map<String, dynamic> data, bool login: true, String host, CancelToken cancelToken, Map<String, dynamic> headers, bool checkSsl, String cookie, int timeout = 20}) async {
     headers = headers ?? {};
-    headers['Cookie'] = cookie ?? Util.cookie;
+    data = dsmParameters(url, data, host: host, login: login);
+    url = dsmPath(url, data, host: host);
+    headers['Cookie'] = requestCookie(url, host, cookie);
     headers["Accept-Language"] = "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5";
     headers['origin'] = host ?? baseUrl;
     headers['referer'] = host ?? baseUrl;
     Dio dio = new Dio(
       new BaseOptions(
         // connectTimeout: timeout,
-        baseUrl: (host ?? baseUrl) + "/webapi/",
+        baseUrl: (host ?? baseUrl).replaceFirst(RegExp(r'/+$'), '') + "/webapi/",
         contentType: "application/x-www-form-urlencoded",
         headers: headers,
       ),
@@ -440,11 +470,15 @@ class Util {
     }
     Response response;
     try {
-      response = await dio.post(url, data: data, cancelToken: cancelToken);
+      response = await dio.post(url, data: data, cancelToken: cancelToken,
+        queryParameters: {
+          if (data['_sid'] != null) '_sid': data['_sid'],
+          if (data['SynoToken'] != null) 'SynoToken': data['SynoToken'],
+        });
 
-      return response.data;
+      return response.data is String ? jsonDecode(response.data) : response.data;
     } on DioError catch (error) {
-      debugPrint("请求出错:${headers['origin']} $url 请求内容:$data");
+      debugPrint("请求出错:${headers['origin']} $url");
       return {
         "success": false,
         "error": {"code": error.message},
@@ -455,7 +489,9 @@ class Util {
 
   static Future<dynamic> upload(String url, {Map<String, dynamic> params, Map<String, dynamic> data, bool login: true, String host, CancelToken cancelToken, Function(int, int) onSendProgress, Map<String, dynamic> headers}) async {
     headers = headers ?? {};
-    headers['Cookie'] = Util.cookie;
+    params = dsmParameters(url, params, host: host, login: login);
+    url = dsmPath(url, params, host: host);
+    headers['Cookie'] = requestCookie(url, host, null);
     headers['Accept-Encoding'] = "gzip, deflate";
     headers['Accept'] = "*/*";
     // headers["Accept-Language"] = "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5";
@@ -468,7 +504,7 @@ class Util {
     // print(headers);
     Dio dio = new Dio(
       new BaseOptions(
-        baseUrl: (host ?? baseUrl) + "/webapi/",
+        baseUrl: (host ?? baseUrl).replaceFirst(RegExp(r'/+$'), '') + "/webapi/",
         headers: headers,
       ),
     );
@@ -478,7 +514,7 @@ class Util {
     //   };
     // };
     //忽略Https校验
-    if (!checkSsl) {
+    if (!Util.checkSsl) {
       (dio.httpClientAdapter as IOHttpClientAdapter).onHttpClientCreate = (client) {
         client.badCertificateCallback = (cert, host, port) {
           return true;
@@ -502,7 +538,7 @@ class Util {
         return response.data;
       }
     } on DioError catch (error) {
-      debugPrint("请求出错:$baseUrl/$url 请求内容:$data msg:${error.message}");
+      debugPrint("上传请求失败:$baseUrl/$url");
       return {
         "success": false,
         "error": {"code": error.message},

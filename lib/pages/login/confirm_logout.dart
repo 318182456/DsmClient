@@ -84,6 +84,10 @@ class _ConfirmLogoutState extends State<ConfirmLogout> {
                             Api.trustDevice("delete");
                           }
                           Util.removeStorage("sid");
+                          Util.removeStorage("synotoken");
+                          Util.sid = '';
+                          Util.sessionTokens.clear();
+                          Api.apiList.clear();
                           // Util.removeStorage("smid");
                           Navigator.of(context).pushNamedAndRemoveUntil("/login", (route) => false);
                         },

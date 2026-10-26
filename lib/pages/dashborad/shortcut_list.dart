@@ -95,8 +95,9 @@ class ShortcutList extends StatelessWidget {
         page = StorageManager();
         routerName = "storage_manager";
         break;
+      case "SYNO.SDS.ContainerManager.Application":
       case "SYNO.SDS.Docker.Application":
-        if (validAppViewOrder.contains("SYNO.SDS.ContainerManager.Application")) {
+        if ((validAppViewOrder ?? []).contains("SYNO.SDS.ContainerManager.Application")) {
           icon = "assets/applications/container_manager.png";
           name = "Container Manager";
           page = Docker(
@@ -110,8 +111,9 @@ class ShortcutList extends StatelessWidget {
 
         routerName = "docker";
         break;
+      case "SYNO.SDS.ContainerManager.ContainerDetail.Instance":
       case "SYNO.SDS.Docker.ContainerDetail.Instance":
-        if (validAppViewOrder.contains("SYNO.SDS.ContainerManager.Application")) {
+        if ((validAppViewOrder ?? []).contains("SYNO.SDS.ContainerManager.Application")) {
           icon = "assets/applications/container_manager.png";
         } else {
           icon = "assets/applications/docker.png";
@@ -129,6 +131,7 @@ class ShortcutList extends StatelessWidget {
         }
 
         break;
+      case "SYNO.SDS.LogCenter.BuiltIn":
       case "SYNO.SDS.LogCenter.Instance":
         icon = "assets/applications/${Util.version}/log_center.png";
         name = "日志中心";

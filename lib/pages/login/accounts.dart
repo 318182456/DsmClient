@@ -48,6 +48,7 @@ class _AccountsState extends State<Accounts> {
       });
     }
     servers.forEach((server) {
+      Util.sessionTokens.remember(server['base_url'], server['sid'], server['synotoken']);
       server['loading'] = server['loading'] ?? true;
       server['is_login'] = server['is_login'] ?? false;
       server['base_url'] = server['base_url'] ?? "${server['https'] ? "https" : "http"}://${server['host']}:${server['port']}/";
@@ -57,19 +58,21 @@ class _AccountsState extends State<Accounts> {
         //仅首次重新登录
         if (server['loading']) {
           String host = server['base_url'];
-          Api.shareList(sid: server['sid'], checkSsl: server['check_ssl'], cookie: server['smid'], host: host).then((checkLogin) async {
+          Api.shareList(sid: server['sid'], checkSsl: server['check_ssl'], cookie: server['cookie'], host: host).then((checkLogin) async {
             if (checkLogin['success']) {
               server['is_login'] = true;
               //获取系统信息
               serverInfo(server);
             } else {
               //登录失败，尝试重新登录
-              var res = await Api.login(host: host, account: server['account'], password: server['password'], otpCode: "", rememberDevice: false, cookie: server['smid']);
+              var res = await Api.login(host: host, account: server['account'], password: server['password'], otpCode: "", rememberDevice: false, cookie: server['cookie'], checkSsl: server['check_ssl']);
               if (res['success']) {
                 setState(() {
                   server['is_login'] = true;
                 });
                 server['sid'] = res['data']['sid'];
+                server['cookie'] = res['data']['cookie'] ?? '';
+                server['synotoken'] = res['data']['synotoken'] ?? '';
                 saveAccounts();
                 serverInfo(server);
               } else {
@@ -101,13 +104,14 @@ class _AccountsState extends State<Accounts> {
         "check_ssl": server['check_ssl'],
         "cookie": server['cookie'],
         "sid": server['sid'],
+        "synotoken": server['synotoken'] ?? '',
       });
     });
     Util.setStorage("servers", json.encode(accounts));
   }
 
   serverInfo(server) async {
-    var res = await Api.utilization(sid: server['sid'], checkSsl: server['check_ssl'], cookie: server['smid'], host: "${server['base_url']}");
+    var res = await Api.utilization(sid: server['sid'], checkSsl: server['check_ssl'], cookie: server['cookie'], host: "${server['base_url']}");
     if (res['success']) {
       if (!mounted) {
         return;
@@ -148,7 +152,7 @@ class _AccountsState extends State<Accounts> {
     server['write'] = server['write'] ?? 0.0;
     return GestureDetector(
       onTap: () {
-        print(server);
+
         if (server['is_login']) {
           Util.account = "${server['account']}";
           Util.baseUrl = "${server['base_url']}";
@@ -171,6 +175,10 @@ class _AccountsState extends State<Accounts> {
           Util.setStorage("sid", server['sid']);
           Util.sid = server['sid'];
           Util.cookie = server['cookie'];
+          Util.sessionTokens.remember(Util.baseUrl, Util.sid, server['synotoken']);
+          Util.setStorage('synotoken', server['synotoken'] ?? '');
+          Util.setStorage('smid', Util.cookie ?? '');
+          Api.apiList.clear();
           Navigator.of(context).pushNamedAndRemoveUntil("/home", (route) => false);
         } else {
           server['action'] = "login";
@@ -240,7 +248,7 @@ class _AccountsState extends State<Accounts> {
                         ),
                         NeuButton(
                           onPressed: () {
-                            print(server);
+
                             server['action'] = "edit";
                             Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
                               return Login(server: server);

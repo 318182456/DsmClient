@@ -1,5 +1,4 @@
-import 'package:dsm_client/util/api.dart';
-
+// @dart=2.10
 /// maxVersion : 6
 /// minVersion : 1
 /// path : "auth.cgi"
@@ -10,21 +9,9 @@ class ApiModel {
     this.minVersion,
     this.path,
   });
-  static Future<Map<String, ApiModel>> fetch() async {
-    Map<String, ApiModel> apis = {};
-    Map res = await Api.api();
-    if (res['success']) {
-      res['data'].forEach((key, value) {
-        apis[key] = ApiModel.fromJson(value);
-      });
-    }
-
-    return apis;
-  }
-
   ApiModel.fromJson(dynamic json) {
-    maxVersion = json['maxVersion'];
-    minVersion = json['minVersion'];
+    maxVersion = num.tryParse('${json['maxVersion']}') ?? 1;
+    minVersion = num.tryParse('${json['minVersion']}') ?? 1;
     path = json['path'];
   }
   num maxVersion;
