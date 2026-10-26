@@ -17,6 +17,7 @@ Future<void> main() async {
   server.listen((r) async {
     try {
       expect(r.headers.value('origin') == 'http://127.0.0.1:${server.port}', 'Service Origin must match Dockhand');
+      expect(r.headers.value('accept') == 'application/json', 'Job operations must negotiate the final JSON result');
       expect(!(r.headers.value('cookie') ?? '').contains('NAS'), 'Never reuse a NAS cookie');
       final path = r.uri.path;
       final bodyText = await utf8.decoder.bind(r).join();
@@ -37,7 +38,9 @@ Future<void> main() async {
           else if (path.endsWith('/logs')) r.response.write('{"logs":"example log"}');
           else if (path.endsWith('/stop') || path.endsWith('/restart')) {
             expect(r.method == 'POST', 'State changes require POST'); actions++;
-            r.response.write('{"success":true}');
+            if (path.contains('/failed-stack/')) r.response.write('{"success":false,"error":"compose failed"}');
+            else if (path.contains('/pending-stack/')) r.response.write('{"jobId":"pending"}');
+            else r.response.write('{"success":true}');
           } else r.response.write('[]');
         }
       }
@@ -52,6 +55,9 @@ Future<void> main() async {
     expect((await tokenClient.container('c1','logs','2'))['logs'] == 'example log', 'Read logs');
     await tokenClient.control('c1','stop','2'); await tokenClient.control('my-stack','restart','2',stack:true);
     expect(actions == 2, 'Only explicit requested actions execute');
+    await rejects(tokenClient.control('failed-stack','restart','2',stack:true), 'Surface a failed compose operation');
+    await rejects(tokenClient.control('pending-stack','restart','2',stack:true), 'Scheduling alone is not completion');
+    expect(actions == 4, 'Never automatically retry state changes');
     await rejects(tokenClient.control('c1','stop',null), 'Reject actions without an environment');
     await rejects(tokenClient.container('../escape','logs','2'), 'Reject path traversal in container identifiers');
     await rejects(tokenClient.request('api/redirect'), 'Do not follow authenticated redirects');

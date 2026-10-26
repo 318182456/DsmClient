@@ -27,7 +27,7 @@ void main() {
     await tester.tap(find.text('复制下载链接'));
     await tester.pump(Duration(seconds: 4)); await tester.pumpAndSettle();
     expect(copied, 'https://edgeone.gh-proxy.org/$url');
-    final picker = find.byType(DropdownButtonFormField<String>);
+    final picker = find.byWidgetPredicate((widget) => widget is DropdownButtonFormField<String>);
     await tester.ensureVisible(picker); await tester.tap(picker); await tester.pumpAndSettle();
     await tester.tap(find.text('GitHub 直连').last); await tester.pumpAndSettle();
     await tester.tap(find.text('复制下载链接'));

@@ -81,7 +81,12 @@ class DockhandClient {
       throw ArgumentError('Unsupported action');
     final result = await request('api/${stack ? 'stacks' : 'containers'}/${identifier(id)}/$action',
       method: 'POST', query: {'env': env}, body: {});
-    if (result is Map && result['success'] == false) throw StateError('Dockhand 未接受此操作');
+    // Dockhand's job endpoints return the final result for Accept: application/json.
+    // A jobId alone acknowledges scheduling, not a completed operation.
+    if (result is! Map || result['success'] != true) {
+      final reason = result is Map ? '${result['error'] ?? ''}' : '';
+      throw StateError('Dockhand 未确认操作完成${reason.isEmpty ? '' : ': $reason'}');
+    }
   }
   void close() { _cookies.clear(); _token = ''; _http.close(force: true); }
   static void validateEnvironment(String env) {
