@@ -41,7 +41,12 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
   }
 
   getContainer() async {
-    var res = await Api.dockerContainerInfo();
+    dynamic res;
+    try { res = await Api.dockerContainerInfo(); }
+    catch (_) {
+      if (mounted) setState(() { containerLoading = false; utilization = null; });
+      return;
+    }
     if (!mounted) return;
     setState(() {
       containerLoading = false;
@@ -85,7 +90,12 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
   }
 
   getImage() async {
-    var res = await Api.dockerImageInfo();
+    dynamic res;
+    try { res = await Api.dockerImageInfo(); }
+    catch (_) {
+      if (mounted) setState(() => imageLoading = false);
+      return;
+    }
     if (!mounted) return;
     setState(() {
       imageLoading = false;
