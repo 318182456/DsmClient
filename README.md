@@ -33,13 +33,22 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 - 登录前查询 `SYNO.API.Info`，使用 NAS 返回的认证路径及兼容版本；支持 OTP 和 CSRF 会话令牌。
 - 请求按连接地址和会话 ID 隔离令牌，切换账号时恢复相应会话，上传与组合请求使用已发现的版本范围。
 - 识别 `DSM 7.4.1-90080 Update 1` 等版本格式，DSM 7 小版本沿用对应界面资源。
-- 主菜单新增“NAS 应用”：动态发现账号有权查看的全部已安装套件与容器，支持搜索、状态和版本查看。
-- File Station、Photos、Container Manager 与存储管理器可进入现有原生页面；其他套件按 NAS 返回的桌面注册信息打开 DSM 网页界面。
-- Drive 可分别打开文件、管理控制台和 ShareSync；Hyper Backup、Cloud Sync、Audio Station、Tailscale 等使用对应 DSM 入口。
-- Node.js、Python、Git 等后台组件保留版本、状态和套件中心入口，不为它们创建虚构的网页功能。
-- 所有容器均可进入详情页面；可按当前 NAS 保存各容器的网页地址，通过系统浏览器访问，网页应用自行认证。
+- 主菜单按程序显示独立卡片，动态发现账号可见的已安装套件与容器，支持搜索和刷新。点击进入 Flutter 页面，不再默认跳转 DSM Web。
+- File Station、Photos、Container Manager、存储、控制面板、日志等继续使用现有原生模块。
 
-网页入口复用与完整原生客户端属于不同支持范围。当前未为所有套件及容器重写独立的原生业务界面，也未验证全部业务操作。设备、账号权限和已安装套件会影响可用功能。
+| 程序 | 当前原生功能 |
+| --- | --- |
+| Synology Drive | 我的文件、团队文件夹、分页浏览、上传下载、新建目录、重命名、移动、回收站删除、创建分享链接；连接设备、同步日志、服务信息 |
+| Audio Station | 歌曲、专辑、歌手、播放列表、文件夹、曲库搜索、分页加载、音频播放 |
+| Hyper Backup | 任务、存储库、备份日志、实时任务状态；立即备份、取消任务（操作前确认） |
+| Cloud Sync | 云端连接、同步任务、日志、连接设置、同步中文件、最近同步；暂停与恢复（操作前确认） |
+| SAN Manager | LUN 与 Target 列表及详情 |
+| WebDAV Server | HTTP/HTTPS 开关状态、端口与连接参数查看 |
+| Hybrid Share | 共享信息查看 |
+| 容器 | 每个容器独立入口，进入原生详情、进程与日志页面 |
+| 其他套件及后台组件 | 版本、状态、说明、相关文件工具和 SSH 入口；未接入的专用功能明确标示 |
+
+以上为当前实现范围，尚未覆盖每个程序的完整功能。Drive 历史版本/回收站浏览、备份任务创建与恢复、云盘授权与任务创建、Office 在线编辑等仍待开发。新增读取接口已在 DSM 7.4.1 上进行只读验证；写操作按接口实现，未在用户 NAS 上执行破坏性或状态变更测试。移动端交互与音频解码仍需 Android 实机验证。不会将通用套件信息页视为已完成整个程序的原生适配。
 
 认证流程参考 [Synology DSM Login Web API Guide](https://global.download.synology.com/download/Document/Software/DeveloperGuide/Os/DSM/All/enu/DSM_Login_Web_API_Guide_enu.pdf)。
 

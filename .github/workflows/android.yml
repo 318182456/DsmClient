@@ -85,8 +85,17 @@ jobs:
       - name: Test DSM and update protocols
         run: |
           dart --no-sound-null-safety test/dsm_compatibility_test.dart
+          dart --no-sound-null-safety test/program_section_test.dart
           dart --no-sound-null-safety test/update_release_test.dart
           dart --no-sound-null-safety test/update_download_test.dart
+
+      - name: Analyze native program pages
+        run: >-
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          lib/models/program_section.dart lib/util/program_api.dart
+          lib/pages/packages/program_page.dart lib/pages/packages/program_launcher.dart
+          lib/pages/packages/audio_station.dart lib/pages/packages/drive.dart
+          lib/pages/dashborad/applications.dart
 
       - name: Prepare signing
         env:

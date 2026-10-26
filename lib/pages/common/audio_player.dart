@@ -20,6 +20,7 @@ class AudioPlayer extends StatefulWidget {
 class _AudioPlayerState extends State<AudioPlayer> {
   ja.AudioPlayer player = ja.AudioPlayer();
   String title = "";
+  String playbackError = '';
   @override
   void initState() {
     var audioPlayerProvider = context.read<AudioPlayerProvider>();
@@ -43,8 +44,12 @@ class _AudioPlayerState extends State<AudioPlayer> {
   }
 
   setSource() async {
-    await player.setUrl(widget.url);
-    await player.play();
+    try {
+      await player.setUrl(widget.url);
+      await player.play();
+    } catch (_) {
+      if (mounted) setState(() => playbackError = '无法播放此音频，请检查连接、访问权限或音频格式');
+    }
   }
 
   @override
@@ -80,6 +85,8 @@ class _AudioPlayerState extends State<AudioPlayer> {
             SizedBox(
               height: 20,
             ),
+            if (playbackError.isNotEmpty)
+              Padding(padding: EdgeInsets.all(16), child: Text(playbackError)),
             ControlButtons(player),
             SeekBar(
               player: player,
@@ -128,7 +135,11 @@ class ControlButtons extends StatelessWidget {
             height: 100.0,
             child: Column(
               children: [
-                Text('${snapshot.data?.toStringAsFixed(1)}$valueSuffix', style: const TextStyle(fontFamily: 'Fixed', fontWeight: FontWeight.bold, fontSize: 24.0)),
+                Text('${snapshot.data?.toStringAsFixed(1)}$valueSuffix',
+                    style: const TextStyle(
+                        fontFamily: 'Fixed',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24.0)),
                 Slider(
                   divisions: divisions,
                   min: min,
@@ -185,7 +196,8 @@ class ControlButtons extends StatelessWidget {
             final playerState = snapshot.data;
             final processingState = playerState?.processingState;
             final playing = playerState?.playing;
-            if (processingState == ja.ProcessingState.loading || processingState == ja.ProcessingState.buffering) {
+            if (processingState == ja.ProcessingState.loading ||
+                processingState == ja.ProcessingState.buffering) {
               return NeuButton(
                 child: const CupertinoActivityIndicator(
                   radius: 32,
@@ -234,7 +246,8 @@ class ControlButtons extends StatelessWidget {
                   color: Theme.of(context).scaffoldBackgroundColor,
                 ),
                 bevel: 10,
-                onPressed: () => player.seek(Duration.zero, index: player.effectiveIndices.first),
+                onPressed: () => player.seek(Duration.zero,
+                    index: player.effectiveIndices.first),
               );
             }
           },
@@ -252,7 +265,8 @@ class ControlButtons extends StatelessWidget {
         StreamBuilder<double>(
           stream: player.speedStream,
           builder: (context, snapshot) => NeuButton(
-            child: Text("${snapshot.data?.toStringAsFixed(1)}x", style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text("${snapshot.data?.toStringAsFixed(1)}x",
+                style: const TextStyle(fontWeight: FontWeight.bold)),
             decoration: NeumorphicDecoration(
               shape: BoxShape.circle,
               color: Theme.of(context).scaffoldBackgroundColor,
@@ -340,21 +354,25 @@ class SeekBarState extends State<SeekBar> {
           child: ExcludeSemantics(
             child: StreamBuilder(
               stream: widget.player.bufferedPositionStream,
-              builder: (BuildContext context, AsyncSnapshot<Duration> snapshot) {
+              builder:
+                  (BuildContext context, AsyncSnapshot<Duration> snapshot) {
                 Duration _duration = widget.player.duration ?? Duration.zero;
                 Duration _position = snapshot.data ?? Duration.zero;
                 return Slider(
                   min: 0.0,
                   max: _duration.inMilliseconds.toDouble(),
-                  value: min(_position.inMilliseconds.toDouble(), _duration.inMilliseconds.toDouble()),
+                  value: min(_position.inMilliseconds.toDouble(),
+                      _duration.inMilliseconds.toDouble()),
                   onChanged: (value) {
                     setState(() {
                       _dragValue = value;
                     });
-                    widget.onChanged?.call(Duration(milliseconds: value.round()));
+                    widget.onChanged
+                        ?.call(Duration(milliseconds: value.round()));
                   },
                   onChangeEnd: (value) {
-                    widget.onChangeEnd?.call(Duration(milliseconds: value.round()));
+                    widget.onChangeEnd
+                        ?.call(Duration(milliseconds: value.round()));
                     _dragValue = null;
                   },
                 );
@@ -373,15 +391,18 @@ class SeekBarState extends State<SeekBar> {
                 Slider(
                   min: 0.0,
                   max: _duration.inMilliseconds.toDouble(),
-                  value: min(_dragValue ?? _position.inMilliseconds.toDouble(), _duration.inMilliseconds.toDouble()),
+                  value: min(_dragValue ?? _position.inMilliseconds.toDouble(),
+                      _duration.inMilliseconds.toDouble()),
                   onChanged: (value) {
                     setState(() {
                       _dragValue = value;
                     });
-                    widget.onChanged?.call(Duration(milliseconds: value.round()));
+                    widget.onChanged
+                        ?.call(Duration(milliseconds: value.round()));
                   },
                   onChangeEnd: (value) {
-                    widget.onChangeEnd?.call(Duration(milliseconds: value.round()));
+                    widget.onChangeEnd
+                        ?.call(Duration(milliseconds: value.round()));
                     _dragValue = null;
                   },
                 ),
@@ -390,8 +411,22 @@ class SeekBarState extends State<SeekBar> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(RegExp(r'((^0*[1-9]\d*:)?\d{2}:\d{2})\.\d+$').firstMatch("$_position")?.group(1) ?? '$_position', style: TextStyle(color: AppTheme.of(context).placeholderColor, fontSize: 12)),
-                      Text(RegExp(r'((^0*[1-9]\d*:)?\d{2}:\d{2})\.\d+$').firstMatch("$_remaining")?.group(1) ?? '$_remaining', style: TextStyle(color: AppTheme.of(context).placeholderColor, fontSize: 12))
+                      Text(
+                          RegExp(r'((^0*[1-9]\d*:)?\d{2}:\d{2})\.\d+$')
+                                  .firstMatch("$_position")
+                                  ?.group(1) ??
+                              '$_position',
+                          style: TextStyle(
+                              color: AppTheme.of(context).placeholderColor,
+                              fontSize: 12)),
+                      Text(
+                          RegExp(r'((^0*[1-9]\d*:)?\d{2}:\d{2})\.\d+$')
+                                  .firstMatch("$_remaining")
+                                  ?.group(1) ??
+                              '$_remaining',
+                          style: TextStyle(
+                              color: AppTheme.of(context).placeholderColor,
+                              fontSize: 12))
                     ],
                   ),
                 )
