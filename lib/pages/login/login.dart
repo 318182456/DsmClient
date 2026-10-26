@@ -287,11 +287,8 @@ class _LoginState extends State<Login> {
     if (Platform.isAndroid) {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String buildNumber = packageInfo.buildNumber;
-      if (kDebugMode) {
-        buildNumber = '1';
-      }
       var res = await Api.update(buildNumber); //packageInfo.buildNumber
-      if (res['code'] == 1) {
+      if (res['code'] == 1 && mounted) {
         setState(() {
           updateInfo = res['data'];
         });
@@ -413,7 +410,18 @@ class _LoginState extends State<Login> {
       debugPrint(baseUri);
       doLogin(baseUri);
     } else {
-      qcLogin();
+      // MagicDNS and LAN hostnames can be short names too, not only QuickConnect IDs.
+      bool resolves = false;
+      try {
+        resolves = (await InternetAddress.lookup(host.trim())
+          .timeout(Duration(seconds: 3))).isNotEmpty;
+      } catch (_) {}
+      if (!mounted) return;
+      if (resolves) {
+        doLogin("${https ? 'https' : 'http'}://${host.trim()}:${port.trim()}");
+      } else {
+        qcLogin();
+      }
     }
   }
 

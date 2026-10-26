@@ -772,16 +772,23 @@ class Util {
   static checkUpdate(bool showMsg, BuildContext context, {bool force = false}) async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String buildNumber = packageInfo.buildNumber;
-    if (kDebugMode) {
-      buildNumber = '1';
-    }
-    var res = await Api.update(buildNumber, force: force); //packageInfo.buildNumber
+    var res = await Api.update(buildNumber, force: force);
+    if (!context.mounted) return;
     if (res['code'] == 1) {
+      if (!showMsg) {
+        final accepted = await showDialog<bool>(context: context, builder: (dialog) =>
+          AlertDialog(
+            title: Text("发现新版本 v${res['data']['buildVersion']}"),
+            content: Text('可在应用内下载并覆盖安装更新。'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text('稍后')),
+              TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text('查看更新')),
+            ],
+          ));
+        if (accepted != true || !context.mounted) return;
+      }
       Navigator.of(context).push(CupertinoPageRoute(
-          builder: (context) {
-            return Update(res['data']);
-          },
-          settings: RouteSettings(name: "update")));
+        builder: (_) => Update(res['data']), settings: RouteSettings(name: 'update')));
     } else {
       if (showMsg) {
         toast(res['msg']);

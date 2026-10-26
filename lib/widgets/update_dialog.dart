@@ -130,7 +130,7 @@ class UpdateDialog extends StatelessWidget {
                           if (ignoredVersionsString.isNotBlank) {
                             ignoredVersions = ignoredVersionsString.split(",");
                           }
-                          ignoredVersions.add(packageInfo.buildNumber);
+                          ignoredVersions.add('${updateInfo['buildVersionNo']}');
                           Util.setStorage("ignoredVersions", ignoredVersions.join(","));
                         },
                         color: CupertinoTheme.of(context).scaffoldBackgroundColor,

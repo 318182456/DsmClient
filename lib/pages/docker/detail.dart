@@ -41,57 +41,71 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   getData() async {
     var res = await Api.dockerDetail(widget.name, "get");
-    if (res['success']) {
+    if (!mounted) return;
+    if (res != null && res['success'] == true) {
+      final profile = res['data']['profile'] ?? {};
+      final details = res['data']['details'] ?? {};
       setState(() {
         loading = false;
-        ports = res['data']['profile']['port_bindings'];
-        networks = res['data']['profile']['network'];
-        volumes = res['data']['profile']['volume_bindings'];
-        envs = res['data']['profile']['env_variables'];
-        memory = res['data']['profile']['memory_limit'];
-        shortcut = res['data']['profile']['shortcut'];
-        cpuPriority = res['data']['profile']['cpu_priority'];
-        links = res['data']['profile']['links'];
-        memoryPercent = res['data']['details']['memoryPercent'] * 1.0;
+        ports = profile['port_bindings'] ?? [];
+        networks = profile['network'] ?? [];
+        volumes = profile['volume_bindings'] ?? [];
+        envs = profile['env_variables'] ?? [];
+        memory = num.tryParse('${profile['memory_limit']}')?.toInt() ?? 0;
+        shortcut = profile['shortcut'] ?? {};
+        cpuPriority = num.tryParse('${profile['cpu_priority']}')?.toInt() ?? 0;
+        links = profile['links'] ?? [];
+        memoryPercent = num.tryParse('${details['memoryPercent']}')?.toDouble() ?? 0;
 
-        upTime = res['data']['details']['up_time'];
-        status = res['data']['details']['status'];
-        cmd = res['data']['details']['exe_cmd'];
+        upTime = num.tryParse('${details['up_time']}')?.toInt() ?? 0;
+        status = details['status'] ?? 'unknown';
+        cmd = details['exe_cmd'] ?? '';
       });
 
       var process = await Api.dockerDetail(widget.name, "get_process");
-      if (process['success']) {
+      if (!mounted) return;
+      if (process != null && process['success'] == true) {
         setState(() {
-          processes = process['data']['processes'];
+          processes = process['data']['processes'] ?? [];
         });
       }
       getLogDates();
     } else {
+      setState(() => loading = false);
       Util.toast("获取详情失败");
     }
   }
 
   getLogDates() async {
     var res = await Api.dockerLog(widget.name, "get_date_list");
-    if (res['success']) {
+    if (!mounted) return;
+    if (res != null && res['success'] == true) {
       setState(() {
-        logDates = res['data']['dates'];
+        logDates = res['data']['dates'] ?? [];
         if (logDates.length > 0) {
           selectedDate = logDates[0];
         }
       });
 
-      getLog();
+      if (logDates.isNotEmpty) getLog();
     }
   }
 
   getLog() async {
     var log = await Api.dockerLog(widget.name, "get", date: selectedDate);
-    if (log['success']) {
+    if (!mounted) return;
+    if (log != null && log['success'] == true) {
       setState(() {
-        logs = log['data']['logs'];
+        logs = log['data']['logs'] ?? [];
       });
     }
   }
@@ -423,7 +437,7 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                                       Text("启动时间："),
                                       Expanded(
                                         child: Text(
-                                          DateTime.fromMillisecondsSinceEpoch(upTime * 1000).timeAgo,
+                                          upTime > 0 ? DateTime.fromMillisecondsSinceEpoch(upTime * 1000).timeAgo : '未提供',
                                         ),
                                       ),
                                     ],
@@ -436,10 +450,10 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                                       Text("快捷方式："),
                                       Expanded(
                                         child: Text(
-                                          shortcut['enable_shortcut']
-                                              ? (shortcut['enable_status_page']
+                                          (shortcut ?? {})['enable_shortcut'] == true
+                                              ? ((shortcut ?? {})['enable_status_page'] == true
                                                   ? "状态页面"
-                                                  : shortcut['enable_web_page']
+                                                  : (shortcut ?? {})['enable_web_page'] == true
                                                       ? shortcut['web_page_url']
                                                       : "")
                                               : "无",

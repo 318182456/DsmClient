@@ -460,7 +460,7 @@ class _AboutState extends State<About> {
                     checking = true;
                   });
                   await Util.checkUpdate(true, context, force: true);
-                  setState(() {
+                  if (mounted) setState(() {
                     checking = false;
                   });
                 },

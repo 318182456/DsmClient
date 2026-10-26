@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Android debug APK
+    name: Build Android APK
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
@@ -25,14 +25,13 @@ jobs:
         with:
           persist-credentials: false
 
-      # Android uses the checked-in AAR files; the LFS framework is iOS-only.
       - name: Set up Java for Android SDK tools
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK packages
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
           cmdline-tools-version: '11479570'
@@ -52,7 +51,6 @@ jobs:
         if: steps.android-cache.outputs.cache-hit != 'true'
         run: sdkmanager "platforms;android-33" "build-tools;29.0.2" "build-tools;30.0.3"
 
-      # Save the SDK before project compilation, including when compilation fails.
       - name: Save Android packages
         if: steps.android-cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
         uses: actions/cache/save@v4
@@ -84,41 +82,82 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
-      - name: Test DSM protocol compatibility
-        run: dart --no-sound-null-safety test/dsm_compatibility_test.dart
+      - name: Test DSM and update protocols
+        run: |
+          dart --no-sound-null-safety test/dsm_compatibility_test.dart
+          dart --no-sound-null-safety test/update_release_test.dart
+          dart --no-sound-null-safety test/update_download_test.dart
 
-      # The inherited Gradle file requires key.properties for debug builds too.
-      # Generate a disposable test key instead of using a production secret.
-      - name: Prepare CI test signing
+      - name: Prepare signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEYSTORE_BASE64 || '' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEYSTORE_PASSWORD || '' }}
+          ANDROID_KEY_ALIAS: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEY_ALIAS || '' }}
+          ANDROID_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEY_PASSWORD || '' }}
         shell: bash
         run: |
-          keytool -genkeypair -noprompt \
-            -keystore "$RUNNER_TEMP/dsmclient-ci.jks" \
-            -storetype JKS -storepass android -keypass android \
-            -alias androiddebugkey -keyalg RSA -keysize 2048 \
-            -validity 2 -dname "CN=DsmClient CI"
+          if [[ "$GITHUB_EVENT_NAME" == 'pull_request' ]]; then
+            export ANDROID_KEYSTORE_PASSWORD=android
+            export ANDROID_KEY_PASSWORD=android
+            export ANDROID_KEY_ALIAS=androiddebugkey
+            keytool -genkeypair -noprompt \
+              -keystore "$RUNNER_TEMP/dsmclient.jks" \
+              -storetype JKS -storepass:env ANDROID_KEYSTORE_PASSWORD \
+              -keypass:env ANDROID_KEY_PASSWORD \
+              -alias "$ANDROID_KEY_ALIAS" -keyalg RSA -keysize 2048 \
+              -validity 2 -dname 'CN=DsmClient CI'
+          else
+            test -n "$ANDROID_KEYSTORE_BASE64" && test -n "$ANDROID_KEYSTORE_PASSWORD"
+            test -n "$ANDROID_KEY_ALIAS" && test -n "$ANDROID_KEY_PASSWORD"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dsmclient.jks"
+            keytool -list -keystore "$RUNNER_TEMP/dsmclient.jks" \
+              -storepass:env ANDROID_KEYSTORE_PASSWORD -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          fi
           cat > android/key.properties <<EOF
-          storeFile=$RUNNER_TEMP/dsmclient-ci.jks
-          storePassword=android
-          keyPassword=android
-          keyAlias=androiddebugkey
+          storeFile=$RUNNER_TEMP/dsmclient.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
           EOF
 
-      - name: Build debug APK
-        run: flutter build apk --debug --target-platform android-arm64
+      - name: Build APK and update manifest
+        shell: bash
+        run: |
+          export DSM_BUILD_NUMBER=$((10000 + GITHUB_RUN_NUMBER))
+          build_mode=release
+          if [[ "$GITHUB_EVENT_NAME" == 'pull_request' ]]; then build_mode=debug; fi
+          flutter build apk "--$build_mode" --no-sound-null-safety \
+            --target-platform android-arm64 --build-number "$DSM_BUILD_NUMBER"
+          mkdir -p "$RUNNER_TEMP/dsmclient-artifacts"
+          cp "build/app/outputs/flutter-apk/app-$build_mode.apk" \
+            "$RUNNER_TEMP/dsmclient-artifacts/DsmClient-dev-$GITHUB_RUN_NUMBER-arm64.apk"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'dsmclient-artifacts'
+          apk = root / ('DsmClient-dev-' + os.environ['GITHUB_RUN_NUMBER'] + '-arm64.apk')
+          digest = hashlib.sha256()
+          with apk.open('rb') as stream:
+              for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                  digest.update(chunk)
+          version = re.search(r'^version:\s*([^+\s]+)', pathlib.Path('pubspec.yaml').read_text(), re.M).group(1)
+          manifest = {'packageId': 'fit.flutter.dsm_helper', 'abi': 'arm64-v8a',
+                      'version': version, 'buildNumber': int(os.environ['DSM_BUILD_NUMBER']),
+                      'apkName': apk.name, 'size': apk.stat().st_size, 'sha256': digest.hexdigest()}
+          (root / 'update-arm64.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY
 
-      - name: Upload debug APK
+      - name: Upload APK and update manifest
         uses: actions/upload-artifact@v4
         with:
-          name: DsmClient-debug-arm64-${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: DsmClient-arm64-${{ github.run_number }}
+          path: ${{ runner.temp }}/dsmclient-artifacts/
           if-no-files-found: error
           retention-days: 7
 
-      - name: Remove CI signing files
+      - name: Remove signing files
         if: always()
         shell: bash
-        run: rm -f android/key.properties "$RUNNER_TEMP/dsmclient-ci.jks"
+        run: rm -f android/key.properties "$RUNNER_TEMP/dsmclient.jks"
 
   publish:
     name: Publish development APK
@@ -132,10 +171,10 @@ jobs:
       - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: DsmClient-debug-arm64-${{ github.run_number }}
+          name: DsmClient-arm64-${{ github.run_number }}
           path: ${{ runner.temp }}/dsmclient-release
 
-      - name: Publish development prerelease
+      - name: Publish signed development prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -143,21 +182,19 @@ jobs:
         run: |
           release_dir="$RUNNER_TEMP/dsmclient-release"
           release_tag="dev-$GITHUB_RUN_NUMBER"
-          apk="$release_dir/DsmClient-$release_tag-arm64.apk"
-          mv "$release_dir/app-debug.apk" "$apk"
           cat > "$release_dir/notes.md" <<EOF
           DsmClient Android ARM64 开发测试版。
 
           提交：$GITHUB_SHA
           构建记录：https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
 
-          本 APK 使用临时测试签名。不同构建的签名不同，覆盖安装时可能需要先卸载旧测试版。正式签名和稳定版发布尚未接入。
+          本版本使用固定签名和递增版本号，支持应用内检查、断点下载、SHA-256 校验及覆盖安装。此前使用临时签名的测试包需要首次卸载后换装，之后可覆盖更新。安装仍需在 Android 系统界面确认。
           EOF
           if gh release view "$release_tag" >/dev/null 2>&1; then
-            gh release upload "$release_tag" "$apk" --clobber
+            gh release upload "$release_tag" "$release_dir"/*.apk "$release_dir/update-arm64.json" --clobber
           else
-            gh release create "$release_tag" "$apk" \
-              --target "$GITHUB_SHA" \
-              --title "DsmClient 开发测试版 $release_tag" \
-              --prerelease --notes-file "$release_dir/notes.md"
+            gh release create "$release_tag" "$release_dir"/*.apk "$release_dir/update-arm64.json" \
+              --target "$GITHUB_SHA" --title "DsmClient 开发测试版 $release_tag" \
+              --draft --prerelease --notes-file "$release_dir/notes.md"
           fi
+          gh release edit "$release_tag" --draft=false --prerelease --notes-file "$release_dir/notes.md"

@@ -58,7 +58,8 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 - [ ] 重新设计界面、导航和主题，统一交互风格。
 - [ ] 评估 Flutter、Dart 和第三方依赖升级，分阶段迁移。
 - [x] 移除穿山甲广告 SDK、开屏/激励视频、免广告付费及兑换服务。
-- [ ] 清理或替换继承的反馈及更新服务配置。
+- [x] 将更新源切换到本仓库 GitHub Releases，并接入应用内更新。
+- [ ] 清理或替换继承的反馈服务配置。
 - [ ] 补充核心测试、持续集成及发布流程。
 
 ## 开发环境
@@ -122,13 +123,26 @@ flutter build ios --release
 
 Android applicationId、iOS Bundle ID、分享扩展关联配置及下载路径目前沿用原项目；后续独立发行时需统一规划应用标识与签名。
 
+## 应用内更新
+
+Android 在进入主页时检查本仓库的 GitHub Releases，也可通过“设置 → 关于 → 检查更新”手动检查。
+
+- 更新从本仓库发布的 `update-arm64.json` 读取版本、安装包大小和 SHA-256，支持开发预发布。
+- 只有更高的 Android build number 才会提示更新，手动检查也不会降级或重复安装当前版本。
+- 应用内显示下载进度，支持暂停、继续和断点续传；已下载且通过校验的安装包直接复用。
+- 安装前核对安装包大小和 SHA-256，然后调用 Android 系统安装器；无需手动前往 GitHub 下载。
+- 发布使用固定签名，build number 按 `10000 + GitHub run number` 递增，以便后续覆盖安装。
+- 旧的临时签名测试包首次需要卸载后换装固定签名版本，之后即可覆盖更新。Android 仍需用户确认安装，并允许 DsmClient 安装应用。
+
+更新请求使用独立 HTTPS 客户端，不附带 NAS Cookie 或会话令牌。APK 与更新清单在同一个 Release 中就绪后才对外发布。当前未接入 iOS 应用内更新。
+
 ## GitHub Actions
 
 [Android CI](https://github.com/318182456/DsmClient/actions/workflows/android.yml) 在推送到 `main`、向 `main` 提交 Pull Request 或手动运行时触发。
 
-工作流使用 Flutter 3.7.12 和 JDK 11，安装依赖后构建 ARM64 debug APK。成功后可在对应运行的 Artifacts 中下载 `DsmClient-debug-arm64` 成果，保留 7 天。`main` 分支成功构建后还会自动创建 `dev-构建序号` 开发测试预发布并附上 APK；PR 构建不发布。
+工作流使用 Flutter 3.7.12 和 JDK 11。`main` 构建固定签名的 ARM64 release APK，PR 构建隔离的临时签名 debug APK。成功后可在对应运行的 Artifacts 中下载 `DsmClient-arm64` 成果，保留 7 天。`main` 分支成功构建后还会自动创建 `dev-构建序号` 开发测试预发布并附上 APK；PR 构建不发布。
 
-CI 自动生成临时测试签名，无需配置签名 Secrets。每次运行的签名不同，安装时可能需要先卸载旧测试包；该成果用于开发验证。正式签名、稳定版发布及 iOS 构建尚未接入。
+仓库已配置专用固定签名，保存在 Actions Secrets：`ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`。不要替换这些密钥，否则新版本无法覆盖安装。PR 不使用这些密钥，也不会发版。iOS 构建尚未接入。
 
 工作流复用 Flutter SDK 与 Pub 缓存，并缓存 Android SDK 平台、构建工具及 Gradle 依赖；Android SDK 安装成功后立即保存，编译失败也能保留该缓存。
 
@@ -138,7 +152,14 @@ CI 自动生成临时测试签名，无需配置签名 Secrets。每次运行的
 dart --no-sound-null-safety test/dsm_compatibility_test.dart
 ```
 
-工作流执行这些回归测试和 APK 构建。它们不等同于移动设备上的完整功能测试。
+另有更新清单和下载回归测试，覆盖版本比较、来源限制、SHA-256 校验、断点续传、暂停和缓存复用：
+
+```sh
+dart --no-sound-null-safety test/update_release_test.dart
+dart --no-sound-null-safety test/update_download_test.dart
+```
+
+工作流执行这些测试和 APK 构建。它们不等同于移动设备上的完整功能测试。
 
 ## 代码结构
 
@@ -160,7 +181,7 @@ test/             DSM 协议与套件元数据回归测试
 
 ## 开发注意事项
 
-继承的代码仍包含原项目的服务地址、品牌素材及第三方集成配置。重新开发时需逐项确认用途，替换为自己的配置并验证相关数据流；当前尚未完成这些迁移。
+继承的代码仍包含原项目的反馈等服务地址、品牌素材及第三方集成配置。重新开发时需逐项确认用途，替换为自己的配置并验证相关数据流；当前尚未完成这些迁移。
 
 问题反馈和开发讨论使用本仓库的 [Issues](https://github.com/318182456/DsmClient/issues)。
 

@@ -1,4 +1,6 @@
-import 'package:dio/dio.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:dsm_client/util/update_download.dart';
 import 'package:dsm_client/themes/app_theme.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/animation_progress_bar.dart';
@@ -7,8 +9,6 @@ import 'package:easy_app_installer/easy_app_installer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:neumorphic/neumorphic.dart';
-import 'package:open_file/open_file.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class Update extends StatefulWidget {
@@ -22,45 +22,78 @@ class Update extends StatefulWidget {
 class _UpdateState extends State<Update> {
   bool downloading = false;
   double progress = 0;
-  bool loading = true;
-  String fileName = "";
+  String fileName = '';
+  String statusText = '可在应用内下载并安装更新';
+  String localApk;
+  final updater = UpdateDownload();
+
   @override
   void initState() {
-    fileName = "dsm_helper-${widget.data['buildVersionNo']}.apk";
-    if (widget.direct) {
-      download();
-    }
     super.initState();
+    fileName = "DsmClient-${widget.data['buildVersionNo']}.apk";
+    if (widget.direct) Future.microtask(download);
   }
 
-  download() async {
-    // 检查安装应用权限
-    // if (!await Permission.requestInstallPackages.request().isGranted) {
-    //   Util.toast("权限不足，无法安装更新");
-    // }
-    setState(() {
-      downloading = true;
-    });
-    try {
-      /// 仅支持将APK下载到沙盒目录下
-      /// 当前这个示例最终生成的文件路径就是 '/data/user/0/$applicationPackageName/files/updateApk/new.apk'
-      /// 如果连续调用此方法，并且参数传递的完全一致，那么Native端将拒绝执行后续任务，直到下载中的任务执行完毕。
-      await EasyAppInstaller.instance.downloadAndInstallApk(
-        fileUrl: widget.data['downloadURL'],
-        fileDirectory: "apk",
-        fileName: fileName,
-        onDownloadingListener: (progress) {
-          setState(() {
-            this.progress = progress / 100;
-          });
-        },
-      );
-    } catch (e) {
-      Util.toast("下载失败");
+  @override
+  void dispose() {
+    updater.pause();
+    super.dispose();
+  }
+
+  Future<void> download() async {
+    if (downloading) return;
+    if (!Platform.isAndroid) {
+      Util.toast('当前平台暂不支持应用内安装');
+      return;
+    }
+    final size = int.tryParse('${widget.data['size']}') ?? 0;
+    final digest = '${widget.data['sha256'] ?? ''}';
+    if (size <= 0 || !RegExp(r'^[0-9a-f]{64}$').hasMatch(digest)) {
+      Util.toast('更新信息不完整，请重新检查更新');
+      return;
     }
     setState(() {
-      downloading = false;
+      downloading = true;
+      statusText = progress > 0 ? '正在继续下载' : '正在下载安装包';
     });
+    try {
+      final directory = await getApplicationSupportDirectory();
+      final file = await updater.fetch(
+        url: widget.data['downloadURL'],
+        path: '${directory.path}/updates/$fileName',
+        size: size,
+        digest: digest,
+        onProgress: (value) {
+          if (mounted)
+            setState(() {
+              progress = value;
+              if (value >= 1) statusText = '正在校验安装包';
+            });
+        },
+      );
+      if (!mounted || updater.isPaused) return;
+      setState(() {
+        localApk = file.path;
+        progress = 1;
+        statusText = '安装包已校验，正在打开安装界面';
+      });
+      final result = await EasyAppInstaller.instance.installApk(file.path,
+          explainContent: '需要允许 DsmClient 安装下载的新版本，以完成应用内更新。',
+          positiveText: '去设置',
+          negativeText: '稍后');
+      if (!mounted) return;
+      setState(() => statusText =
+          (result ?? '').isEmpty ? '安装未启动，可再次点击安装更新' : '请在系统界面完成安装');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => statusText = updater.isPaused
+          ? '下载已暂停，可继续下载'
+          : error is StateError
+              ? '${error.message}'
+              : '下载中断，请重试继续下载');
+    } finally {
+      if (mounted) setState(() => downloading = false);
+    }
   }
 
   @override
@@ -130,7 +163,8 @@ class _UpdateState extends State<Update> {
                       ),
                       Text(
                         "${widget.data['buildUpdateDescription'] ?? "暂无更新日志"}",
-                        style: TextStyle(color: AppTheme.of(context).placeholderColor),
+                        style: TextStyle(
+                            color: AppTheme.of(context).placeholderColor),
                       ),
                     ],
                   ),
@@ -138,13 +172,21 @@ class _UpdateState extends State<Update> {
               ],
             ),
           ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text(statusText, textAlign: TextAlign.center),
+          ),
           GestureDetector(
             onTap: () {
-              launchUrlString(widget.data['downloadURL'], mode: LaunchMode.externalApplication);
+              launchUrlString(widget.data['downloadURL'],
+                  mode: LaunchMode.externalApplication);
             },
             child: Text(
               "使用浏览器下载",
-              style: TextStyle(color: Colors.grey, decoration: TextDecoration.underline, fontSize: 14),
+              style: TextStyle(
+                  color: Colors.grey,
+                  decoration: TextDecoration.underline,
+                  fontSize: 14),
             ),
           ),
           SizedBox(
@@ -165,7 +207,11 @@ class _UpdateState extends State<Update> {
                 ),
                 bevel: 20,
                 child: Text(
-                  "开始下载",
+                  localApk != null
+                      ? '安装更新'
+                      : progress > 0
+                          ? '继续下载'
+                          : '下载并安装',
                   style: TextStyle(fontSize: 18),
                 ),
               ),
@@ -189,14 +235,20 @@ class _UpdateState extends State<Update> {
                     size: 64,
                     borderRadius: BorderRadius.circular(20),
                     displayText: '%',
-                    displayTextStyle: TextStyle(fontSize: 18, color: Colors.white),
+                    displayTextStyle:
+                        TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
               ),
             ),
-          SizedBox(
-            height: 30,
-          ),
+          if (downloading)
+            TextButton(
+                onPressed: () {
+                  updater.pause();
+                  setState(() => statusText = '下载已暂停，可继续下载');
+                },
+                child: Text('暂停下载')),
+          SizedBox(height: 30),
         ],
       ),
     );

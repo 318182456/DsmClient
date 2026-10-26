@@ -10,51 +10,24 @@ import 'package:http_parser/http_parser.dart';
 
 import 'function.dart';
 import 'dsm_compatibility.dart';
+import 'github_updates.dart';
 
 class Api {
   static Map<String, ApiModel> apiList = {};
   static Future<Map> update(String buildNumber, {bool force = false}) async {
-    if (Platform.isAndroid) {
-      // DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-      // AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      // if (androidInfo.brand == "HUAWEI" || androidInfo.brand == "HONOR") {
-      //   return {
-      //     "code": 0,
-      //     "msg": "已是最新版本",
-      //   };
-      // }
-      String urlBase64 = "aHR0cHM6Ly93d3cucGd5ZXIuY29tL2FwaXYyL2FwcC9jaGVjaw==";
-      var res = await Util.post(Util.base64ToString(urlBase64), data: {
-        "_api_key": "f4621000de0337cc74a156cea513e828",
-        "appKey": "ed1169bc9b9d290ef91c7e21d4ffb008",
-        "buildVersion": buildNumber,
-      });
-      if (res != null) {
-        try {
-          if (res['code'] == 0) {
-            List<String> ignoredVersions = [];
-            String ignoredVersionsString = await Util.getStorage("ignoredVersions");
-            if (ignoredVersionsString.isNotBlank) {
-              ignoredVersions = ignoredVersionsString.split(",");
-            }
-            if (int.parse(buildNumber) < int.parse(res['data']['buildVersionNo'])) {
-              if (force || !ignoredVersions.contains(res['data']['buildVersionNo'])) {
-                return {
-                  "code": 1,
-                  "msg": "版本更新",
-                  "data": res['data'],
-                };
-              }
-            }
-          }
-        } catch (e) {}
+    if (!Platform.isAndroid) return {'code': 0, 'msg': '当前平台暂不支持应用内更新'};
+    try {
+      final release = await GithubUpdates.latest(force: force);
+      if (release == null) return {'code': 0, 'msg': '暂无可用更新'};
+      if (!release.newerThan(buildNumber)) return {'code': 0, 'msg': '已是最新版本'};
+      final ignored = (await Util.getStorage('ignoredVersions') ?? '').split(',');
+      if (!force && ignored.contains('${release.buildNumber}')) {
+        return {'code': 0, 'msg': '已忽略此版本'};
       }
+      return {'code': 1, 'msg': '发现新版本', 'data': release.toLegacyData()};
+    } catch (_) {
+      return {'code': -1, 'msg': '检查更新失败，请确认可以访问 GitHub 后重试'};
     }
-    return {
-      "code": 0,
-      "msg": "已是最新版本",
-    };
-//    var res = await Util.post("base/update", data: {"platform": Platform.isAndroid ? "android" : "ios", "build": buildNumber});
   }
 
   static Future<Map> api({String host, CancelToken cancelToken, bool checkSsl}) async {

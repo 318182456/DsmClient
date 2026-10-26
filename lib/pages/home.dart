@@ -40,6 +40,9 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   List<SharedFile> _sharedFiles;
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && Platform.isAndroid) Util.checkUpdate(false, context);
+    });
     WidgetsBinding.instance.addObserver(this);
     getData();
     Util.setStorage("agreement", "1");
