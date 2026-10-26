@@ -69,7 +69,6 @@ dependencies:
 #  syncfusion_flutter_charts: ^20.3.57
   syncfusion_flutter_pdfviewer: 21.2.3
   wechat_assets_picker: 8.4.2  # 8.5.0 起不再支持flutter3.7
-  fluwx: 3.13.1
 #  better_player:
 #    git: https://github.com/AnonymHK/betterplayer.git
   device_info_plus: 8.1.0
@@ -114,6 +113,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - LICENSE
     - assets/tabbar/
     - assets/icons/
     - assets/applications/

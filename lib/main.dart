@@ -19,7 +19,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:fluwx/fluwx.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -32,14 +31,7 @@ void main() async {
   };
 
   WidgetsFlutterBinding.ensureInitialized();
-  String agreement = await Util.getStorage("agreement");
   Log.init();
-  if (agreement != null && agreement == "1") {
-    registerWxApi(appId: "wxabdf23571f34b49b", universalLink: "https://dsm.apaipai.top/app/").then((value) {
-      stopLog();
-    });
-    Util.isWechatInstalled = await isWeChatInstalled;
-  }
   await FlutterDownloader.initialize(debug: true, ignoreSsl: true);
 
   Util.downloadSavePath = await Util.getStorage("download_save_path") ?? "/storage/emulated/0/dsm_helper/Download";

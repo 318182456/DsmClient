@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dsm_client/util/dsm_compatibility.dart';
 
 import 'package:dio/dio.dart';
-import 'package:dsm_client/pages/common/browser.dart';
+import 'package:dsm_client/pages/setting/privacy.dart';
 import 'package:dsm_client/pages/login/accounts.dart';
 import 'package:dsm_client/pages/setting/license.dart';
 import 'package:dsm_client/pages/update/update.dart';
@@ -13,7 +13,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluwx/fluwx.dart';
 import 'package:neumorphic/neumorphic.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
@@ -157,9 +156,9 @@ class _LoginState extends State<Login> {
                           child: Text.rich(
                             TextSpan(
                               children: [
-                                TextSpan(text: "感谢您使用${Util.appName}，为保护您的个人信息安全，我们将依据${Util.appName}的"),
+                                TextSpan(text: "欢迎使用${Util.appName}，请阅读本项目的"),
                                 TextSpan(
-                                  text: "用户协议",
+                                  text: "开源许可",
                                   style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue),
                                   recognizer: _licenseRecognizer
                                     ..onTap = () {
@@ -171,23 +170,20 @@ class _LoginState extends State<Login> {
                                 ),
                                 TextSpan(text: " 和 "),
                                 TextSpan(
-                                  text: "隐私政策",
+                                  text: "隐私说明",
                                   style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue),
                                   recognizer: _privacyRecognizer
                                     ..onTap = () {
                                       FocusScope.of(context).unfocus();
                                       Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
-                                        return Browser(
-                                          url: '${Util.appUrl}/privacy',
-                                          title: "隐私政策",
-                                        );
+                                        return Privacy();
                                       }));
                                     },
                                 ),
-                                TextSpan(text: "来帮助您了解：我们如何收集个人信息、如何使用及存储个人信息以及您享有的相关权利\n"),
+                                TextSpan(text: "，了解许可条款及本机数据、NAS 连接和更新服务的数据流。\n"),
                                 TextSpan(text: "在您使用${Util.appName}前，请务必仔细阅读"),
                                 TextSpan(
-                                  text: "用户协议",
+                                  text: "开源许可",
                                   style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue),
                                   recognizer: _licenseRecognizer
                                     ..onTap = () {
@@ -199,16 +195,13 @@ class _LoginState extends State<Login> {
                                 ),
                                 TextSpan(text: "和 "),
                                 TextSpan(
-                                  text: "隐私政策",
+                                  text: "隐私说明",
                                   style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue),
                                   recognizer: _privacyRecognizer
                                     ..onTap = () {
                                       FocusScope.of(context).unfocus();
                                       Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
-                                        return Browser(
-                                          url: '${Util.appUrl}/privacy',
-                                          title: "隐私政策",
-                                        );
+                                        return Privacy();
                                       }));
                                     },
                                 ),
@@ -227,8 +220,8 @@ class _LoginState extends State<Login> {
                                 onPressed: () async {
                                   Navigator.of(context).pop();
                                   Util.setStorage("read", "1");
-                                  Util.setStorage("agreement", read ? "1" : "0");
-                                  registerWxApi(appId: "wxabdf23571f34b49b", universalLink: "https://dsm.apaipai.top/app/");
+                                  setState(() => read = true);
+                                  Util.setStorage("agreement", "1");
                                 },
                                 decoration: NeumorphicDecoration(
                                   color: Theme.of(context).scaffoldBackgroundColor,
@@ -1058,7 +1051,7 @@ class _LoginState extends State<Login> {
               onPressed: () {
                 print(login);
                 if (!read) {
-                  Util.toast("请先阅读并同意用户协议和隐私政策");
+                  Util.toast("请先阅读并同意开源许可和隐私说明");
                   return;
                 }
                 if (login) {
@@ -1132,7 +1125,7 @@ class _LoginState extends State<Login> {
                         children: [
                           TextSpan(text: "我已阅读并同意 ${Util.appName}"),
                           TextSpan(
-                            text: "用户协议",
+                            text: "开源许可",
                             style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue, fontSize: 12),
                             recognizer: _licenseRecognizer
                               ..onTap = () {
@@ -1144,16 +1137,13 @@ class _LoginState extends State<Login> {
                           ),
                           TextSpan(text: "和 "),
                           TextSpan(
-                            text: "隐私政策",
+                            text: "隐私说明",
                             style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue, fontSize: 12),
                             recognizer: _privacyRecognizer
                               ..onTap = () {
                                 FocusScope.of(context).unfocus();
                                 Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
-                                  return Browser(
-                                    url: '${Util.appUrl}/privacy',
-                                    title: "隐私政策",
-                                  );
+                                  return Privacy();
                                 }));
                               },
                           ),

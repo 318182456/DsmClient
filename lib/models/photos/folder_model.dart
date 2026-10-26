@@ -215,7 +215,7 @@ class FolderAdditional {
 /// passphrase : "5kpICmfPs"
 /// permission : []
 /// privacy_type : "public-view"
-/// sharing_link : "http://pan.apaipai.top:5000/mo/sharing/5kpICmfPs"
+/// sharing_link : "https://nas.example.com/mo/sharing/example"
 /// type : "album"
 
 class SharingInfo {

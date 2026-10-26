@@ -1403,11 +1403,7 @@ class Api {
     return await Util.post("entry.cgi", data: data);
   }
 
-  static Future<Map> reward() async {
-    return await Util.get("${Util.appUrl}/reward");
-  }
-
-  static Future<Map> downloadStationInfo() async {
+static Future<Map> downloadStationInfo() async {
     List apis = [
       {
         "api": "SYNO.DownloadStation2.Task",

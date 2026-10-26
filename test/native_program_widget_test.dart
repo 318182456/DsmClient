@@ -4,8 +4,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dsm_client/pages/dashborad/applications.dart';
 import 'package:dsm_client/pages/packages/program_page.dart';
 import 'package:dsm_client/pages/packages/torrent_program.dart';
+import 'package:dsm_client/pages/setting/about.dart';
+import 'package:dsm_client/pages/setting/privacy.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() {
+  testWidgets(
+      'About opens local privacy and license pages without promotion links',
+      (tester) async {
+    PackageInfo.setMockInitialValues(
+        appName: 'DsmClient',
+        packageName: 'fit.flutter.dsm_helper',
+        version: '0.1.0',
+        buildNumber: '10000',
+        buildSignature: '');
+    await tester.pumpWidget(MaterialApp(home: About()));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('10000'), findsOneWidget);
+    for (final text in ['加群', 'QQ频道', '公众号', '进入小程序', '打赏']) {
+      expect(find.textContaining(text), findsNothing);
+    }
+    await tester.tap(find.text('隐私说明'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Privacy), findsOneWidget);
+    expect(find.text('本机数据'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('开源许可'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Apache License'), findsWidgets);
+    expect(find.text('许可文件加载失败'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
       'Installed programs have searchable, distinct native drawer routes',
       (tester) async {
@@ -58,7 +88,8 @@ void main() {
     await tester.enterText(find.byType(TextField), 'qbittorrent');
     await tester.pumpAndSettle();
     expect(find.text('Node.js v22'), findsNothing);
-    await tester.tap(find.text('qbittorrent'));
+    await tester
+        .tap(find.byKey(ValueKey('program-card:container:qbittorrent')));
     await tester.pumpAndSettle();
     expect(find.byType(TorrentProgram), findsOneWidget);
     expect(find.text('连接 qBittorrent API'), findsOneWidget);

@@ -102,6 +102,7 @@ jobs:
           lib/pages/dashborad/applications.dart
           lib/pages/packages/torrent_program.dart lib/util/torrent_client.dart
           lib/pages/packages/snapshots.dart
+          lib/pages/setting/about.dart lib/pages/setting/license.dart lib/pages/setting/privacy.dart
 
       - name: Prepare signing
         env:

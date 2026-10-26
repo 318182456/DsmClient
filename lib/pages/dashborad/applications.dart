@@ -217,6 +217,7 @@ class _ApplicationListState extends State<ApplicationList> {
                     runSpacing: 20,
                     children: shown
                         .map((app) => Semantics(
+                            key: ValueKey('program-card:${app.id}'),
                             button: true,
                             label: app.title,
                             child: GestureDetector(

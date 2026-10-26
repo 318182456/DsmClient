@@ -7,7 +7,6 @@ import 'package:dsm_client/widgets/hero_widget.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluwx/fluwx.dart';
 import 'package:neumorphic/neumorphic.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 
@@ -379,41 +378,9 @@ class _ImagePreviewState extends State<ImagePreview> with SingleTickerProviderSt
 
               return Column(
                 children: [
-                  if (Util.isWechatInstalled)
-                    SafeArea(
-                      child: Container(
-                        height: 56,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        alignment: Alignment.centerRight,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: widget.names != null ? FileName(widget.names, currentIndex, rebuildIndex) : Container(),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                WeChatImage wechatImage;
-                                if (widget.images[currentIndex].startsWith("http")) {
-                                  wechatImage = WeChatImage.network(widget.images[currentIndex]);
-                                } else if (widget.images[currentIndex].startsWith("/")) {
-                                  wechatImage = WeChatImage.file(File(widget.images[currentIndex]));
-                                } else {
-                                  Util.toast("暂不支持分享此图片");
-                                  return;
-                                }
-                                shareToWeChat(
-                                  WeChatShareImageModel(wechatImage, scene: WeChatScene.SESSION),
-                                );
-                              },
-                              child: Image.asset(
-                                "assets/icons/wechat.png",
-                                width: 30,
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
+                  if (widget.names != null)
+                    SafeArea(child: Padding(padding: EdgeInsets.all(20),
+                      child: FileName(widget.names, currentIndex, rebuildIndex))),
                   Spacer(),
                   MySwiperPlugin(
                     widget.images,
