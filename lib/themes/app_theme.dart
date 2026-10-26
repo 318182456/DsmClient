@@ -13,6 +13,8 @@ ThemeData buildDsmTheme(Brightness brightness) {
           .copyWith(
     primary: Color(dark ? 0xffa8c5ff : 0xff245ac8),
     onPrimary: Color(dark ? 0xff102d61 : 0xffffffff),
+    secondary: Color(dark ? 0xffa8c5ff : 0xff245ac8),
+    onSecondary: Color(dark ? 0xff102d61 : 0xffffffff),
     background: canvas,
     onBackground: ink,
     surface: surface,

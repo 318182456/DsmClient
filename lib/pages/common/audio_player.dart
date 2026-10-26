@@ -88,9 +88,18 @@ class _AudioPlayerState extends State<AudioPlayer> {
                                         child: ClipRRect(
                                             borderRadius:
                                                 BorderRadius.circular(16),
-                                            child: Image.asset(
-                                                'assets/music_cover.png',
-                                                fit: BoxFit.cover)))),
+                                            child: AspectRatio(
+                                                aspectRatio: 1,
+                                                child: ColoredBox(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primaryContainer,
+                                                    child: Center(
+                                                        child: Icon(Icons.album_outlined,
+                                                            size: 100,
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .onPrimaryContainer))))))),
                                 SizedBox(height: 28),
                                 Text(title ?? '音乐',
                                     textAlign: TextAlign.center,

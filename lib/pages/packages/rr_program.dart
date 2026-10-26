@@ -425,7 +425,10 @@ class _RrUpdatesPanelState extends State<RrUpdatesPanel>
   Widget build(BuildContext context) {
     super.build(context);
     return ListView(padding: EdgeInsets.all(16), children: [
-      WorkspaceHeader(title: '版本与升级', subtitle: '管理 RR 引导和 RR Manager 的更新。'),
+      WorkspaceHeader(
+          padding: EdgeInsets.fromLTRB(0, 16, 0, 20),
+          title: '版本与升级',
+          subtitle: '管理 RR 引导和 RR Manager 的更新。'),
       if (busy) LinearProgressIndicator(),
       DropdownButtonFormField<String>(
           value: kind,

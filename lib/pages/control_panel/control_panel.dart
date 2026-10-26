@@ -153,7 +153,10 @@ class _ControlPanelState extends State<ControlPanel> {
     return Scaffold(
         appBar: AppBar(leading: AppBackButton(context), title: Text('控制面板')),
         body: ListView(padding: EdgeInsets.fromLTRB(20, 0, 20, 28), children: [
-          WorkspaceHeader(title: '设备与服务', subtitle: '集中管理 NAS 的账户、连接与系统。'),
+          WorkspaceHeader(
+              padding: EdgeInsets.fromLTRB(0, 16, 0, 20),
+              title: '设备与服务',
+              subtitle: '集中管理 NAS 的账户、连接与系统。'),
           TextField(
               onChanged: (value) => setState(() => query = value),
               decoration: InputDecoration(

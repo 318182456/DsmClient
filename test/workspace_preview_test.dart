@@ -24,6 +24,12 @@ void main() {
           .readAsBytes()
           .then((v) => ByteData.view(v.buffer)));
       await loader.load();
+      final icons = FontLoader('MaterialIcons');
+      icons.addFont(File(
+              '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf')
+          .readAsBytes()
+          .then((v) => ByteData.view(v.buffer)));
+      await icons.load();
     });
     tester.binding.window.physicalSizeTestValue = Size(390, 844);
     tester.binding.window.devicePixelRatioTestValue = 1;
@@ -52,6 +58,28 @@ void main() {
               theme: reviewTheme(theme),
               home: page)));
       await tester.pumpAndSettle();
+      if (page is ControlPanel) {
+        await tester.runAsync(() async {
+          for (final icon in [
+            'shared_folders',
+            'file_services',
+            'users',
+            'public_access',
+            'network',
+            'terminal_and_SNMP',
+            'info_center',
+            'hardware_and_power',
+            'external_devices',
+            'update_and_reset',
+            'file_index',
+            'task_scheduler'
+          ]) {
+            await precacheImage(AssetImage('assets/control_panel/7/$icon.png'),
+                key.currentContext);
+          }
+        });
+        await tester.pumpAndSettle();
+      }
       await tester.runAsync(() async {
         final boundary =
             key.currentContext.findRenderObject() as RenderRepaintBoundary;

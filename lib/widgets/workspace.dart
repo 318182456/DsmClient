@@ -3,11 +3,16 @@ import 'package:flutter/material.dart';
 class WorkspaceHeader extends StatelessWidget {
   final String title, subtitle;
   final Widget leading, trailing;
+  final EdgeInsetsGeometry padding;
   const WorkspaceHeader(
-      {@required this.title, this.subtitle, this.leading, this.trailing});
+      {@required this.title,
+      this.subtitle,
+      this.leading,
+      this.trailing,
+      this.padding = const EdgeInsets.fromLTRB(20, 16, 20, 20)});
   @override
   Widget build(BuildContext context) => Padding(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
+      padding: padding,
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (leading != null) ...[leading, SizedBox(width: 14)],
         Expanded(

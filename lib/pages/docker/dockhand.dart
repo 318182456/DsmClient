@@ -320,7 +320,9 @@ class _DockhandProgramState extends State<DockhandProgram> {
   Widget connectionForm() =>
       ListView(padding: EdgeInsets.fromLTRB(20, 8, 20, 24), children: [
         WorkspaceHeader(
-            title: '连接你的容器环境', subtitle: '使用 Dockhand 管理 NAS 上的服务。'),
+            padding: EdgeInsets.fromLTRB(0, 16, 0, 20),
+            title: '连接你的容器环境',
+            subtitle: '使用 Dockhand 管理 NAS 上的服务。'),
         Card(
             child: Padding(
                 padding: EdgeInsets.all(18),
