@@ -57,23 +57,65 @@ class _AudioPlayerState extends State<AudioPlayer> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(leading: AppBackButton(context), title: Text('正在播放')),
-    body: SafeArea(child: LayoutBuilder(builder: (context, constraints) => SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 32), child: Center(child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 420), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('NAS 音乐资料库', textAlign: TextAlign.center, style: Theme.of(context).textTheme.caption), SizedBox(height: 24),
-          Center(child: Container(constraints: BoxConstraints(maxWidth: min(300.0, constraints.maxWidth - 48)),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), color: Theme.of(context).cardColor,
-              border: Border.all(color: Theme.of(context).dividerColor)), padding: EdgeInsets.all(28),
-            child: ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.asset('assets/music_cover.png', fit: BoxFit.cover)))),
-          SizedBox(height: 28), Text(title ?? '音乐', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headline5),
-          SizedBox(height: 8), Text('Audio Station', textAlign: TextAlign.center, style: Theme.of(context).textTheme.caption),
-          SizedBox(height: 24),
-          if (playbackError.isNotEmpty) Padding(padding: EdgeInsets.all(12), child: Text(playbackError,
-            style: TextStyle(color: Theme.of(context).colorScheme.error))),
-          SeekBar(player: player, onChangeEnd: (position) => player.seek(position)),
-          SizedBox(height: 20), Center(child: ControlButtons(player)),
-        ])))))));
+      appBar: AppBar(leading: AppBackButton(context), title: Text('正在播放')),
+      body: SafeArea(
+          child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(24, 20, 24, 32),
+                  child: Center(
+                      child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 420),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text('NAS 音乐资料库',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.caption),
+                                SizedBox(height: 24),
+                                Center(
+                                    child: Container(
+                                        constraints: BoxConstraints(
+                                            maxWidth: min(300.0,
+                                                constraints.maxWidth - 48)),
+                                        decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(28),
+                                            color: Theme.of(context).cardColor,
+                                            border: Border.all(
+                                                color: Theme.of(context)
+                                                    .dividerColor)),
+                                        padding: EdgeInsets.all(28),
+                                        child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            child: Image.asset(
+                                                'assets/music_cover.png',
+                                                fit: BoxFit.cover)))),
+                                SizedBox(height: 28),
+                                Text(title ?? '音乐',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        Theme.of(context).textTheme.headline5),
+                                SizedBox(height: 8),
+                                Text('Audio Station',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.caption),
+                                SizedBox(height: 24),
+                                if (playbackError.isNotEmpty)
+                                  Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: Text(playbackError,
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .error))),
+                                SeekBar(
+                                    player: player,
+                                    onChangeEnd: (position) =>
+                                        player.seek(position)),
+                                SizedBox(height: 20),
+                                Center(child: ControlButtons(player)),
+                              ])))))));
 }
 
 class PositionData {
@@ -131,26 +173,81 @@ class ControlButtons extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center,
-    spacing: 24, runSpacing: 16, children: [
-      IconButton(tooltip: '调整音量', icon: Icon(Icons.volume_up_outlined), iconSize: 26, onPressed: () => showSliderDialog(
-        context: context, title: '音量', divisions: 10, min: 0, max: 1, value: player.volume, stream: player.volumeStream, onChanged: player.setVolume)),
-      StreamBuilder<ja.PlayerState>(stream: player.playerStateStream, builder: (context, snapshot) {
-        final state = snapshot.data;
-        final waiting = state?.processingState == ja.ProcessingState.loading || state?.processingState == ja.ProcessingState.buffering;
-        final playing = state?.playing == true && state?.processingState != ja.ProcessingState.completed;
-        return SizedBox(width: 76, height: 76, child: ElevatedButton(style: ElevatedButton.styleFrom(shape: CircleBorder(), padding: EdgeInsets.zero),
-          onPressed: waiting ? null : () async {
-            if (playing) { await player.pause(); }
-            else { if (state?.processingState == ja.ProcessingState.completed) await player.seek(Duration.zero); await player.play(); }
-          }, child: waiting ? SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2))
-            : Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 38, semanticLabel: playing ? '暂停' : '播放')));
-      }),
-      StreamBuilder<double>(stream: player.speedStream, builder: (context, snapshot) => TextButton(
-        onPressed: () => showSliderDialog(context: context, title: '播放速度', divisions: 15, min: .5, max: 2,
-          value: player.speed, stream: player.speedStream, valueSuffix: '×', onChanged: player.setSpeed),
-        child: Text('${(snapshot.data ?? 1).toStringAsFixed(1)}×'))),
-    ]);
+  Widget build(BuildContext context) => Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 24,
+          runSpacing: 16,
+          children: [
+            IconButton(
+                tooltip: '调整音量',
+                icon: Icon(Icons.volume_up_outlined),
+                iconSize: 26,
+                onPressed: () => showSliderDialog(
+                    context: context,
+                    title: '音量',
+                    divisions: 10,
+                    min: 0,
+                    max: 1,
+                    value: player.volume,
+                    stream: player.volumeStream,
+                    onChanged: player.setVolume)),
+            StreamBuilder<ja.PlayerState>(
+                stream: player.playerStateStream,
+                builder: (context, snapshot) {
+                  final state = snapshot.data;
+                  final waiting = state?.processingState ==
+                          ja.ProcessingState.loading ||
+                      state?.processingState == ja.ProcessingState.buffering;
+                  final playing = state?.playing == true &&
+                      state?.processingState != ja.ProcessingState.completed;
+                  return SizedBox(
+                      width: 76,
+                      height: 76,
+                      child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              shape: CircleBorder(), padding: EdgeInsets.zero),
+                          onPressed: waiting
+                              ? null
+                              : () async {
+                                  if (playing) {
+                                    await player.pause();
+                                  } else {
+                                    if (state?.processingState ==
+                                        ja.ProcessingState.completed)
+                                      await player.seek(Duration.zero);
+                                    await player.play();
+                                  }
+                                },
+                          child: waiting
+                              ? SizedBox(
+                                  width: 26,
+                                  height: 26,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2))
+                              : Icon(
+                                  playing
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                                  size: 38,
+                                  semanticLabel: playing ? '暂停' : '播放')));
+                }),
+            StreamBuilder<double>(
+                stream: player.speedStream,
+                builder: (context, snapshot) => TextButton(
+                    onPressed: () => showSliderDialog(
+                        context: context,
+                        title: '播放速度',
+                        divisions: 15,
+                        min: .5,
+                        max: 2,
+                        value: player.speed,
+                        stream: player.speedStream,
+                        valueSuffix: '×',
+                        onChanged: player.setSpeed),
+                    child:
+                        Text('${(snapshot.data ?? 1).toStringAsFixed(1)}×'))),
+          ]);
 }
 
 class SeekBar extends StatefulWidget {

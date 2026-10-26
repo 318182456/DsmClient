@@ -39,7 +39,8 @@ class _MenuApp {
   final NasPackage package;
   final List<String> iconApps;
   final String caption;
-  _MenuApp(this.id, this.title, this.icon, this.page, {this.asset, this.package, this.iconApps, this.caption});
+  _MenuApp(this.id, this.title, this.icon, this.page,
+      {this.asset, this.package, this.iconApps, this.caption});
 }
 
 class _ApplicationListState extends State<ApplicationList> {
@@ -142,53 +143,71 @@ class _ApplicationListState extends State<ApplicationList> {
           asset: 'assets/applications/${Util.version}/log_center.png'));
     for (final package in packages) {
       if (ProgramCapabilities.isDependency(package.id)) continue;
-      if (!ProgramCapabilities.hasWorkspace(package.id) && package.launchApps(widget.applications ?? []).isEmpty) continue;
+      if (!ProgramCapabilities.hasWorkspace(package.id) &&
+          package.launchApps(widget.applications ?? []).isEmpty) continue;
       if (package.id == 'StorageManager' &&
           desktop.contains('SYNO.SDS.StorageManager.Instance')) continue;
       result.add(_MenuApp('package:${package.id}', package.name,
-          programIcon(package.id), () => nativeProgram(package), package: package,
-          asset: {'SMBService': 'assets/control_panel/${Util.version}/file_services.png',
-            'ContainerManager':'assets/applications/container_manager.png', 'Docker':'assets/applications/docker.png',
-            'StorageManager':'assets/applications/${Util.version}/storage_manager.png',
-            'Virtualization':'assets/applications/${Util.version}/virtual_machine.png',
-            'DownloadStation':'assets/applications/download_station.png'}[package.id],
-          caption: ProgramCapabilities.hasWorkspace(package.id) ? null : '套件管理'));
-      if (package.id == 'SynologyDrive') result.add(_MenuApp('package:SynologyDrive:console',
-        'Drive 控制台', Icons.cloud, () => ProgramPage(package), package: package,
-        iconApps: ['SYNO.SDS.CSTN.Instance']));
+          programIcon(package.id), () => nativeProgram(package),
+          package: package,
+          asset: {
+            'SMBService':
+                'assets/control_panel/${Util.version}/file_services.png',
+            'ContainerManager': 'assets/applications/container_manager.png',
+            'Docker': 'assets/applications/docker.png',
+            'StorageManager':
+                'assets/applications/${Util.version}/storage_manager.png',
+            'Virtualization':
+                'assets/applications/${Util.version}/virtual_machine.png',
+            'DownloadStation': 'assets/applications/download_station.png'
+          }[package.id],
+          caption:
+              ProgramCapabilities.hasWorkspace(package.id) ? null : '套件管理'));
+      if (package.id == 'SynologyDrive')
+        result.add(_MenuApp('package:SynologyDrive:console', 'Drive 控制台',
+            Icons.cloud, () => ProgramPage(package),
+            package: package, iconApps: ['SYNO.SDS.CSTN.Instance']));
     }
     if (!installed.contains('FileStation'))
-      result.add(
-          _MenuApp('FileStation', 'File Station', Icons.folder, () => Files(),
-            package: NasPackage.fromJson({'id': 'FileStation', 'name': 'File Station'})));
+      result.add(_MenuApp(
+          'FileStation', 'File Station', Icons.folder, () => Files(),
+          package: NasPackage.fromJson(
+              {'id': 'FileStation', 'name': 'File Station'})));
     if (!installed.contains('SynologyPhotos') &&
         desktop.contains('SYNO.Foto.AppInstance'))
       result.add(_MenuApp(
           'Photos', 'Synology Photos', Icons.photo_library, () => Photos(),
           asset: 'assets/applications/7/synology_photos.png'));
     if (desktop.contains('SYNO.Photo.AppInstance'))
-      result.add(_MenuApp('Moments', 'Moments', Icons.photo, () => Moments(), asset: 'assets/applications/6/moments.png'));
+      result.add(_MenuApp('Moments', 'Moments', Icons.photo, () => Moments(),
+          asset: 'assets/applications/6/moments.png'));
     if (desktop.contains('SYNO.SDS.DownloadStation.Application') &&
         !installed.contains('DownloadStation'))
       result.add(_MenuApp('DownloadStation', 'Download Station', Icons.download,
-          () => DownloadStation(), asset: 'assets/applications/download_station.png'));
+          () => DownloadStation(),
+          asset: 'assets/applications/download_station.png'));
     if (desktop.contains('SYNO.SDS.Virtualization.Application') &&
         !installed.contains('Virtualization'))
       result.add(_MenuApp('Virtualization', 'Virtual Machine Manager',
-          Icons.computer, () => VirtualMachine(), asset: 'assets/applications/${Util.version}/virtual_machine.png'));
+          Icons.computer, () => VirtualMachine(),
+          asset: 'assets/applications/${Util.version}/virtual_machine.png'));
     if (!installed.contains('ContainerManager') &&
         !installed.contains('Docker') &&
         (desktop.contains('SYNO.SDS.ContainerManager.Application') ||
             desktop.contains('SYNO.SDS.Docker.Application')))
       result.add(_MenuApp('ContainerManager', 'Container Manager',
-          Icons.view_in_ar, () => DockerWorkspace(), asset: 'assets/applications/container_manager.png'));
+          Icons.view_in_ar, () => DockerWorkspace(),
+          asset: 'assets/applications/container_manager.png'));
     for (final container in containers) {
       final name = '${container['name']}';
-      if (!ProgramCapabilities.hasContainerWorkspace(name, '${container['image'] ?? ''}')) continue;
-      final managers = packages.where((p) => p.id == 'ContainerManager' || p.id == 'Docker');
+      if (!ProgramCapabilities.hasContainerWorkspace(
+          name, '${container['image'] ?? ''}')) continue;
+      final managers =
+          packages.where((p) => p.id == 'ContainerManager' || p.id == 'Docker');
       result.add(_MenuApp('container:$name', name, Icons.view_in_ar_outlined,
           () => nativeContainer(name, image: '${container['image'] ?? ''}'),
-          package: managers.isEmpty ? null : managers.first, asset: 'assets/applications/container_manager.png'));
+          package: managers.isEmpty ? null : managers.first,
+          asset: 'assets/applications/container_manager.png'));
     }
     return result;
   }
@@ -247,22 +266,28 @@ class _ApplicationListState extends State<ApplicationList> {
                                   padding: EdgeInsets.symmetric(
                                       vertical: 20, horizontal: 8),
                                   decoration: BoxDecoration(
-                                      border: Border.all(color: Theme.of(context).dividerColor),
-                                      color: Theme.of(context)
-                                          .cardColor,
+                                      border: Border.all(
+                                          color:
+                                              Theme.of(context).dividerColor),
+                                      color: Theme.of(context).cardColor,
                                       borderRadius: BorderRadius.circular(20)),
                                   child: Column(children: [
-                                    app.package != null ? NasAppIcon(app.package, appIds: app.iconApps,
-                                      key: ValueKey('icon:${Util.baseUrl}|${Util.sid}|${app.package.id}|${app.iconApps}'), fallbackAsset: app.asset) : app.asset == null
-                                        ? Icon(app.icon,
-                                            size: 45,
-                                            color:
-                                                Theme.of(context).primaryColor)
-                                        : Image.asset(app.asset,
-                                            height: 45,
-                                            width: 45,
-                                            errorBuilder: (_, __, ___) =>
-                                                Icon(app.icon, size: 45)),
+                                    app.package != null
+                                        ? NasAppIcon(app.package,
+                                            appIds: app.iconApps,
+                                            key: ValueKey(
+                                                'icon:${Util.baseUrl}|${Util.sid}|${app.package.id}|${app.iconApps}'),
+                                            fallbackAsset: app.asset)
+                                        : app.asset == null
+                                            ? Icon(app.icon,
+                                                size: 45,
+                                                color: Theme.of(context)
+                                                    .primaryColor)
+                                            : Image.asset(app.asset,
+                                                height: 45,
+                                                width: 45,
+                                                errorBuilder: (_, __, ___) =>
+                                                    Icon(app.icon, size: 45)),
                                     SizedBox(height: 10),
                                     Text(app.title,
                                         maxLines: 2,
@@ -273,7 +298,11 @@ class _ApplicationListState extends State<ApplicationList> {
                                           style: Theme.of(context)
                                               .textTheme
                                               .caption),
-                                    if (app.caption != null) Text(app.caption, style: Theme.of(context).textTheme.caption),
+                                    if (app.caption != null)
+                                      Text(app.caption,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .caption),
                                   ]),
                                 ))))
                         .toList()),
