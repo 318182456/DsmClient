@@ -36,7 +36,32 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           cmdline-tools-version: '11479570'
-          packages: 'platform-tools platforms;android-33 build-tools;30.0.3'
+          packages: 'platform-tools'
+
+      - name: Restore Android platform and build tools
+        id: android-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/platforms/android-33
+            ${{ env.ANDROID_HOME }}/build-tools/29.0.2
+            ${{ env.ANDROID_HOME }}/build-tools/30.0.3
+          key: android-${{ runner.os }}-api33-build-tools29.0.2-30.0.3-v1
+
+      - name: Install missing Android packages
+        if: steps.android-cache.outputs.cache-hit != 'true'
+        run: sdkmanager "platforms;android-33" "build-tools;29.0.2" "build-tools;30.0.3"
+
+      # Save the SDK before project compilation, including when compilation fails.
+      - name: Save Android packages
+        if: steps.android-cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/platforms/android-33
+            ${{ env.ANDROID_HOME }}/build-tools/29.0.2
+            ${{ env.ANDROID_HOME }}/build-tools/30.0.3
+          key: ${{ steps.android-cache.outputs.cache-primary-key }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -50,6 +75,11 @@ jobs:
           channel: stable
           flutter-version: '3.7.12'
           cache: true
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Resolve dependencies
         run: flutter pub get
