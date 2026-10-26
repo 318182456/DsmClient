@@ -14,11 +14,16 @@ Color _surface(BuildContext context, NeumorphicDecoration decoration) {
       : color;
 }
 
-OutlinedBorder _shape(BuildContext context, NeumorphicDecoration decoration) {
+OutlinedBorder _shape(BuildContext context, NeumorphicDecoration decoration,
+    {bool selected = false}) {
   final border = decoration?.border;
   final side = border is Border && border.isUniform
       ? border.top
-      : BorderSide(color: Theme.of(context).dividerColor);
+      : BorderSide(
+          color: selected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).dividerColor,
+          width: selected ? 1.5 : 1);
   return decoration?.shape == BoxShape.circle
       ? CircleBorder(side: side)
       : RoundedRectangleBorder(
@@ -55,6 +60,9 @@ class NeuCard extends StatelessWidget {
       : super(key: key);
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final selected = curveType == CurveType.emboss;
+    final background = color ?? _surface(context, decoration);
     Widget content = Padding(padding: padding ?? EdgeInsets.zero, child: child);
     if (alignment != null)
       content = Align(alignment: alignment, child: content);
@@ -70,8 +78,11 @@ class NeuCard extends StatelessWidget {
         margin: margin,
         transform: transform,
         child: Material(
-            color: color ?? _surface(context, decoration),
-            shape: _shape(context, decoration),
+            color: selected && background == theme.cardColor
+                ? Color.alphaBlend(
+                    theme.colorScheme.primary.withOpacity(.1), background)
+                : background,
+            shape: _shape(context, decoration, selected: selected),
             clipBehavior: decoration?.clipBehavior ?? Clip.antiAlias,
             child: content));
   }
