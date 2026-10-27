@@ -247,8 +247,11 @@ void main() {
     await tester.tap(find.text('确认'));
     await tester.pumpAndSettle();
     expect(client.writes, isEmpty);
-    await tester.scrollUntilVisible(find.text('规则名称已存在，请使用其他名称'), 400);
+    await tester.scrollUntilVisible(find.text('规则名称已存在，请使用其他名称'), 400,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('规则名称已存在，请使用其他名称'), findsOneWidget);
+    await tester.pumpWidget(SizedBox());
+    await tester.pumpAndSettle();
     await tester.pumpWidget(
         MaterialApp(theme: lightTheme, home: QbRssRulesPage(client)));
     await tester.pumpAndSettle();
