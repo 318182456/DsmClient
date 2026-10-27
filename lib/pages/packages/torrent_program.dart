@@ -11,6 +11,8 @@ import 'package:dsm_client/widgets/workspace.dart';
 import 'package:dsm_client/pages/docker/detail.dart';
 import 'torrent_detail.dart';
 import 'torrent_import.dart' show readIncomingTorrent;
+import 'package:dsm_client/widgets/torrent_filters.dart';
+import 'torrent_rss.dart';
 
 class TorrentProgram extends StatefulWidget {
   final String name;
@@ -40,6 +42,8 @@ class _TorrentProgramState extends State<TorrentProgram>
       automatic = true,
       foreground = true;
   String error = '', query = '', filter = 'all', sort = 'added';
+  Map<String, String> facets = {};
+  bool descending = true;
   Timer refreshTimer, restoreTimer;
   int restoreGeneration = 0;
   String initialConnectionUrl;
@@ -423,6 +427,11 @@ class _TorrentProgramState extends State<TorrentProgram>
         filter: filter,
         query: query,
         sort: sort,
+        descending: descending,
+        categoryFilter: facets['category'],
+        tagFilter: facets['tag'],
+        trackerFilter: facets['tracker'],
+        directoryFilter: facets['directory'],
         transmission: widget.transmission);
     final picked = tasks.where((t) => selected.contains('${t['id']}')).toList();
     return Scaffold(
@@ -458,6 +467,14 @@ class _TorrentProgramState extends State<TorrentProgram>
                           MaterialPageRoute(
                               builder: (_) => ContainerDetail(widget.name)))),
                 if (client != null) ...[
+                  IconButton(
+                      tooltip: 'RSS 订阅',
+                      icon: Icon(Icons.rss_feed),
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => TorrentRssPage(
+                                  client: client, profile: profile)))),
                   IconButton(
                       tooltip: automatic ? '关闭自动刷新' : '开启自动刷新',
                       icon: Icon(
@@ -517,20 +534,39 @@ class _TorrentProgramState extends State<TorrentProgram>
                                   decoration: InputDecoration(
                                       prefixIcon: Icon(Icons.search),
                                       hintText: '搜索 ${tasks.length} 个任务'))),
+                          IconButton(
+                              tooltip: '分类、标签与 Tracker 筛选',
+                              icon: Icon(facets.isEmpty
+                                  ? Icons.filter_list
+                                  : Icons.filter_alt),
+                              onPressed: () async {
+                                final result = await showTorrentFilters(
+                                    context, tasks,
+                                    transmission: widget.transmission,
+                                    current: facets);
+                                if (mounted && result != null)
+                                  setState(() => facets = result);
+                              }),
                           PopupMenuButton<String>(
                               tooltip: '排序',
                               icon: Icon(Icons.sort),
-                              onSelected: (v) => setState(() => sort = v),
-                              itemBuilder: (_) => const {
-                                    'added': '最近添加',
-                                    'name': '名称',
-                                    'progress': '进度',
-                                    'speed': '下载速度'
-                                  }
-                                      .entries
-                                      .map((e) => PopupMenuItem(
-                                          value: e.key, child: Text(e.value)))
-                                      .toList()),
+                              onSelected: (v) => setState(() {
+                                    if (v == 'direction')
+                                      descending = !descending;
+                                    else
+                                      sort = v;
+                                  }),
+                              itemBuilder: (_) => [
+                                    PopupMenuItem(
+                                        value: 'direction',
+                                        child: Text(descending
+                                            ? '当前降序 · 切换升序'
+                                            : '当前升序 · 切换降序')),
+                                    ...TorrentPresentation.sorts.entries
+                                        .map((e) => PopupMenuItem(
+                                            value: e.key, child: Text(e.value)))
+                                        .toList()
+                                  ]),
                         ])),
                     SizedBox(
                         height: 48,

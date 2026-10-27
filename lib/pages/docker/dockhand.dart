@@ -22,7 +22,8 @@ class DockhandProgram extends StatefulWidget {
   State<DockhandProgram> createState() => _DockhandProgramState();
 }
 
-class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingObserver {
+class _DockhandProgramState extends State<DockhandProgram>
+    with WidgetsBindingObserver {
   final address = TextEditingController(),
       account = TextEditingController(),
       password = TextEditingController();
@@ -93,11 +94,14 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
     scheduleStats();
     if (foreground) loadStatistics();
   }
+
   void scheduleStats() {
     statsTimer?.cancel();
     if (foreground && client != null && env != null && resource == 'containers')
-      statsTimer = Timer.periodic(Duration(seconds: 10), (_) => loadStatistics());
+      statsTimer =
+          Timer.periodic(Duration(seconds: 10), (_) => loadStatistics());
   }
+
   void clearStats() {
     statsGeneration++;
     statsLoading = false;
@@ -105,23 +109,37 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
     statsUpdated = null;
     statsError = '';
   }
+
   Future<void> loadStatistics() async {
-    if (!mounted || !foreground || statsLoading || client == null || env == null || resource != 'containers') return;
+    if (!mounted ||
+        !foreground ||
+        statsLoading ||
+        client == null ||
+        env == null ||
+        resource != 'containers') return;
     final generation = ++statsGeneration;
     final source = client, environment = env;
     setState(() => statsLoading = true);
     try {
       final rows = await source.statistics(environment);
-      if (mounted && generation == statsGeneration && source == client && environment == env)
+      if (mounted &&
+          generation == statsGeneration &&
+          source == client &&
+          environment == env)
         setState(() {
-          statistics = {for (final row in rows) if (row['id'] != null) '${row['id']}': row};
+          statistics = {
+            for (final row in rows)
+              if (row['id'] != null) '${row['id']}': row
+          };
           statsError = '';
           statsUpdated = DateTime.now();
         });
     } catch (e) {
-      if (mounted && generation == statsGeneration) setState(() => statsError = message(e));
+      if (mounted && generation == statsGeneration)
+        setState(() => statsError = message(e));
     } finally {
-      if (mounted && generation == statsGeneration) setState(() => statsLoading = false);
+      if (mounted && generation == statsGeneration)
+        setState(() => statsLoading = false);
     }
   }
 
@@ -192,7 +210,8 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
     DockhandClient candidate;
     String credentialWarning = '';
     try {
-      candidate = widget.clientFactory?.call(address.text) ?? DockhandClient(address.text);
+      candidate = widget.clientFactory?.call(address.text) ??
+          DockhandClient(address.text);
       if (authMode == 'local' &&
           (account.text.trim().isEmpty || password.text.isEmpty))
         throw StateError('请输入 Dockhand 本地账号和密码');
@@ -343,7 +362,10 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
                         child: view == 'logs' && value is Map
                             ? SelectableText('${value['logs'] ?? ''}')
                             : view == 'stats' && value is Map
-                                ? Card(child: Padding(padding: EdgeInsets.all(18), child: DockerStatsPanel(value)))
+                                ? Card(
+                                    child: Padding(
+                                        padding: EdgeInsets.all(18),
+                                        child: DockerStatsPanel(value)))
                                 : NativeProperties(value)))));
     } catch (e) {
       if (mounted) setState(() => error = message(e));
@@ -574,10 +596,16 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
                                       child: Card(
                                           child: NativeProperties(item))))))),
                   if (resource == 'containers')
-                    Padding(padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
-                      child: statistics['${item['id']}'] != null
-                        ? DockerStatsPanel(statistics['${item['id']}'], compact: true)
-                        : Text(running ? (statsLoading ? '正在采样资源…' : '暂无资源采样') : '容器未运行', style: theme.textTheme.caption)),
+                    Padding(
+                        padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
+                        child: statistics['${item['id']}'] != null
+                            ? DockerStatsPanel(statistics['${item['id']}'],
+                                compact: true)
+                            : Text(
+                                running
+                                    ? (statsLoading ? '正在采样资源…' : '暂无资源采样')
+                                    : '容器未运行',
+                                style: theme.textTheme.caption)),
                   if (resource == 'containers')
                     Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8),
@@ -650,7 +678,10 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
               onChanged: busy
                   ? null
                   : (v) async {
-                      setState(() { env = v; clearStats(); });
+                      setState(() {
+                        env = v;
+                        clearStats();
+                      });
                       await Util.setStorage(
                           'dockhand_env_${widget.profile}', v);
                       if (mounted) load();
@@ -704,16 +735,50 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
                   padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
                   children: [
                     if (resource == 'containers' && env != null)
-                      Card(child: Padding(padding: EdgeInsets.all(16), child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                          Row(children: [Expanded(child: Text('容器资源合计', style: Theme.of(context).textTheme.subtitle1)),
-                            IconButton(tooltip: '刷新资源', icon: Icon(Icons.refresh), onPressed: statsLoading ? null : loadStatistics)]),
-                          if (statistics.isNotEmpty) DockerStatsPanel(DockerStatsPanel.totals(statistics.values))
-                          else Text(statsLoading ? '正在采样资源…' : '暂无运行中的容器采样', style: Theme.of(context).textTheme.caption),
-                          SizedBox(height: 12),
-                          Text('前台每 10 秒刷新 · 网络和磁盘 I/O 为累计量${statsUpdated == null ? '' : ' · ${statsUpdated.hour.toString().padLeft(2, '0')}:${statsUpdated.minute.toString().padLeft(2, '0')}:${statsUpdated.second.toString().padLeft(2, '0')} 更新'}', style: Theme.of(context).textTheme.caption),
-                          if (statsError.isNotEmpty) Text('资源采样失败，当前显示上次结果：$statsError', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                        ]))),
+                      Card(
+                          child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(children: [
+                                      Expanded(
+                                          child: Text('容器资源合计',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .subtitle1)),
+                                      IconButton(
+                                          tooltip: '刷新资源',
+                                          icon: Icon(Icons.refresh),
+                                          onPressed: statsLoading
+                                              ? null
+                                              : loadStatistics)
+                                    ]),
+                                    if (statistics.isNotEmpty)
+                                      DockerStatsPanel(DockerStatsPanel.totals(
+                                          statistics.values))
+                                    else
+                                      Text(
+                                          statsLoading
+                                              ? '正在采样资源…'
+                                              : '暂无运行中的容器采样',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .caption),
+                                    SizedBox(height: 12),
+                                    Text(
+                                        '前台每 10 秒刷新 · 网络和磁盘 I/O 为累计量${statsUpdated == null ? '' : ' · ${statsUpdated.hour.toString().padLeft(2, '0')}:${statsUpdated.minute.toString().padLeft(2, '0')}:${statsUpdated.second.toString().padLeft(2, '0')} 更新'}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .caption),
+                                    if (statsError.isNotEmpty)
+                                      Text('资源采样失败，当前显示上次结果：$statsError',
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .error)),
+                                  ]))),
                     if (env == null)
                       WorkspaceEmpty('还没有 Docker 环境',
                           detail: '在 Dockhand 中添加可访问的 Docker 环境后刷新。'),

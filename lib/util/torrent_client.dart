@@ -75,7 +75,8 @@ class TorrentClient {
     final session = response.headers.value('X-Transmission-Session-Id');
     if (session != null && session.isNotEmpty) _rpcSession = session;
     for (final cookie in response.cookies) {
-      if (cookie.name == 'SID' || RegExp(r'^QBT_SID_\d+$').hasMatch(cookie.name))
+      if (cookie.name == 'SID' ||
+          RegExp(r'^QBT_SID_\d+$').hasMatch(cookie.name))
         _cookie = '${cookie.name}=${cookie.value}';
     }
     if (response.statusCode == 401 || response.statusCode == 403)
@@ -155,7 +156,9 @@ class TorrentClient {
           'downloadDir',
           'uploadRatio',
           'hashString',
-          'addedDate'
+          'addedDate',
+          'labels',
+          'trackers'
         ]
       });
       return (result['torrents'] as List ?? [])
@@ -175,6 +178,12 @@ class TorrentClient {
     final result = await qb('torrents/info',
         params: {'sort': 'added_on', 'reverse': 'true'});
     if (result is! List) throw HttpException('无法读取任务列表');
+    Map trackerIndex = {};
+    try {
+      final metadata = await qb('sync/maindata', params: {'rid': '0'});
+      if (metadata is Map && metadata['trackers'] is Map)
+        trackerIndex = metadata['trackers'];
+    } catch (_) {/* Older servers still expose the active tracker per task. */}
     return (result as List)
         .whereType<Map>()
         .map<Map>((t) => {
@@ -186,6 +195,11 @@ class TorrentClient {
               'uploadSpeed': t['upspeed'],
               'state': t['state'],
               'raw': t,
+              'trackers': trackerIndex.entries
+                  .where((e) =>
+                      e.value is List && (e.value as List).contains(t['hash']))
+                  .map((e) => e.key)
+                  .toList(),
             })
         .toList();
   }

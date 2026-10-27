@@ -17,104 +17,211 @@ class FixtureDockhandClient extends DockhandClient {
   bool requireMfa = false;
   FixtureDockhandClient() : super('https://example.test');
   @override
-  Future<void> login({String user = '', String password = '', String mfa = '', String token = ''}) async {
+  Future<void> login(
+      {String user = '',
+      String password = '',
+      String mfa = '',
+      String token = ''}) async {
     logins++;
     if (requireMfa && mfa.isEmpty) throw DockhandMfaRequired();
   }
+
   @override
-  Future<List<Map>> environments() async => [{'id':1,'name':'环境一'},{'id':2,'name':'环境二'}];
+  Future<List<Map>> environments() async => [
+        {'id': 1, 'name': '环境一'},
+        {'id': 2, 'name': '环境二'}
+      ];
   @override
-  Future<dynamic> resource(String name, String env) async => [{'id':'c$env','name':'服务 $env','state':'running','image':'example:latest'}];
+  Future<dynamic> resource(String name, String env) async => [
+        {
+          'id': 'c$env',
+          'name': '服务 $env',
+          'state': 'running',
+          'image': 'example:latest'
+        }
+      ];
   @override
   Future<List<Map>> statistics(String env) async {
     samples.add(env);
     if (env == '1' && delayed != null) return delayed.future;
-    return [{'id':'c$env','cpuPercent': env == '1' ? 12.5 : 22.0, 'memoryUsage': 268435456,
-      'memoryLimit':1073741824,'memoryPercent':25,'networkRx':1024,'networkTx':2048,'blockRead':4096,'blockWrite':8192}];
+    return [
+      {
+        'id': 'c$env',
+        'cpuPercent': env == '1' ? 12.5 : 22.0,
+        'memoryUsage': 268435456,
+        'memoryLimit': 1073741824,
+        'memoryPercent': 25,
+        'networkRx': 1024,
+        'networkTx': 2048,
+        'blockRead': 4096,
+        'blockWrite': 8192
+      }
+    ];
   }
 }
 
 void main() {
   for (final mode in ['local', 'token']) {
-    testWidgets('Dockhand reconnects remembered $mode credentials once and respects explicit disconnect/clear', (tester) async {
-      SharedPreferences.setMockInitialValues({'dockhand_url_auto':'https://example.test'});
+    testWidgets(
+        'Dockhand reconnects remembered $mode credentials once and respects explicit disconnect/clear',
+        (tester) async {
+      SharedPreferences.setMockInitialValues(
+          {'dockhand_url_auto': 'https://example.test'});
       FlutterSecureStorage.setMockInitialValues({});
       const vault = DockhandCredentials();
-      await vault.save('auto', 'https://example.test', {'mode':mode,'account':'demo','password':'fixture','token':'fixture-token'});
+      await vault.save('auto', 'https://example.test', {
+        'mode': mode,
+        'account': 'demo',
+        'password': 'fixture',
+        'token': 'fixture-token'
+      });
       final client = FixtureDockhandClient();
-      await tester.pumpWidget(MaterialApp(theme:lightTheme,home:DockhandProgram(profile:'auto',clientFactory:(_)=>client)));
-      await tester.pumpAndSettle();await tester.pump(Duration(milliseconds:400));await tester.pumpAndSettle();
-      expect(client.logins,1);expect(find.text('容器资源合计'),findsOneWidget);
-      await tester.tap(find.byTooltip('断开 Dockhand'));await tester.pumpAndSettle();await tester.pump(Duration(milliseconds:400));await tester.pumpAndSettle();
-      expect(client.logins,1);expect(find.text('连接 Dockhand'),findsOneWidget);
-      await tester.ensureVisible(find.text('清除已保存登录信息'));await tester.tap(find.text('清除已保存登录信息'));await tester.pumpAndSettle();
-      await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+      await tester.pumpWidget(MaterialApp(
+          theme: lightTheme,
+          home:
+              DockhandProgram(profile: 'auto', clientFactory: (_) => client)));
+      await tester.pumpAndSettle();
+      await tester.pump(Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(client.logins, 1);
+      expect(find.text('容器资源合计'), findsOneWidget);
+      await tester.tap(find.byTooltip('断开 Dockhand'));
+      await tester.pumpAndSettle();
+      await tester.pump(Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(client.logins, 1);
+      expect(find.text('连接 Dockhand'), findsOneWidget);
+      await tester.ensureVisible(find.text('清除已保存登录信息'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('清除已保存登录信息'));
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(SizedBox());
+      await tester.pumpAndSettle();
       final cleared = FixtureDockhandClient();
-      await tester.pumpWidget(MaterialApp(theme:lightTheme,home:DockhandProgram(profile:'auto',clientFactory:(_)=>cleared)));
-      await tester.pumpAndSettle();await tester.pump(Duration(milliseconds:400));await tester.pumpAndSettle();
-      expect(cleared.logins,0);expect(tester.takeException(),isNull);
-      await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+      await tester.pumpWidget(MaterialApp(
+          theme: lightTheme,
+          home:
+              DockhandProgram(profile: 'auto', clientFactory: (_) => cleared)));
+      await tester.pumpAndSettle();
+      await tester.pump(Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(cleared.logins, 0);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(SizedBox());
+      await tester.pumpAndSettle();
     });
   }
-  testWidgets('Dockhand automatic login stops for MFA and never saves the code', (tester) async {
-    SharedPreferences.setMockInitialValues({'dockhand_url_mfa':'https://example.test'});FlutterSecureStorage.setMockInitialValues({});
+  testWidgets('Dockhand automatic login stops for MFA and never saves the code',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(
+        {'dockhand_url_mfa': 'https://example.test'});
+    FlutterSecureStorage.setMockInitialValues({});
     const vault = DockhandCredentials();
-    await vault.save('mfa','https://example.test',{'mode':'local','account':'demo','password':'fixture'});
-    final client=FixtureDockhandClient()..requireMfa=true;
-    await tester.pumpWidget(MaterialApp(theme:lightTheme,home:DockhandProgram(profile:'mfa',clientFactory:(_)=>client)));
-    await tester.pumpAndSettle();await tester.pump(Duration(milliseconds:400));await tester.pumpAndSettle();
-    expect(client.logins,1);expect(find.text('请输入 Dockhand 两步验证码后再次连接'),findsOneWidget);
-    await tester.pump(Duration(seconds:6));await tester.pumpAndSettle();expect(client.logins,1);
-    await tester.enterText(find.byType(TextField).last,'123456');
-    await tester.ensureVisible(find.text('连接 Dockhand'));await tester.tap(find.text('连接 Dockhand'));await tester.pumpAndSettle();
-    expect(client.logins,2);expect(find.text('容器资源合计'),findsOneWidget);
-    final saved=await vault.read('mfa','https://example.test');expect(saved.containsKey('otp'),isFalse);expect(saved.containsKey('mfaToken'),isFalse);
-    expect(tester.takeException(),isNull);
-    await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+    await vault.save('mfa', 'https://example.test',
+        {'mode': 'local', 'account': 'demo', 'password': 'fixture'});
+    final client = FixtureDockhandClient()..requireMfa = true;
+    await tester.pumpWidget(MaterialApp(
+        theme: lightTheme,
+        home: DockhandProgram(profile: 'mfa', clientFactory: (_) => client)));
+    await tester.pumpAndSettle();
+    await tester.pump(Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(client.logins, 1);
+    expect(find.text('两步验证码'), findsOneWidget);
+    await tester.pump(Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(client.logins, 1);
+    await tester.enterText(find.byType(TextField).last, '123456');
+    await tester.ensureVisible(find.text('连接 Dockhand'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('连接 Dockhand'));
+    await tester.pumpAndSettle();
+    expect(client.logins, 2);
+    expect(find.text('容器资源合计'), findsOneWidget);
+    final saved = await vault.read('mfa', 'https://example.test');
+    expect(saved.containsKey('otp'), isFalse);
+    expect(saved.containsKey('mfaToken'), isFalse);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(SizedBox());
+    await tester.pumpAndSettle();
   });
-  testWidgets('Docker totals never sum host memory limits and support CPU above one core', (tester) async {
+  testWidgets(
+      'Docker totals never sum host memory limits and support CPU above one core',
+      (tester) async {
     final totals = DockerStatsPanel.totals([
-      {'cpuPercent':125,'memoryUsage':1024,'memoryLimit':8192},
-      {'cpuPercent':125,'memoryUsage':2048,'memoryLimit':8192},
+      {'cpuPercent': 125, 'memoryUsage': 1024, 'memoryLimit': 8192},
+      {'cpuPercent': 125, 'memoryUsage': 2048, 'memoryLimit': 8192},
     ]);
-    expect(totals['cpuPercent'],250);
-    expect(totals['memoryUsage'],3072);
-    expect(totals.containsKey('memoryLimit'),isFalse);
-    expect(DockerStatsPanel.percent(double.nan),'—');
-    tester.binding.window.physicalSizeTestValue = Size(320,760);
+    expect(totals['cpuPercent'], 250);
+    expect(totals['memoryUsage'], 3072);
+    expect(totals.containsKey('memoryLimit'), isFalse);
+    expect(DockerStatsPanel.percent(double.nan), '—');
+    tester.binding.window.physicalSizeTestValue = Size(320, 760);
     tester.binding.window.devicePixelRatioTestValue = 1;
     tester.binding.window.textScaleFactorTestValue = 1.6;
-    addTearDown(() {tester.binding.window.clearPhysicalSizeTestValue();tester.binding.window.clearDevicePixelRatioTestValue();tester.binding.window.clearTextScaleFactorTestValue();});
-    await tester.pumpWidget(MaterialApp(theme:lightTheme,home:Scaffold(body:SingleChildScrollView(child:Padding(padding:EdgeInsets.all(16),child:DockerStatsPanel(totals))))));
-    expect(find.text('250.0%'),findsOneWidget);
-    expect(tester.takeException(),isNull);
+    addTearDown(() {
+      tester.binding.window.clearPhysicalSizeTestValue();
+      tester.binding.window.clearDevicePixelRatioTestValue();
+      tester.binding.window.clearTextScaleFactorTestValue();
+    });
+    await tester.pumpWidget(MaterialApp(
+        theme: lightTheme,
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: DockerStatsPanel(totals))))));
+    expect(find.text('250.0%'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
-  testWidgets('Dockhand samples on entry and refresh; pauses in background and rejects stale environments', (tester) async {
-    SharedPreferences.setMockInitialValues({'dockhand_url_stats-fixture':'https://example.test'});
+  testWidgets(
+      'Dockhand samples on entry and refresh; pauses in background and rejects stale environments',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(
+        {'dockhand_url_stats-fixture': 'https://example.test'});
     FlutterSecureStorage.setMockInitialValues({});
     final client = FixtureDockhandClient();
-    await tester.pumpWidget(MaterialApp(theme:lightTheme,home:DockhandProgram(profile:'stats-fixture',clientFactory:(_)=>client)));
-    await tester.pumpAndSettle();await tester.pump(Duration(milliseconds:400));await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).at(1),'demo');await tester.enterText(find.byType(TextField).last,'fixture');
-    await tester.ensureVisible(find.text('连接 Dockhand'));await tester.tap(find.text('连接 Dockhand'));await tester.pumpAndSettle();
-    expect(find.text('容器资源合计'),findsOneWidget);
-    expect(find.text('12.5%'),findsWidgets);
-    final before=client.samples.length;
-    await tester.pump(Duration(seconds:10));await tester.pumpAndSettle();
-    expect(client.samples.length,before+1);
+    await tester.pumpWidget(MaterialApp(
+        theme: lightTheme,
+        home: DockhandProgram(
+            profile: 'stats-fixture', clientFactory: (_) => client)));
+    await tester.pumpAndSettle();
+    await tester.pump(Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), 'demo');
+    await tester.enterText(find.byType(TextField).last, 'fixture');
+    await tester.ensureVisible(find.text('连接 Dockhand'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('连接 Dockhand'));
+    await tester.pumpAndSettle();
+    expect(find.text('容器资源合计'), findsOneWidget);
+    expect(find.text('12.5%'), findsWidgets);
+    final before = client.samples.length;
+    await tester.pump(Duration(seconds: 10));
+    await tester.pumpAndSettle();
+    expect(client.samples.length, before + 1);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await tester.pump(Duration(seconds:20));await tester.pumpAndSettle();
-    expect(client.samples.length,before+1);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);await tester.pumpAndSettle();
-    client.delayed=Completer<List<Map>>();
-    await tester.tap(find.byTooltip('刷新资源'));await tester.pump();
-    await tester.tap(find.text('环境一').last);await tester.pumpAndSettle();
-    await tester.tap(find.text('环境二').last);await tester.pumpAndSettle();
-    expect(find.text('22.0%'),findsWidgets);
-    client.delayed.complete([{'id':'c1','cpuPercent':999.0}]);await tester.pumpAndSettle();
-    expect(find.text('999.0%'),findsNothing);
-    expect(client.samples.last,'2');
-    expect(tester.takeException(),isNull);
-    await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+    await tester.pump(Duration(seconds: 20));
+    await tester.pumpAndSettle();
+    expect(client.samples.length, before + 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    client.delayed = Completer<List<Map>>();
+    await tester.tap(find.byTooltip('刷新资源'));
+    await tester.pump();
+    await tester.tap(find.text('环境一').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('环境二').last);
+    await tester.pumpAndSettle();
+    expect(find.text('22.0%'), findsWidgets);
+    client.delayed.complete([
+      {'id': 'c1', 'cpuPercent': 999.0}
+    ]);
+    await tester.pumpAndSettle();
+    expect(find.text('999.0%'), findsNothing);
+    expect(client.samples.last, '2');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(SizedBox());
+    await tester.pumpAndSettle();
   });
 }

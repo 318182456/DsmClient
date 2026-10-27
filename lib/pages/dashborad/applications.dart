@@ -17,6 +17,7 @@ import 'package:dsm_client/pages/storage_manager/storage_manager.dart';
 import 'package:dsm_client/pages/virtual_machine/virtual_machine.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:flutter/material.dart';
+import 'package:dsm_client/util/program_pins.dart';
 
 class ApplicationList extends StatefulWidget {
   final List applications;
@@ -24,9 +25,15 @@ class ApplicationList extends StatefulWidget {
   final List volumes, disks;
   final Map appNotify;
   final Future<Map> Function() packageLoader, containerLoader;
+  final bool pinnedOnly;
+  final VoidCallback onManage;
   const ApplicationList(
       this.applications, this.system, this.volumes, this.disks, this.appNotify,
-      {Key key, this.packageLoader, this.containerLoader})
+      {Key key,
+      this.packageLoader,
+      this.containerLoader,
+      this.pinnedOnly = false,
+      this.onManage})
       : super(key: key);
   @override
   State<ApplicationList> createState() => _ApplicationListState();
@@ -49,16 +56,154 @@ class _ApplicationListState extends State<ApplicationList> {
   String query = '', error = '', connection;
   bool loading = true;
   int generation = 0;
+  List<String> pins = [];
+  bool catalogLoaded = false;
   @override
   void initState() {
     super.initState();
-    load();
+    connection = '${Util.baseUrl}|${Util.sid}';
+    ProgramPins.changed.addListener(readPins);
+    readPins();
+    if (!widget.pinnedOnly) load();
+  }
+
+  @override
+  void dispose() {
+    ProgramPins.changed.removeListener(readPins);
+    super.dispose();
+  }
+
+  Future<void> readPins() async {
+    try {
+      final scope = ProgramPins.key;
+      final value = await ProgramPins.read(scope);
+      if (!mounted || scope != ProgramPins.key) return;
+      setState(() {
+        pins = value;
+        if (widget.pinnedOnly && pins.isEmpty) loading = false;
+      });
+      if (widget.pinnedOnly && pins.isNotEmpty && !catalogLoaded) load();
+    } catch (_) {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> pinMenu(_MenuApp app) async {
+    final pinned = pins.contains(app.id);
+    final action = await showModalBottomSheet<String>(
+        context: context,
+        builder: (sheet) => SafeArea(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+              ListTile(title: Text(app.title), subtitle: Text('控制台首页快捷方式')),
+              ListTile(
+                  leading: Icon(pinned ? Icons.star_border : Icons.star),
+                  title: Text(pinned ? '从首页移除' : '添加到首页'),
+                  onTap: () => Navigator.pop(sheet, 'toggle')),
+              if (widget.pinnedOnly) ...[
+                ListTile(
+                    leading: Icon(Icons.arrow_back),
+                    title: Text('向前移动'),
+                    onTap: () => Navigator.pop(sheet, 'previous')),
+                ListTile(
+                    leading: Icon(Icons.arrow_forward),
+                    title: Text('向后移动'),
+                    onTap: () => Navigator.pop(sheet, 'next')),
+              ]
+            ])));
+    if (action == null || !mounted) return;
+    try {
+      if (action == 'toggle')
+        await ProgramPins.toggle(app.id);
+      else
+        await ProgramPins.move(app.id, action == 'previous' ? -1 : 1);
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(action == 'toggle'
+                ? (pinned ? '已从首页移除' : '已添加到首页')
+                : '顺序已更新')));
+    } catch (_) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('快捷方式保存失败，请重试')));
+    }
+  }
+
+  Widget appIcon(_MenuApp app) => app.package != null
+      ? NasAppIcon(app.package, appIds: app.iconApps, fallbackAsset: app.asset)
+      : app.asset != null
+          ? Image.asset(app.asset,
+              width: 40,
+              height: 40,
+              errorBuilder: (_, __, ___) => Icon(app.icon, size: 40))
+          : Icon(app.icon, size: 40);
+  Widget pinnedHome() {
+    final catalog = {for (final app in entries) app.id: app};
+    final apps =
+        pins.where(catalog.containsKey).map((id) => catalog[id]).toList();
+    return Card(
+        margin: EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(children: [
+                    Expanded(
+                        child: Text('常用程序',
+                            style: Theme.of(context).textTheme.subtitle1)),
+                    TextButton(onPressed: widget.onManage, child: Text('添加'))
+                  ]),
+                  if (loading) LinearProgressIndicator(minHeight: 2),
+                  if (apps.isEmpty && !loading)
+                    Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text('长按程序卡片，添加到首页。',
+                            style: Theme.of(context).textTheme.caption)),
+                  if (apps.isNotEmpty)
+                    SizedBox(
+                        height: 130 * MediaQuery.of(context).textScaleFactor,
+                        child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: apps
+                                .map((app) => SizedBox(
+                                    width: 112,
+                                    child: InkWell(
+                                        key: ValueKey(
+                                            'pinned-program:${app.id}'),
+                                        onLongPress: () => pinMenu(app),
+                                        onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (_) => app.page(),
+                                                settings: RouteSettings(
+                                                    name: app.id))),
+                                        child: Padding(
+                                            padding: EdgeInsets.all(8),
+                                            child: Column(children: [
+                                              SizedBox(
+                                                  height: 44,
+                                                  child: appIcon(app)),
+                                              SizedBox(height: 10),
+                                              Text(app.title,
+                                                  maxLines: 2,
+                                                  textAlign: TextAlign.center,
+                                                  overflow:
+                                                      TextOverflow.ellipsis)
+                                            ])))))
+                                .toList())),
+                ])));
   }
 
   @override
   void didUpdateWidget(ApplicationList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (connection != '${Util.baseUrl}|${Util.sid}') load();
+    if (connection != '${Util.baseUrl}|${Util.sid}') {
+      connection = '${Util.baseUrl}|${Util.sid}';
+      catalogLoaded = false;
+      pins = [];
+      readPins();
+      if (!widget.pinnedOnly) load();
+    }
   }
 
   Future<Map> safe(Future<Map> request) async {
@@ -100,6 +245,7 @@ class _ApplicationListState extends State<ApplicationList> {
           (result[1]['error'] ?? {})['code'] != 102)
         error += '${error.isEmpty ? '' : '；'}容器列表加载失败';
       loading = false;
+      catalogLoaded = true;
     });
   }
 
@@ -214,6 +360,7 @@ class _ApplicationListState extends State<ApplicationList> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.pinnedOnly) return pinnedHome();
     final shown = entries
         .where((a) =>
             '${a.title} ${a.id}'.toLowerCase().contains(query.toLowerCase()))
@@ -251,6 +398,7 @@ class _ApplicationListState extends State<ApplicationList> {
                             button: true,
                             label: app.title,
                             child: GestureDetector(
+                                onLongPress: () => pinMenu(app),
                                 onTap: () {
                                   final navigator = Navigator.of(context);
                                   navigator.pop();

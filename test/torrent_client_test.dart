@@ -62,6 +62,8 @@ Future<void> main() async {
               'state': 'downloading'
             }
           ]));
+        else if (path.endsWith('/sync/maindata'))
+          r.response.write('{}');
         else if (path.endsWith('/redirect')) {
           r.response.statusCode = 302;
           r.response.headers

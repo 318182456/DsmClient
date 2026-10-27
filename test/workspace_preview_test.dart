@@ -68,11 +68,14 @@ void main() {
               home: page)));
       await tester.pumpAndSettle();
       if (name == 'dockhand-stats') {
-        await tester.enterText(find.byType(TextField).first, 'https://example.test');
-        await tester.pump(Duration(milliseconds: 400));await tester.pumpAndSettle();
+        await tester.enterText(
+            find.byType(TextField).first, 'https://example.test');
+        await tester.pump(Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField).at(1), 'demo');
         await tester.enterText(find.byType(TextField).last, 'fixture');
-        await tester.ensureVisible(find.text('连接 Dockhand'));await tester.tap(find.text('连接 Dockhand'));
+        await tester.ensureVisible(find.text('连接 Dockhand'));
+        await tester.tap(find.text('连接 Dockhand'));
         await tester.pumpAndSettle();
       }
       if (name.startsWith('torrent-')) {
@@ -182,7 +185,12 @@ void main() {
         darkTheme);
     await capture(
         'dockhand-connect', DockhandProgram(profile: 'review'), lightTheme);
-    await capture('dockhand-stats', DockhandProgram(profile: 'review-stats', clientFactory: (_) => FixtureDockhandClient()), lightTheme);
+    await capture(
+        'dockhand-stats',
+        DockhandProgram(
+            profile: 'review-stats',
+            clientFactory: (_) => FixtureDockhandClient()),
+        lightTheme);
     await capture('control-panel', ControlPanel({}, [], [], {}), lightTheme);
     SharedPreferences.setMockInitialValues({'agreement': '1', 'read': '1'});
     Login login() => Login(server: {

@@ -23,6 +23,7 @@ environment:
 dependency_overrides:
   ffi: 2.0.1  # open_file 3.2.1 需要重写
 dependencies:
+  xml: 6.2.2
   flutter:
     sdk: flutter
   flutter_localizations:

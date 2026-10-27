@@ -96,6 +96,8 @@ jobs:
           dart --no-sound-null-safety test/dockhand_client_test.dart
           dart --no-sound-null-safety test/torrent_client_test.dart
           dart --no-sound-null-safety test/torrent_advanced_test.dart
+          dart --no-sound-null-safety test/torrent_filters_test.dart
+          dart --no-sound-null-safety test/torrent_rss_test.dart
           dart --no-sound-null-safety test/update_release_test.dart
           dart --no-sound-null-safety test/update_download_test.dart
 
@@ -108,7 +110,7 @@ jobs:
             curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
               https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
           fi
-          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart test/torrent_workspace_test.dart test/dockhand_stats_widget_test.dart
+          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart test/torrent_workspace_test.dart test/dockhand_stats_widget_test.dart test/torrent_features_widget_test.dart
 
       - name: Analyze native program pages
         run: >-
@@ -134,6 +136,8 @@ jobs:
           lib/widgets/adaptive_tab_bar.dart lib/widgets/media_actions.dart lib/models/media_queue.dart
           lib/util/media_delete.dart lib/providers/audio_player_provider.dart lib/pages/common/video_player.dart
           lib/widgets/docker_stats.dart
+          lib/widgets/torrent_filters.dart lib/util/torrent_rss.dart lib/util/torrent_rss_store.dart
+          lib/pages/packages/torrent_rss.dart lib/util/program_pins.dart
 
       - name: Prepare signing
         env:

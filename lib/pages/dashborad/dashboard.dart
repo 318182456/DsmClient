@@ -1886,6 +1886,8 @@ class DashboardState extends State<Dashboard> {
                         context,
                         validAppViewOrder: validAppViewOrder,
                       ),
+                    if(Util.notReviewAccount&&shortcutProvider.showShortcut)
+                      ApplicationList(validAppViewOrder,system,volumes,disks,appNotify,pinnedOnly:true,onManage:()=>_scaffoldKey.currentState.openDrawer()),
                     if (widgets != null && widgets.length > 0)
                       ...widgets.map((widget) {
                         return _buildWidgetItem(widget);

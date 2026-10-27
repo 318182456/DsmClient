@@ -52,6 +52,8 @@ Future<void> main() async {
           else if (path == 'trackers')
             request.response
                 .write('[{"url":"udp://tracker.example.test:6969/announce"}]');
+          else if (path == 'maindata')
+            request.response.write('{}');
           else if (path == 'torrentPeers')
             request.response.write('{"peers":{"one":{"ip":"192.0.2.1"}}}');
           else {
