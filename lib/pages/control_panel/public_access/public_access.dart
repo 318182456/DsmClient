@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'dart:async';
 
 import 'package:dsm_client/pages/control_panel/public_access/edit_ddns.dart';
@@ -15,7 +16,8 @@ class PublicAccess extends StatefulWidget {
   _PublicAccessState createState() => _PublicAccessState();
 }
 
-class _PublicAccessState extends State<PublicAccess> with SingleTickerProviderStateMixin {
+class _PublicAccessState extends State<PublicAccess>
+    with SingleTickerProviderStateMixin {
   TabController _tabController;
   List providers = [];
   List records = [];
@@ -53,7 +55,10 @@ class _PublicAccessState extends State<PublicAccess> with SingleTickerProviderSt
           switch (item['api']) {
             case "SYNO.Core.DDNS.Provider":
               setState(() {
-                providers = item['data']['providers'].where((e) => e['provider'].startsWith("USER_") || e['url'] == null).map((e) {
+                providers = item['data']['providers']
+                    .where((e) =>
+                        e['provider'].startsWith("USER_") || e['url'] == null)
+                    .map((e) {
                   e['provider'] = e['provider'].replaceAll("USER_", "*");
                   return e;
                 }).toList();
@@ -119,7 +124,9 @@ class _PublicAccessState extends State<PublicAccess> with SingleTickerProviderSt
                 ),
                 Label(
                   statusStr[ddns['status']] ?? ddns['status'],
-                  ddns['status'] == "service_ddns_normal" ? Colors.green : Colors.red,
+                  ddns['status'] == "service_ddns_normal"
+                      ? Colors.green
+                      : Colors.red,
                   fill: true,
                 ),
               ],
@@ -141,7 +148,8 @@ class _PublicAccessState extends State<PublicAccess> with SingleTickerProviderSt
             ),
             Row(
               children: [
-                Text("上次：${ddns['lastupdated'] == "disabled" ? "已停用" : ddns['lastupdated']}"),
+                Text(
+                    "上次：${ddns['lastupdated'] == "disabled" ? "已停用" : ddns['lastupdated']}"),
               ],
             ),
           ],
@@ -167,7 +175,8 @@ class _PublicAccessState extends State<PublicAccess> with SingleTickerProviderSt
               padding: EdgeInsets.all(10),
               bevel: 5,
               onPressed: () async {
-                Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
+                Navigator.of(context)
+                    .push(CupertinoPageRoute(builder: (context) {
                   return EditDdns(
                     providers,
                     extIp: ips,
@@ -206,7 +215,7 @@ class _PublicAccessState extends State<PublicAccess> with SingleTickerProviderSt
           //   margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
           //   curveType: CurveType.flat,
           //   bevel: 10,
-          //   child: TabBar(
+          //   child: AdaptiveTabBar(
           //     isScrollable: false,
           //     controller: _tabController,
           //     indicatorSize: TabBarIndicatorSize.label,

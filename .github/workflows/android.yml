@@ -107,7 +107,7 @@ jobs:
             curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
               https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
           fi
-          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart
+          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart
 
       - name: Analyze native program pages
         run: >-
@@ -128,6 +128,8 @@ jobs:
           lib/widgets/workspace.dart lib/util/dockhand_credentials.dart lib/pages/common/audio_player.dart
           lib/widgets/surfaces.dart lib/widgets/label.dart lib/pages/control_panel/control_panel.dart
           lib/pages/login/login.dart
+          lib/widgets/adaptive_tab_bar.dart lib/widgets/media_actions.dart lib/models/media_queue.dart
+          lib/util/media_delete.dart lib/providers/audio_player_provider.dart lib/pages/common/video_player.dart
 
       - name: Prepare signing
         env:
@@ -162,6 +164,10 @@ jobs:
           EOF
 
       - name: Build APK and update manifest
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
+          ANDROID_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEY_PASSWORD || 'android' }}
+          ANDROID_KEY_ALIAS: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEY_ALIAS || 'androiddebugkey' }}
         shell: bash
         run: |
           export DSM_BUILD_NUMBER=$((10000 + GITHUB_RUN_NUMBER))
@@ -170,18 +176,30 @@ jobs:
           flutter build apk "--$build_mode" --no-sound-null-safety \
             --target-platform android-arm64 --build-number "$DSM_BUILD_NUMBER"
           mkdir -p "$RUNNER_TEMP/dsmclient-artifacts"
-          cp "build/app/outputs/flutter-apk/app-$build_mode.apk" \
+          signer="$ANDROID_HOME/build-tools/30.0.3/apksigner"
+          "$signer" sign --ks "$RUNNER_TEMP/dsmclient.jks" --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --v4-signing-enabled false \
+            --out "$RUNNER_TEMP/dsmclient-artifacts/DsmClient-dev-$GITHUB_RUN_NUMBER-arm64.apk" \
+            "build/app/outputs/flutter-apk/app-$build_mode.apk"
+          "$signer" verify --verbose --print-certs --Werr \
             "$RUNNER_TEMP/dsmclient-artifacts/DsmClient-dev-$GITHUB_RUN_NUMBER-arm64.apk"
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, re
+          import hashlib, json, os, pathlib, re, subprocess
           root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'dsmclient-artifacts'
           apk = root / ('DsmClient-dev-' + os.environ['GITHUB_RUN_NUMBER'] + '-arm64.apk')
+          badging = subprocess.check_output([os.environ['ANDROID_HOME'] + '/build-tools/30.0.3/aapt', 'dump', 'badging', str(apk)], text=True)
+          actual_id = re.search(r"^package: name='([^']+)'", badging, re.M).group(1)
+          assert actual_id == 'io.github.user318182456.dsmclient', 'Unexpected APK applicationId'
+          if os.environ['GITHUB_EVENT_NAME'] != 'pull_request':
+              assert 'application-debuggable' not in badging, 'Release APK must not be debuggable'
           digest = hashlib.sha256()
           with apk.open('rb') as stream:
               for chunk in iter(lambda: stream.read(1024 * 1024), b''):
                   digest.update(chunk)
           version = re.search(r'^version:\s*([^+\s]+)', pathlib.Path('pubspec.yaml').read_text(), re.M).group(1)
-          manifest = {'packageId': 'fit.flutter.dsm_helper', 'abi': 'arm64-v8a',
+          manifest = {'packageId': 'io.github.user318182456.dsmclient', 'abi': 'arm64-v8a',
                       'version': version, 'buildNumber': int(os.environ['DSM_BUILD_NUMBER']),
                       'apkName': apk.name, 'size': apk.stat().st_size, 'sha256': digest.hexdigest()}
           (root / 'update-arm64.json').write_text(json.dumps(manifest, indent=2) + '\n')

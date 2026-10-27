@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/models/nas_package.dart';
 import 'package:dsm_client/models/program_section.dart';
 import 'package:dsm_client/pages/file/file.dart';
@@ -28,7 +29,7 @@ class ProgramPage extends StatelessWidget {
           appBar: AppBar(
               title: Text(package.name),
               bottom: tabs.length > 1
-                  ? TabBar(isScrollable: true, tabs: tabs)
+                  ? AdaptiveTabBar(isScrollable: true, tabs: tabs)
                   : null),
           body: Column(children: [
             WorkspaceHeader(

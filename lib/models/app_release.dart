@@ -3,7 +3,7 @@
 /// Metadata from a published manifest, optionally cross-checked with GitHub's API.
 class AppRelease {
   static const repository = '318182456/DsmClient';
-  static const packageId = 'fit.flutter.dsm_helper';
+  static const packageId = 'io.github.user318182456.dsmclient';
   final int buildNumber;
   final String version;
   final String apkName;

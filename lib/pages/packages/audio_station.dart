@@ -1,3 +1,7 @@
+import 'package:dsm_client/util/media_delete.dart';
+import 'package:dsm_client/models/media_queue.dart';
+import 'package:dsm_client/widgets/media_actions.dart';
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/models/program_section.dart';
 import 'package:dsm_client/pages/common/audio_player.dart';
 import 'package:dsm_client/util/function.dart';
@@ -43,7 +47,7 @@ class AudioStation extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16)),
-                child: TabBar(
+                child: AdaptiveTabBar(
                     isScrollable: true,
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelColor:
@@ -216,6 +220,74 @@ class _AudioLibraryState extends State<AudioLibrary>
                 name: '${song['title'] ?? song['name'] ?? '音乐'}', url: url)));
   }
 
+  MediaTrack track(Map song) => MediaTrack(
+      id: '${song['id']}',
+      name: '${song['title'] ?? song['name'] ?? '音乐'}',
+      path: song['path'],
+      url: ProgramApi.url(
+          ProgramSection('', 'SYNO.AudioStation.Stream', 'stream', version: 2),
+          {'id': song['id'], 'format': 'raw'}));
+  Future<void> mediaMenu(Map song) async {
+    if (song['type'] == 'folder' || song['id'] == null) {
+      showInfo(song);
+      return;
+    }
+    final path = '${song['path'] ?? ''}';
+    final deletable = path.startsWith('/') &&
+        !path.startsWith('/volume') &&
+        !path.split('/').contains('..');
+    final action = await showMediaActions(
+        context, '${song['title'] ?? song['name'] ?? '音乐'}',
+        canDelete: deletable);
+    if (!mounted || action == null) return;
+    if (action == 'details') {
+      showInfo(song);
+      return;
+    }
+    if (action == 'delete') {
+      final yes = await showDialog<bool>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+                  title: Text('删除音乐文件'),
+                  content: Text(
+                      '将删除 NAS 上的原始音乐文件“${song['title'] ?? song['name']}”，是否继续？'),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(dialog, false),
+                        child: Text('取消')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(dialog, true),
+                        child: Text('确认删除'))
+                  ]));
+      if (yes != true || !mounted) return;
+      try {
+        await deleteMediaFile(path);
+        if (mounted)
+          setState(() => items.removeWhere((item) => item['id'] == song['id']));
+      } catch (_) {
+        if (mounted) setState(() => error = '删除请求失败，请检查文件权限');
+      }
+      return;
+    }
+    final selected = track(song);
+    final queue = MediaQueue.from(
+        items
+            .where((s) => s['id'] != null && s['type'] != 'folder')
+            .map(track)
+            .toList(),
+        selected,
+        continuous: action == 'continuous');
+    if (mounted)
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => AudioPlayer(
+                  name: selected.name,
+                  url: selected.url,
+                  tracks: queue,
+                  restart: true)));
+  }
+
   void showInfo(Map song) => Navigator.push(
       context,
       MaterialPageRoute(
@@ -324,7 +396,9 @@ class _AudioLibraryState extends State<AudioLibrary>
                                           index: i + 1,
                                           song: songs,
                                           onTap: () => select(items[i]),
-                                          onInfo: () => showInfo(items[i])),
+                                          onInfo: () => mediaMenu(items[i]),
+                                          onLongPress: () =>
+                                              mediaMenu(items[i])),
                                       childCount: items.length))),
                         if (offset < total)
                           SliverToBoxAdapter(
@@ -349,9 +423,13 @@ class AudioTrackTile extends StatelessWidget {
   final Map item;
   final int index;
   final bool song;
-  final VoidCallback onTap, onInfo;
+  final VoidCallback onTap, onInfo, onLongPress;
   const AudioTrackTile(this.item,
-      {this.index = 1, this.song = true, this.onTap, this.onInfo});
+      {this.index = 1,
+      this.song = true,
+      this.onTap,
+      this.onInfo,
+      this.onLongPress});
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -370,6 +448,7 @@ class AudioTrackTile extends StatelessWidget {
             child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: onTap,
+                onLongPress: onLongPress,
                 child: Padding(
                     padding: EdgeInsets.fromLTRB(14, 12, 4, 12),
                     child: Row(children: [
@@ -416,7 +495,7 @@ class AudioTrackTile extends StatelessWidget {
                                 '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
                                 style: theme.textTheme.caption)),
                       IconButton(
-                          tooltip: '音乐信息',
+                          tooltip: '音乐操作',
                           onPressed: onInfo,
                           icon: Icon(Icons.more_horiz, size: 22)),
                     ])))));

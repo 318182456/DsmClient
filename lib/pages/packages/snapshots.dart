@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/models/program_section.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/util/program_api.dart';
@@ -96,7 +97,8 @@ class _SnapshotProgramState extends State<SnapshotProgram> {
       child: Scaffold(
           appBar: AppBar(
               title: Text('Snapshot Replication'),
-              bottom: TabBar(tabs: [Tab(text: '共享文件夹快照'), Tab(text: '复制任务')]),
+              bottom: AdaptiveTabBar(
+                  tabs: [Tab(text: '共享文件夹快照'), Tab(text: '复制任务')]),
               actions: [
                 IconButton(
                     icon: Icon(Icons.refresh),

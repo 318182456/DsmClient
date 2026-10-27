@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/models/rr_protocol.dart';
 import 'package:dsm_client/util/rr_api.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,7 @@ class RrProgram extends StatelessWidget {
       child: Scaffold(
           appBar: AppBar(
               title: Text('RR Manager'),
-              bottom: TabBar(isScrollable: true, tabs: [
+              bottom: AdaptiveTabBar(isScrollable: true, tabs: [
                 Tab(text: '概览'),
                 Tab(text: '引导配置'),
                 Tab(text: 'Addons'),

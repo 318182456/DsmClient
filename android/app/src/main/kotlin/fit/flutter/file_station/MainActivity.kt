@@ -1,4 +1,4 @@
-package fit.flutter.dsm_helper
+package io.github.user318182456.dsmclient
 
 import android.os.Bundle
 import android.view.WindowManager

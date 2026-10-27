@@ -40,7 +40,7 @@ void main() {
       (tester) async {
     PackageInfo.setMockInitialValues(
         appName: 'DsmClient',
-        packageName: 'fit.flutter.dsm_helper',
+        packageName: 'io.github.user318182456.dsmclient',
         version: '0.1.0',
         buildNumber: '10000',
         buildSignature: '');
@@ -73,42 +73,44 @@ void main() {
     });
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-      drawer:
-          ApplicationList(['SYNO.SDS.StorageManager.Instance', 'SYNO.SDS.AdminCenter.Application'], {}, [], [], {},
-              packageLoader: () async => {
-                    'success': true,
-                    'data': {
-                      'packages': [
-                        {'id': 'StorageManager', 'name': '存储空间管理员'},
-                        {'id': 'FileStation', 'name': 'File Station'},
-                        {'id': 'AudioStation', 'name': 'Audio Station'},
-                        {'id': 'CloudSync', 'name': 'Cloud Sync'},
-                        {'id': 'HybridShare', 'name': 'Hybrid Share'},
-                        {'id': 'HyperBackup', 'name': 'Hyper Backup'},
-                        {'id': 'rr-manager', 'name': 'RR Manager'},
-                        {'id': 'SynologyDrive', 'name': 'Synology Drive'},
-                        {
-                          'id': 'Node.js_v22',
-                          'name': 'Node.js v22',
-                          'version': '22.0',
-                          'additional': {
-                            'status': 'running',
-                            'description': 'JavaScript runtime'
-                          }
-                        },
-                      ]
-                    }
-                  },
-              containerLoader: () async => {
-                    'success': true,
-                    'data': {
-                      'containers': [
-                        {'name': 'qbittorrent', 'image': 'qbittorrent:latest'},
-                          {'name': 'dockhand-postgres', 'image': 'postgres:17'},
-                          {'name': 'redis', 'image': 'redis:alpine'},
-                      ]
-                    }
-                  }),
+      drawer: ApplicationList([
+        'SYNO.SDS.StorageManager.Instance',
+        'SYNO.SDS.AdminCenter.Application'
+      ], {}, [], [], {},
+          packageLoader: () async => {
+                'success': true,
+                'data': {
+                  'packages': [
+                    {'id': 'StorageManager', 'name': '存储空间管理员'},
+                    {'id': 'FileStation', 'name': 'File Station'},
+                    {'id': 'AudioStation', 'name': 'Audio Station'},
+                    {'id': 'CloudSync', 'name': 'Cloud Sync'},
+                    {'id': 'HybridShare', 'name': 'Hybrid Share'},
+                    {'id': 'HyperBackup', 'name': 'Hyper Backup'},
+                    {'id': 'rr-manager', 'name': 'RR Manager'},
+                    {'id': 'SynologyDrive', 'name': 'Synology Drive'},
+                    {
+                      'id': 'Node.js_v22',
+                      'name': 'Node.js v22',
+                      'version': '22.0',
+                      'additional': {
+                        'status': 'running',
+                        'description': 'JavaScript runtime'
+                      }
+                    },
+                  ]
+                }
+              },
+          containerLoader: () async => {
+                'success': true,
+                'data': {
+                  'containers': [
+                    {'name': 'qbittorrent', 'image': 'qbittorrent:latest'},
+                    {'name': 'dockhand-postgres', 'image': 'postgres:17'},
+                    {'name': 'redis', 'image': 'redis:alpine'},
+                  ]
+                }
+              }),
       body: Builder(
           builder: (context) => TextButton(
               onPressed: () => Scaffold.of(context).openDrawer(),
@@ -119,10 +121,32 @@ void main() {
     expect(find.text('NAS 应用'), findsNothing);
     expect(find.text('存储空间管理员'), findsOneWidget);
     expect(find.text('控制面板'), findsOneWidget);
-    for (final name in ['Audio Station','Cloud Sync','Hybrid Share','Hyper Backup','RR Manager','Synology Drive','Drive 控制台']) {
+    for (final name in [
+      'Audio Station',
+      'Cloud Sync',
+      'Hybrid Share',
+      'Hyper Backup',
+      'RR Manager',
+      'Synology Drive',
+      'Drive 控制台'
+    ]) {
       expect(find.text(name), findsOneWidget);
     }
     expect(find.text('File Station'), findsOneWidget);
+    tester.binding.window.textScaleFactorTestValue = 1.6;
+    addTearDown(() => tester.binding.window.clearTextScaleFactorTestValue());
+    await tester.pumpAndSettle();
+    final cards = find.byWidgetPredicate((widget) =>
+        widget is Semantics &&
+        widget.key is ValueKey &&
+        '${(widget.key as ValueKey).value}'.startsWith('program-card:'));
+    final heights = [
+      for (var i = 0; i < cards.evaluate().length; i++)
+        tester.getSize(cards.at(i)).height
+    ];
+    expect(heights.toSet().length, 1);
+    tester.binding.window.textScaleFactorTestValue = 1;
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'postgres');
     await tester.pumpAndSettle();
     expect(find.text('没有匹配的程序'), findsOneWidget);

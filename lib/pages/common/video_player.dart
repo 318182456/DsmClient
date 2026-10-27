@@ -1,3 +1,4 @@
+import 'package:dsm_client/models/media_queue.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -18,7 +19,14 @@ class VideoPlayer extends StatefulWidget {
   final String cover;
   final String nfo;
   final bool network;
-  VideoPlayer({@required this.url, this.name, this.cover, this.nfo, this.network: true});
+  final List<MediaTrack> tracks;
+  VideoPlayer(
+      {@required this.url,
+      this.name,
+      this.cover,
+      this.nfo,
+      this.network: true,
+      this.tracks});
 
   @override
   _VideoPlayerState createState() => _VideoPlayerState();
@@ -27,6 +35,44 @@ class VideoPlayer extends StatefulWidget {
 class _VideoPlayerState extends State<VideoPlayer> {
   final FPlayer player = FPlayer();
   bool fullScreen = false;
+  int queueIndex = 0;
+  bool advancing = false;
+  String playbackError = '';
+  List<MediaTrack> get queue =>
+      widget.tracks ??
+      [
+        MediaTrack(
+            id: widget.url, name: widget.name, url: widget.url, video: true)
+      ];
+  MediaTrack get current => queue[queueIndex];
+  void queueListener() {
+    if (player.state == FState.completed &&
+        !advancing &&
+        queueIndex + 1 < queue.length) playIndex(queueIndex + 1);
+  }
+
+  Future<void> playIndex(int index) async {
+    if (advancing || index < 0 || index >= queue.length) return;
+    advancing = true;
+    try {
+      await player.reset();
+      if (!mounted) return;
+      setState(() {
+        queueIndex = index;
+        description = '';
+        year = '';
+        actors = [];
+        nfoDetail = null;
+        playbackError = '';
+      });
+      await setVideoUrl(current.url);
+    } catch (_) {
+      if (mounted) setState(() => playbackError = '视频加载失败，请检查连接或格式');
+    } finally {
+      advancing = false;
+    }
+  }
+
   _VideoPlayerState();
   String description = "";
   String date = "";
@@ -64,7 +110,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
     await player.setOption(FOption.playerCategory, "soundtouch", 1);
 
     // 播放传入的视频
-    setVideoUrl(widget.url);
+    setVideoUrl(current.url);
 
     // 播放视频列表的第一个视频
     // setVideoUrl(videoList[videoIndex].url);
@@ -74,7 +120,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
     try {
       await player.setDataSource(url, autoPlay: true, showCover: true);
     } catch (error) {
-      print("播放-异常: $error");
+      if (mounted) setState(() => playbackError = '视频加载失败，请检查连接或格式');
       return;
     }
   }
@@ -120,6 +166,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
     //     _setPlaceholderVisibleState(false);
     //   }
     // });
+    player.addListener(queueListener);
     parseNfo();
     startPlay();
     super.initState();
@@ -152,7 +199,8 @@ class _VideoPlayerState extends State<VideoPlayer> {
   parseNfo() async {
     if (widget.nfo != null) {
       final myTransformer = Xml2Json();
-      String nfoUrl = Util.baseUrl + "/fbdownload/info.nfo?dlink=%22${Util.utf8Encode(widget.nfo)}%22&_sid=%22${Util.sid}%22&mode=open";
+      String nfoUrl = Util.baseUrl +
+          "/fbdownload/info.nfo?dlink=%22${Util.utf8Encode(widget.nfo)}%22&_sid=%22${Util.sid}%22&mode=open";
       var res = await Util.get(nfoUrl, decode: false);
       try {
         myTransformer.parse(res);
@@ -172,7 +220,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.name ?? '视频播放'),
+        title: Text(current.name ?? '视频播放'),
         leading: AppBackButton(context),
         actions: [
           Padding(
@@ -189,13 +237,13 @@ class _VideoPlayerState extends State<VideoPlayer> {
                 if (Platform.isAndroid) {
                   AndroidIntent intent = AndroidIntent(
                     action: 'action_view',
-                    data: widget.url,
+                    data: current.url,
                     arguments: {},
                     type: "video/*",
                   );
                   await intent.launch();
                 } else {
-                  launchUrlString("vlc://${widget.url}");
+                  launchUrlString("vlc://${current.url}");
                 }
               },
               child: Image.asset(
@@ -228,7 +276,10 @@ class _VideoPlayerState extends State<VideoPlayer> {
             color: Colors.black,
             fsFit: FFit.contain, // 全屏模式下的填充
             fit: FFit.contain, // 正常模式下的填充
-            cover: widget.cover != null ? ExtendedNetworkImageProvider(Util.baseUrl + "/webapi/entry.cgi?path=${Uri.encodeComponent(widget.cover)}&size=original&api=SYNO.FileStation.Thumb&method=get&version=2&_sid=${Util.sid}&animate=true") : null,
+            cover: widget.cover != null
+                ? ExtendedNetworkImageProvider(Util.baseUrl +
+                    "/webapi/entry.cgi?path=${Uri.encodeComponent(widget.cover)}&size=original&api=SYNO.FileStation.Thumb&method=get&version=2&_sid=${Util.sid}&animate=true")
+                : null,
 
             panelBuilder: fPanelBuilder(
               // 单视频配置
@@ -334,6 +385,31 @@ class _VideoPlayerState extends State<VideoPlayer> {
           Expanded(
             child: ListView(
               children: [
+                if (playbackError.isNotEmpty)
+                  Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(playbackError,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error))),
+                if (queue.length > 1) ...[
+                  ListTile(
+                      title: Text('连续播放队列'),
+                      subtitle: Text('${queueIndex + 1} / ${queue.length}'),
+                      trailing: IconButton(
+                          tooltip: '下一集',
+                          onPressed: advancing || queueIndex + 1 >= queue.length
+                              ? null
+                              : () => playIndex(queueIndex + 1),
+                          icon: Icon(Icons.skip_next))),
+                  for (var i = 0; i < queue.length; i++)
+                    ListTile(
+                        selected: i == queueIndex,
+                        title: Text(queue[i].name ?? '视频'),
+                        leading: Icon(i == queueIndex
+                            ? Icons.play_arrow
+                            : Icons.movie_outlined),
+                        onTap: advancing ? null : () => playIndex(i)),
+                ],
                 // Text("${widget.url}"),
                 Padding(
                   padding: EdgeInsets.all(20),
@@ -381,7 +457,8 @@ class _VideoPlayerState extends State<VideoPlayer> {
                   ),
                   ...actors.map(
                     (e) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 5),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
@@ -409,6 +486,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
   @override
   void dispose() async {
+    player.removeListener(queueListener);
     super.dispose();
     // try {
     //   await ScreenBrightness().resetScreenBrightness();

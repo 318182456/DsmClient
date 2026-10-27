@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
 import 'package:dsm_client/widgets/label.dart';
@@ -16,7 +17,8 @@ class DownloadDetail extends StatefulWidget {
   _DownloadDetailState createState() => _DownloadDetailState();
 }
 
-class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStateMixin {
+class _DownloadDetailState extends State<DownloadDetail>
+    with TickerProviderStateMixin {
   TabController _tabController;
   bool loading = true;
   bool loadingTrackers = true;
@@ -237,7 +239,10 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
               Expanded(
                 child: Text(
                   "${tracker['status']}",
-                  style: TextStyle(color: tracker['status'] == "Success" ? Colors.green : Colors.red),
+                  style: TextStyle(
+                      color: tracker['status'] == "Success"
+                          ? Colors.green
+                          : Colors.red),
                 ),
               ),
             ],
@@ -275,7 +280,10 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                         padding: EdgeInsets.all(22),
                         bevel: 5,
                         curveType: CurveType.emboss,
-                        decoration: NeumorphicDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+                        decoration: NeumorphicDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(22))),
                         child: SafeArea(
                           top: false,
                           child: Column(
@@ -283,14 +291,16 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             children: <Widget>[
                               Text(
                                 "确认删除",
-                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w500),
                               ),
                               SizedBox(
                                 height: 12,
                               ),
                               Text(
                                 "确认要删除此任务？",
-                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w400),
                               ),
                               SizedBox(
                                 height: 22,
@@ -301,23 +311,29 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                                     child: NeuButton(
                                       onPressed: () async {
                                         Navigator.of(context).pop();
-                                        var res = await Api.downloadTaskAction([task['id']], "delete");
+                                        var res = await Api.downloadTaskAction(
+                                            [task['id']], "delete");
                                         if (res['success']) {
                                           Util.toast("任务删除成功");
                                           Navigator.of(context).pop(true);
                                         } else {
-                                          Util.toast("任务删除失败，代码：${res['error']['code']}");
+                                          Util.toast(
+                                              "任务删除失败，代码：${res['error']['code']}");
                                         }
                                       },
                                       decoration: NeumorphicDecoration(
-                                        color: Theme.of(context).scaffoldBackgroundColor,
+                                        color: Theme.of(context)
+                                            .scaffoldBackgroundColor,
                                         borderRadius: BorderRadius.circular(25),
                                       ),
                                       bevel: 5,
-                                      padding: EdgeInsets.symmetric(vertical: 10),
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 10),
                                       child: Text(
                                         "确认删除",
-                                        style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.redAccent),
                                       ),
                                     ),
                                   ),
@@ -330,11 +346,13 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                                         Navigator.of(context).pop();
                                       },
                                       decoration: NeumorphicDecoration(
-                                        color: Theme.of(context).scaffoldBackgroundColor,
+                                        color: Theme.of(context)
+                                            .scaffoldBackgroundColor,
                                         borderRadius: BorderRadius.circular(25),
                                       ),
                                       bevel: 5,
-                                      padding: EdgeInsets.symmetric(vertical: 10),
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 10),
                                       child: Text(
                                         "取消",
                                         style: TextStyle(fontSize: 18),
@@ -389,40 +407,50 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                   margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                   curveType: CurveType.flat,
                   bevel: 10,
-                  child: TabBar(
+                  child: AdaptiveTabBar(
                     isScrollable: true,
                     controller: _tabController,
                     indicatorSize: TabBarIndicatorSize.label,
-                    labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    labelColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                    unselectedLabelColor:
+                        Theme.of(context).colorScheme.onSurfaceVariant,
                     indicator: BubbleTabIndicator(
                       indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                      shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                      shadowColor: Util.getAdjustColor(
+                          Theme.of(context).scaffoldBackgroundColor, -20),
                     ),
                     tabs: [
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("常规"),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("传输信息"),
                       ),
                       if (task['type'] == "bt" && task['status'] == 2) ...[
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                           child: Text("Tracker服务器"),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                           child: Text("Peer数"),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                           child: Text("文件"),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                           child: Text("预览"),
                         ),
                       ],
@@ -436,7 +464,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                       ListView(
                         children: [
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -455,7 +484,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -463,13 +493,15 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Row(
                                 children: [
                                   Text("保存位置："),
                                   Expanded(
                                     child: Text(
-                                      task['additional']['detail']['destination'],
+                                      task['additional']['detail']
+                                          ['destination'],
                                     ),
                                   ),
                                 ],
@@ -477,7 +509,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -485,7 +518,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Row(
                                 children: [
                                   Text("文件大小："),
@@ -499,7 +533,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -515,7 +550,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -527,15 +563,20 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text("网址："),
-                                Expanded(child: Text("${task['additional']['detail']['uri']}")),
+                                Expanded(
+                                    child: Text(
+                                        "${task['additional']['detail']['uri']}")),
                                 NeuButton(
                                   onPressed: () async {
-                                    ClipboardData data = new ClipboardData(text: task['additional']['detail']['uri']);
+                                    ClipboardData data = new ClipboardData(
+                                        text: task['additional']['detail']
+                                            ['uri']);
                                     Clipboard.setData(data);
                                     Util.toast("已复制到剪贴板");
                                   },
                                   decoration: NeumorphicDecoration(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   padding: EdgeInsets.all(5),
@@ -554,7 +595,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -565,12 +607,17 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("创建时间："),
-                                Text(DateTime.fromMillisecondsSinceEpoch(task['additional']['detail']['created_time'] * 1000).format("Y-m-d H:i:s")),
+                                Text(DateTime.fromMillisecondsSinceEpoch(
+                                        task['additional']['detail']
+                                                ['created_time'] *
+                                            1000)
+                                    .format("Y-m-d H:i:s")),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -581,12 +628,21 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("完成时间："),
-                                Text(task['additional']['detail']['completed_time'] > 0 ? DateTime.fromMillisecondsSinceEpoch(task['additional']['detail']['completed_time'] * 1000).format("Y-m-d H:i:s") : "无法取得"),
+                                Text(task['additional']['detail']
+                                            ['completed_time'] >
+                                        0
+                                    ? DateTime.fromMillisecondsSinceEpoch(
+                                            task['additional']['detail']
+                                                    ['completed_time'] *
+                                                1000)
+                                        .format("Y-m-d H:i:s")
+                                    : "无法取得"),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -597,7 +653,12 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("预计等待时间："),
-                                Text(task['additional']['detail']['waiting_seconds'] > 0 ? Util.timeRemaining(task['additional']['detail']['waiting_seconds']) : "无法取得"),
+                                Text(task['additional']['detail']
+                                            ['waiting_seconds'] >
+                                        0
+                                    ? Util.timeRemaining(task['additional']
+                                        ['detail']['waiting_seconds'])
+                                    : "无法取得"),
                               ],
                             ),
                           ),
@@ -606,7 +667,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                       ListView(
                         children: [
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -627,48 +689,65 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                                       : task['status'] == 2
                                           ? Text(
                                               "${Util.formatSize(task['additional']['transfer']['speed_download'])}/s",
-                                              style: TextStyle(color: Colors.lightBlueAccent),
+                                              style: TextStyle(
+                                                  color:
+                                                      Colors.lightBlueAccent),
                                             )
                                           : task['status'] == 3
                                               ? Text(
                                                   "已暂停",
-                                                  style: TextStyle(color: Colors.grey),
+                                                  style: TextStyle(
+                                                      color: Colors.grey),
                                                 )
                                               : task['status'] == 5
                                                   ? Text(
                                                       "已完成",
-                                                      style: TextStyle(color: Colors.green),
+                                                      style: TextStyle(
+                                                          color: Colors.green),
                                                     )
                                                   : task['status'] == 6
                                                       ? Text(
                                                           "检查中",
-                                                          style: TextStyle(color: Colors.grey),
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.grey),
                                                         )
                                                       : task['status'] == 101
                                                           ? Text(
                                                               "错误",
-                                                              style: TextStyle(color: Colors.red),
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .red),
                                                             )
-                                                          : task['status'] == 105
+                                                          : task['status'] ==
+                                                                  105
                                                               ? Text(
                                                                   "空间不足",
-                                                                  style: TextStyle(color: Colors.red),
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .red),
                                                                 )
-                                                              : task['status'] == 113
+                                                              : task['status'] ==
+                                                                      113
                                                                   ? Text(
                                                                       "重复的任务",
-                                                                      style: TextStyle(color: Colors.red),
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              Colors.red),
                                                                     )
                                                                   : Text(
                                                                       "代码：${task['status']}",
-                                                                      style: TextStyle(color: Colors.red),
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              Colors.red),
                                                                     ),
                                 ),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -676,13 +755,15 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Row(
                                 children: [
                                   Text("已下载："),
                                   Expanded(
                                     child: Text(
-                                      Util.formatSize(task['additional']['transfer']['size_downloaded']),
+                                      Util.formatSize(task['additional']
+                                          ['transfer']['size_downloaded']),
                                     ),
                                   ),
                                 ],
@@ -690,7 +771,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -698,7 +780,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Row(
                                 children: [
                                   Text("已上传："),
@@ -712,7 +795,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -720,7 +804,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Row(
                                 children: [
                                   Text("进度："),
@@ -734,7 +819,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -745,12 +831,14 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("速度："),
-                                Text("${task['additional']['transfer']['speed_download'] > 0 ? Util.formatSize(task['additional']['transfer']['speed_download']) : "无法取得"}"),
+                                Text(
+                                    "${task['additional']['transfer']['speed_download'] > 0 ? Util.formatSize(task['additional']['transfer']['speed_download']) : "无法取得"}"),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -762,12 +850,15 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text("Peer数："),
-                                Expanded(child: Text("${task['additional']['detail']['total_peers'] > 0 ? task['additional']['detail']['total_peers'] : "无法取得"}")),
+                                Expanded(
+                                    child: Text(
+                                        "${task['additional']['detail']['total_peers'] > 0 ? task['additional']['detail']['total_peers'] : "无法取得"}")),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -778,12 +869,15 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("分块总数："),
-                                Expanded(child: Text("${task['additional']['detail']['total_pieces'] > 0 ? task['additional']['detail']['total_pieces'] : "无法取得"}")),
+                                Expanded(
+                                    child: Text(
+                                        "${task['additional']['detail']['total_pieces'] > 0 ? task['additional']['detail']['total_pieces'] : "无法取得"}")),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -794,12 +888,14 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("已下载分块数："),
-                                Text("${task['additional']['transfer']['downloaded_pieces']}"),
+                                Text(
+                                    "${task['additional']['transfer']['downloaded_pieces']}"),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -810,12 +906,14 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("已做种时间："),
-                                Text("${Util.timeRemaining(task['additional']['detail']['seed_elapsed'])}"),
+                                Text(
+                                    "${Util.timeRemaining(task['additional']['detail']['seed_elapsed'])}"),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -826,12 +924,14 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("开始时间："),
-                                Text("${DateTime.fromMillisecondsSinceEpoch(task['additional']['detail']['started_time'] * 1000).format("Y-m-d H:i:s")}"),
+                                Text(
+                                    "${DateTime.fromMillisecondsSinceEpoch(task['additional']['detail']['started_time'] * 1000).format("Y-m-d H:i:s")}"),
                               ],
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             padding: EdgeInsets.all(20),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -842,7 +942,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                             child: Row(
                               children: [
                                 Text("剩余时间："),
-                                Text("${task['additional']['transfer']['speed_download'] > 0 ? Util.timeRemaining(((task['size'] - task['additional']['transfer']['size_downloaded']) / task['additional']['transfer']['speed_download']).ceil()) : "无法取得"}"),
+                                Text(
+                                    "${task['additional']['transfer']['speed_download'] > 0 ? Util.timeRemaining(((task['size'] - task['additional']['transfer']['size_downloaded']) / task['additional']['transfer']['speed_download']).ceil()) : "无法取得"}"),
                               ],
                             ),
                           ),
@@ -855,7 +956,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                                   padding: EdgeInsets.all(50),
                                   curveType: CurveType.flat,
                                   decoration: NeumorphicDecoration(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   bevel: 20,
@@ -885,7 +987,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                                   padding: EdgeInsets.all(50),
                                   curveType: CurveType.flat,
                                   decoration: NeumorphicDecoration(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   bevel: 20,
@@ -915,7 +1018,8 @@ class _DownloadDetailState extends State<DownloadDetail> with TickerProviderStat
                                   padding: EdgeInsets.all(50),
                                   curveType: CurveType.flat,
                                   decoration: NeumorphicDecoration(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   bevel: 20,

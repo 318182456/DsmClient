@@ -1,3 +1,4 @@
+import 'package:dsm_client/models/media_queue.dart';
 import 'dart:math';
 
 import 'package:dsm_client/providers/audio_player_provider.dart';
@@ -10,9 +11,12 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:provider/provider.dart';
 
 class AudioPlayer extends StatefulWidget {
-  AudioPlayer({this.name, this.url, Key key}) : super(key: key);
+  AudioPlayer({this.name, this.url, this.tracks, this.restart = false, Key key})
+      : super(key: key);
   final String name;
   final String url;
+  final List<MediaTrack> tracks;
+  final bool restart;
   @override
   State<AudioPlayer> createState() => _AudioPlayerState();
 }
@@ -27,10 +31,14 @@ class _AudioPlayerState extends State<AudioPlayer> {
     player = audioPlayerProvider.player;
     if (widget.url != null) {
       title = widget.name ?? "";
-      if (audioPlayerProvider.url != widget.url ||
+      if (widget.restart ||
+          widget.tracks != null ||
+          audioPlayerProvider.url != widget.url ||
           player.processingState == ja.ProcessingState.idle) {
         audioPlayerProvider.setUrl(widget.url, title);
-        setSource();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setSource();
+        });
       }
     } else {
       title = audioPlayerProvider.name;
@@ -47,8 +55,8 @@ class _AudioPlayerState extends State<AudioPlayer> {
   setSource() async {
     final provider = context.read<AudioPlayerProvider>();
     try {
-      await player.setUrl(widget.url);
-      await player.play();
+      await provider.playQueue(widget.tracks ??
+          [MediaTrack(id: widget.url, name: widget.name, url: widget.url)]);
     } catch (_) {
       if (provider.url == widget.url) provider.setUrl(null, title);
       if (mounted) setState(() => playbackError = '无法播放此音频，请检查连接、访问权限或音频格式');
@@ -101,7 +109,10 @@ class _AudioPlayerState extends State<AudioPlayer> {
                                                                 .colorScheme
                                                                 .onPrimaryContainer))))))),
                                 SizedBox(height: 28),
-                                Text(title ?? '音乐',
+                                Text(
+                                    context.watch<AudioPlayerProvider>().name ??
+                                        title ??
+                                        '音乐',
                                     textAlign: TextAlign.center,
                                     style:
                                         Theme.of(context).textTheme.headline5),
@@ -110,10 +121,19 @@ class _AudioPlayerState extends State<AudioPlayer> {
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context).textTheme.caption),
                                 SizedBox(height: 24),
-                                if (playbackError.isNotEmpty)
+                                if (playbackError.isNotEmpty ||
+                                    context
+                                        .watch<AudioPlayerProvider>()
+                                        .error
+                                        .isNotEmpty)
                                   Padding(
                                       padding: EdgeInsets.all(12),
-                                      child: Text(playbackError,
+                                      child: Text(
+                                          playbackError.isNotEmpty
+                                              ? playbackError
+                                              : context
+                                                  .watch<AudioPlayerProvider>()
+                                                  .error,
                                           style: TextStyle(
                                               color: Theme.of(context)
                                                   .colorScheme
@@ -124,6 +144,33 @@ class _AudioPlayerState extends State<AudioPlayer> {
                                         player.seek(position)),
                                 SizedBox(height: 20),
                                 Center(child: ControlButtons(player)),
+                                if (context
+                                        .watch<AudioPlayerProvider>()
+                                        .queue
+                                        .length >
+                                    1)
+                                  Padding(
+                                      padding: EdgeInsets.only(top: 20),
+                                      child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            IconButton(
+                                                tooltip: '上一首',
+                                                onPressed: player.hasPrevious
+                                                    ? player.seekToPrevious
+                                                    : null,
+                                                icon:
+                                                    Icon(Icons.skip_previous)),
+                                            Text(
+                                                '${context.watch<AudioPlayerProvider>().index + 1} / ${context.watch<AudioPlayerProvider>().queue.length}'),
+                                            IconButton(
+                                                tooltip: '下一首',
+                                                onPressed: player.hasNext
+                                                    ? player.seekToNext
+                                                    : null,
+                                                icon: Icon(Icons.skip_next)),
+                                          ])),
                               ])))))));
 }
 

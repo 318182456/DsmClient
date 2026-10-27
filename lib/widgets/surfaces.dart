@@ -127,7 +127,12 @@ class NeuButton extends StatelessWidget {
                             BoxConstraints(minHeight: 48, minWidth: 48),
                         child: Padding(
                             padding: padding ?? EdgeInsets.zero,
-                            child: Opacity(
-                                opacity: active ? 1 : .5, child: child)))))));
+                            child: Align(
+                                alignment: Alignment.center,
+                                widthFactor: 1,
+                                heightFactor: 1,
+                                child: Opacity(
+                                    opacity: active ? 1 : .5,
+                                    child: child))))))));
   }
 }

@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/pages/control_panel/users/user_detail.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
@@ -115,7 +116,10 @@ class _UsersState extends State<Users> with SingleTickerProviderStateMixin {
                   children: [
                     Row(
                       children: [
-                        if (user['expired'] == 'normal') Label("正常", Colors.green) else Label("停用", Colors.red),
+                        if (user['expired'] == 'normal')
+                          Label("正常", Colors.green)
+                        else
+                          Label("停用", Colors.red),
                         SizedBox(
                           width: 5,
                         ),
@@ -189,23 +193,31 @@ class _UsersState extends State<Users> with SingleTickerProviderStateMixin {
                     margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                     curveType: CurveType.flat,
                     bevel: 10,
-                    child: TabBar(
+                    child: AdaptiveTabBar(
                       isScrollable: false,
                       controller: _tabController,
                       indicatorSize: TabBarIndicatorSize.label,
-                      labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                      unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                      labelColor:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                      unselectedLabelColor:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
                       indicator: BubbleTabIndicator(
-                        indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                        shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                        indicatorColor:
+                            Theme.of(context).scaffoldBackgroundColor,
+                        shadowColor: Util.getAdjustColor(
+                            Theme.of(context).scaffoldBackgroundColor, -20),
                       ),
                       tabs: [
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                           child: Text("用户账号"),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                           child: Text("用户群组"),
                         ),
                       ],

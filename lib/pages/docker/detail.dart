@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:draggable_scrollbar/draggable_scrollbar.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
@@ -14,7 +15,8 @@ class ContainerDetail extends StatefulWidget {
   _ContainerDetailState createState() => _ContainerDetailState();
 }
 
-class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProviderStateMixin {
+class _ContainerDetailState extends State<ContainerDetail>
+    with SingleTickerProviderStateMixin {
   TabController _tabController;
   ScrollController _scrollController = ScrollController();
   bool loading = true;
@@ -64,7 +66,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
         shortcut = profile['shortcut'] ?? {};
         cpuPriority = num.tryParse('${profile['cpu_priority']}')?.toInt() ?? 0;
         links = profile['links'] ?? [];
-        memoryPercent = num.tryParse('${details['memoryPercent']}')?.toDouble() ?? 0;
+        memoryPercent =
+            num.tryParse('${details['memoryPercent']}')?.toDouble() ?? 0;
 
         upTime = num.tryParse('${details['up_time']}')?.toInt() ?? 0;
         status = details['status'] ?? 'unknown';
@@ -380,27 +383,34 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                   margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                   curveType: CurveType.flat,
                   bevel: 10,
-                  child: TabBar(
+                  child: AdaptiveTabBar(
                     isScrollable: false,
                     controller: _tabController,
                     indicatorSize: TabBarIndicatorSize.label,
-                    labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    labelColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                    unselectedLabelColor:
+                        Theme.of(context).colorScheme.onSurfaceVariant,
                     indicator: BubbleTabIndicator(
                       indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                      shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                      shadowColor: Util.getAdjustColor(
+                          Theme.of(context).scaffoldBackgroundColor, -20),
                     ),
                     tabs: [
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("总览"),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("进程"),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("日志"),
                       ),
                     ],
@@ -413,7 +423,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                       ListView(
                         children: [
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -421,13 +432,16 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "基本信息",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 5,
@@ -437,7 +451,12 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                                       Text("启动时间："),
                                       Expanded(
                                         child: Text(
-                                          upTime > 0 ? DateTime.fromMillisecondsSinceEpoch(upTime * 1000).timeAgo : '未提供',
+                                          upTime > 0
+                                              ? DateTime
+                                                      .fromMillisecondsSinceEpoch(
+                                                          upTime * 1000)
+                                                  .timeAgo
+                                              : '未提供',
                                         ),
                                       ),
                                     ],
@@ -450,10 +469,15 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                                       Text("快捷方式："),
                                       Expanded(
                                         child: Text(
-                                          (shortcut ?? {})['enable_shortcut'] == true
-                                              ? ((shortcut ?? {})['enable_status_page'] == true
+                                          (shortcut ?? {})['enable_shortcut'] ==
+                                                  true
+                                              ? ((shortcut ?? {})[
+                                                          'enable_status_page'] ==
+                                                      true
                                                   ? "状态页面"
-                                                  : (shortcut ?? {})['enable_web_page'] == true
+                                                  : (shortcut ?? {})[
+                                                              'enable_web_page'] ==
+                                                          true
                                                       ? shortcut['web_page_url']
                                                       : "")
                                               : "无",
@@ -490,7 +514,9 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                                       Text("内存限制："),
                                       Expanded(
                                         child: Text(
-                                          memory > 0 ? Util.formatSize(memory) : "自动",
+                                          memory > 0
+                                              ? Util.formatSize(memory)
+                                              : "自动",
                                         ),
                                       ),
                                     ],
@@ -513,7 +539,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -521,13 +548,16 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "端口设置",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 5,
@@ -560,7 +590,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -568,13 +599,16 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "卷",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 5,
@@ -609,7 +643,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -617,13 +652,16 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "链接",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 5,
@@ -650,7 +688,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -658,13 +697,16 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "网络",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 5,
@@ -691,7 +733,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
                             decoration: NeumorphicDecoration(
                               color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
@@ -699,13 +742,16 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                             curveType: CurveType.flat,
                             bevel: 20,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "环境变量",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   ...envs.map(_buildEnvItem).toList(),
                                 ],
@@ -729,7 +775,8 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                           Expanded(
                             child: CupertinoScrollbar(
                               child: ListView.separated(
-                                padding: EdgeInsets.only(left: 20, right: 10, top: 20),
+                                padding: EdgeInsets.only(
+                                    left: 20, right: 10, top: 20),
                                 itemBuilder: (context, i) {
                                   return _buildDateItem(logDates[i]);
                                 },
@@ -745,14 +792,17 @@ class _ContainerDetailState extends State<ContainerDetail> with SingleTickerProv
                           Expanded(
                             flex: 2,
                             child: DraggableScrollbar.semicircle(
-                              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                              backgroundColor:
+                                  Theme.of(context).scaffoldBackgroundColor,
                               scrollbarTimeToFade: Duration(seconds: 1),
                               controller: _scrollController,
                               child: ListView.separated(
                                 controller: _scrollController,
-                                padding: EdgeInsets.only(left: 10, right: 20, top: 20),
+                                padding: EdgeInsets.only(
+                                    left: 10, right: 20, top: 20),
                                 itemBuilder: (context, i) {
-                                  return _buildLogItem(logs.reversed.toList()[i]);
+                                  return _buildLogItem(
+                                      logs.reversed.toList()[i]);
                                 },
                                 separatorBuilder: (context, i) {
                                   return SizedBox(

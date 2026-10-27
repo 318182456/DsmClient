@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/pages/docker/detail.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
@@ -42,9 +43,14 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
 
   getContainer() async {
     dynamic res;
-    try { res = await Api.dockerContainerInfo(); }
-    catch (_) {
-      if (mounted) setState(() { containerLoading = false; utilization = null; });
+    try {
+      res = await Api.dockerContainerInfo();
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          containerLoading = false;
+          utilization = null;
+        });
       return;
     }
     if (!mounted) return;
@@ -91,8 +97,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
 
   getImage() async {
     dynamic res;
-    try { res = await Api.dockerImageInfo(); }
-    catch (_) {
+    try {
+      res = await Api.dockerImageInfo();
+    } catch (_) {
       if (mounted) setState(() => imageLoading = false);
       return;
     }
@@ -136,7 +143,10 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
               padding: EdgeInsets.all(22),
               bevel: 5,
               curveType: CurveType.emboss,
-              decoration: NeumorphicDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+              decoration: NeumorphicDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(22))),
               child: SafeArea(
                 top: false,
                 child: Column(
@@ -144,7 +154,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                   children: <Widget>[
                     Text(
                       "确认操作",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                     ),
                     SizedBox(
                       height: 12,
@@ -155,7 +166,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                           : preserveProfile
                               ? "容器 ${container['name']} 将被清除。清除后，容器中的所有数据将丢失。是否确定继续？"
                               : "容器 ${container['name']} 将被删除。删除后，容器中的所有数据将丢失。是否确定继续？",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
                     ),
                     SizedBox(
                       height: 22,
@@ -169,7 +181,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                               setState(() {
                                 powerLoading[container['id']] = true;
                               });
-                              var res = await Api.dockerPower(container['name'], action, preserveProfile: preserveProfile);
+                              var res = await Api.dockerPower(
+                                  container['name'], action,
+                                  preserveProfile: preserveProfile);
                               if (!mounted) return;
                               if (res['success']) {
                                 Util.toast("请求发送成功");
@@ -189,7 +203,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                             padding: EdgeInsets.symmetric(vertical: 10),
                             child: Text(
                               "确认",
-                              style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                              style: TextStyle(
+                                  fontSize: 18, color: Colors.redAccent),
                             ),
                           ),
                         ),
@@ -277,7 +292,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                           children: [
                             Text(
                               container['name'],
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600),
                             ),
                             Spacer(),
                             container['status'] == "running"
@@ -295,7 +311,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                             Expanded(
                               child: Text(
                                 container['image'],
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                                style:
+                                    TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                             ),
                             SizedBox(
@@ -303,8 +320,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                             ),
                             if (container['status'] == "running")
                               Text(
-                                "${container['up_time']!=null ? DateTime.fromMillisecondsSinceEpoch(container['up_time'] * 1000).timeAgo : container['up_status']}",
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                                "${container['up_time'] != null ? DateTime.fromMillisecondsSinceEpoch(container['up_time'] * 1000).timeAgo : container['up_status']}",
+                                style:
+                                    TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                           ],
                         ),
@@ -330,7 +348,11 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                               padding: EdgeInsets.all(22),
                               bevel: 5,
                               curveType: CurveType.emboss,
-                              decoration: NeumorphicDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+                              decoration: NeumorphicDecoration(
+                                  color:
+                                      Theme.of(context).scaffoldBackgroundColor,
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(22))),
                               child: SafeArea(
                                 top: false,
                                 child: Column(
@@ -338,7 +360,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                   children: <Widget>[
                                     Text(
                                       "选择操作",
-                                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                                      style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w500),
                                     ),
                                     SizedBox(
                                       height: 12,
@@ -350,11 +374,14 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                           power(container, "start");
                                         },
                                         decoration: NeumorphicDecoration(
-                                          color: Theme.of(context).scaffoldBackgroundColor,
-                                          borderRadius: BorderRadius.circular(25),
+                                          color: Theme.of(context)
+                                              .scaffoldBackgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(25),
                                         ),
                                         bevel: 5,
-                                        padding: EdgeInsets.symmetric(vertical: 10),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 10),
                                         child: Text(
                                           "启动",
                                           style: TextStyle(fontSize: 18),
@@ -366,17 +393,23 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                       NeuButton(
                                         onPressed: () async {
                                           Navigator.of(context).pop();
-                                          power(container, "delete", preserveProfile: true);
+                                          power(container, "delete",
+                                              preserveProfile: true);
                                         },
                                         decoration: NeumorphicDecoration(
-                                          color: Theme.of(context).scaffoldBackgroundColor,
-                                          borderRadius: BorderRadius.circular(25),
+                                          color: Theme.of(context)
+                                              .scaffoldBackgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(25),
                                         ),
                                         bevel: 5,
-                                        padding: EdgeInsets.symmetric(vertical: 10),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 10),
                                         child: Text(
                                           "清除",
-                                          style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.redAccent),
                                         ),
                                       ),
                                       SizedBox(
@@ -385,17 +418,23 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                       NeuButton(
                                         onPressed: () async {
                                           Navigator.of(context).pop();
-                                          power(container, "delete", preserveProfile: false);
+                                          power(container, "delete",
+                                              preserveProfile: false);
                                         },
                                         decoration: NeumorphicDecoration(
-                                          color: Theme.of(context).scaffoldBackgroundColor,
-                                          borderRadius: BorderRadius.circular(25),
+                                          color: Theme.of(context)
+                                              .scaffoldBackgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(25),
                                         ),
                                         bevel: 5,
-                                        padding: EdgeInsets.symmetric(vertical: 10),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 10),
                                         child: Text(
                                           "删除",
-                                          style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.redAccent),
                                         ),
                                       ),
                                     ] else ...[
@@ -405,14 +444,19 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                           power(container, "stop");
                                         },
                                         decoration: NeumorphicDecoration(
-                                          color: Theme.of(context).scaffoldBackgroundColor,
-                                          borderRadius: BorderRadius.circular(25),
+                                          color: Theme.of(context)
+                                              .scaffoldBackgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(25),
                                         ),
                                         bevel: 5,
-                                        padding: EdgeInsets.symmetric(vertical: 10),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 10),
                                         child: Text(
                                           "停止",
-                                          style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.redAccent),
                                         ),
                                       ),
                                       SizedBox(
@@ -424,14 +468,19 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                           power(container, "signal");
                                         },
                                         decoration: NeumorphicDecoration(
-                                          color: Theme.of(context).scaffoldBackgroundColor,
-                                          borderRadius: BorderRadius.circular(25),
+                                          color: Theme.of(context)
+                                              .scaffoldBackgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(25),
                                         ),
                                         bevel: 5,
-                                        padding: EdgeInsets.symmetric(vertical: 10),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 10),
                                         child: Text(
                                           "强制停止",
-                                          style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.redAccent),
                                         ),
                                       ),
                                       SizedBox(
@@ -443,14 +492,19 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                           power(container, "restart");
                                         },
                                         decoration: NeumorphicDecoration(
-                                          color: Theme.of(context).scaffoldBackgroundColor,
-                                          borderRadius: BorderRadius.circular(25),
+                                          color: Theme.of(context)
+                                              .scaffoldBackgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(25),
                                         ),
                                         bevel: 5,
-                                        padding: EdgeInsets.symmetric(vertical: 10),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 10),
                                         child: Text(
                                           "重新启动",
-                                          style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.redAccent),
                                         ),
                                       ),
                                     ],
@@ -473,7 +527,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                         color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      curveType: container['status'] == "running" ? CurveType.emboss : CurveType.flat,
+                      curveType: container['status'] == "running"
+                          ? CurveType.emboss
+                          : CurveType.flat,
                       bevel: 20,
                       child: powerLoading[container['id']]
                           ? CupertinoActivityIndicator()
@@ -500,7 +556,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                               Spacer(),
                               Text(
                                 "${container['cpu'].toStringAsFixed(2)}%",
-                                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -539,7 +597,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                               Spacer(),
                               Text(
                                 "${Util.formatSize(container['memory'], fixed: 0)}",
-                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -609,7 +669,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                 SizedBox(
                   width: 10,
                 ),
-                Label(Util.formatSize(image['size'], fixed: 0, format: 1000), Theme.of(context).primaryColor),
+                Label(Util.formatSize(image['size'], fixed: 0, format: 1000),
+                    Theme.of(context).primaryColor),
               ],
             ),
             if (image['description'] != null || image['description'] != '') ...[
@@ -635,14 +696,23 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
       appBar: AppBar(
         leading: AppBackButton(context),
         title: Text(widget.title),
-        actions: [if (widget.onChooseBackend != null) IconButton(icon: Icon(Icons.tune),
-          tooltip: '选择容器管理方式', onPressed: powerLoading.values.any((v) => v) ? null : widget.onChooseBackend)],
+        actions: [
+          if (widget.onChooseBackend != null)
+            IconButton(
+                icon: Icon(Icons.tune),
+                tooltip: '选择容器管理方式',
+                onPressed: powerLoading.values.any((v) => v)
+                    ? null
+                    : widget.onChooseBackend)
+        ],
       ),
       body: Column(
         children: [
           if (!containerLoading && utilization == null)
-            ListTile(title: Text('群晖资源信息加载失败，可刷新或切换管理方式'),
-              trailing: IconButton(icon: Icon(Icons.refresh), onPressed: getContainer)),
+            ListTile(
+                title: Text('群晖资源信息加载失败，可刷新或切换管理方式'),
+                trailing: IconButton(
+                    icon: Icon(Icons.refresh), onPressed: getContainer)),
           NeuCard(
             width: double.infinity,
             decoration: NeumorphicDecoration(
@@ -652,15 +722,19 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
             margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             curveType: CurveType.flat,
             bevel: 10,
-            child: TabBar(
+            child: AdaptiveTabBar(
               isScrollable: false,
               controller: _tabController,
               indicatorSize: TabBarIndicatorSize.label,
-              labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              labelColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+              unselectedLabelColor:
+                  Theme.of(context).colorScheme.onSurfaceVariant,
               indicator: BubbleTabIndicator(
                 indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                shadowColor: Util.getAdjustColor(
+                    Theme.of(context).scaffoldBackgroundColor, -20),
               ),
               tabs: [
                 Padding(
@@ -706,7 +780,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                 child: NeuCard(
                                   curveType: CurveType.flat,
                                   decoration: NeumorphicDecoration(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   bevel: 20,
@@ -715,7 +790,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                     child: Column(
                                       children: [
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Image.asset(
                                               "assets/icons/cpu.png",
@@ -726,7 +802,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                             ),
                                             Text(
                                               "CPU",
-                                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
@@ -737,15 +815,23 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                           curveType: CurveType.flat,
                                           bevel: 10,
                                           decoration: NeumorphicDecoration(
-                                            color: Theme.of(context).scaffoldBackgroundColor,
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: Theme.of(context)
+                                                .scaffoldBackgroundColor,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: FAProgressBar(
                                             backgroundColor: Colors.transparent,
                                             changeColorValue: 90,
                                             changeProgressColor: Colors.red,
                                             progressColor: Colors.blue,
-                                            currentValue: (((utilization ?? {})['cpu'] ?? {})['user_load'] ?? 0) + (((utilization ?? {})['cpu'] ?? {})['system_load'] ?? 0),
+                                            currentValue: (((utilization ??
+                                                            {})['cpu'] ??
+                                                        {})['user_load'] ??
+                                                    0) +
+                                                (((utilization ?? {})['cpu'] ??
+                                                        {})['system_load'] ??
+                                                    0),
                                             displayText: '%',
                                           ),
                                         ),
@@ -761,7 +847,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                 child: NeuCard(
                                   curveType: CurveType.flat,
                                   decoration: NeumorphicDecoration(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   bevel: 20,
@@ -770,7 +857,8 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                     child: Column(
                                       children: [
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Image.asset(
                                               "assets/icons/ram.png",
@@ -781,7 +869,9 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                             ),
                                             Text(
                                               "内存",
-                                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
@@ -792,15 +882,20 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                           curveType: CurveType.flat,
                                           bevel: 10,
                                           decoration: NeumorphicDecoration(
-                                            color: Theme.of(context).scaffoldBackgroundColor,
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: Theme.of(context)
+                                                .scaffoldBackgroundColor,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: FAProgressBar(
                                             backgroundColor: Colors.transparent,
                                             changeColorValue: 90,
                                             changeProgressColor: Colors.red,
                                             progressColor: Colors.blue,
-                                            currentValue: ((utilization ?? {})['memory'] ?? {})['real_usage'] ?? 0,
+                                            currentValue: ((utilization ??
+                                                        {})['memory'] ??
+                                                    {})['real_usage'] ??
+                                                0,
                                             displayText: '%',
                                           ),
                                         ),

@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/pages/file/select_folder.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
@@ -12,7 +13,8 @@ class RemoteFolder extends StatefulWidget {
   _RemoteFolderState createState() => _RemoteFolderState();
 }
 
-class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderStateMixin {
+class _RemoteFolderState extends State<RemoteFolder>
+    with SingleTickerProviderStateMixin {
   TabController _tabController;
   String serverIp = "";
   String mountPoint = "";
@@ -43,14 +45,18 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
             margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             curveType: CurveType.flat,
             bevel: 10,
-            child: TabBar(
+            child: AdaptiveTabBar(
               controller: _tabController,
               indicatorSize: TabBarIndicatorSize.label,
-              labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              labelColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+              unselectedLabelColor:
+                  Theme.of(context).colorScheme.onSurfaceVariant,
               indicator: BubbleTabIndicator(
                 indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                shadowColor: Util.getAdjustColor(
+                    Theme.of(context).scaffoldBackgroundColor, -20),
               ),
               tabs: [
                 Padding(
@@ -78,10 +84,14 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
                       ),
                       bevel: 20,
                       curveType: CurveType.flat,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                       child: TextField(
                         onChanged: (v) => serverIp = v,
-                        decoration: InputDecoration(border: InputBorder.none, labelText: '远程文件夹', hintText: r"示例:\\192.168.1.1\share"),
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            labelText: '远程文件夹',
+                            hintText: r"示例:\\192.168.1.1\share"),
                       ),
                     ),
                     SizedBox(
@@ -94,7 +104,8 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
                       ),
                       bevel: 20,
                       curveType: CurveType.flat,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                       child: TextField(
                         onChanged: (v) => account = v,
                         decoration: InputDecoration(
@@ -113,7 +124,8 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
                       ),
                       bevel: 20,
                       curveType: CurveType.flat,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                       child: TextField(
                         onChanged: (v) => passwd = v,
                         decoration: InputDecoration(
@@ -161,7 +173,11 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
                                   height: 20,
                                   child: Text(
                                     mountPoint == "" ? "选择装载到文件夹" : mountPoint,
-                                    style: TextStyle(fontSize: 16, color: mountPoint == "" ? Colors.grey : null),
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: mountPoint == ""
+                                            ? Colors.grey
+                                            : null),
                                   ),
                                 ),
                               ],
@@ -184,10 +200,12 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
                           color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        curveType: autoMount ? CurveType.emboss : CurveType.flat,
+                        curveType:
+                            autoMount ? CurveType.emboss : CurveType.flat,
                         bevel: 12,
                         height: 60,
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                         child: Row(
                           children: [
                             Text("开机时自动装载"),
@@ -205,7 +223,8 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
                       height: 20,
                     ),
                     NeuButton(
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                       decoration: NeumorphicDecoration(
                         color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(20),
@@ -220,7 +239,8 @@ class _RemoteFolderState extends State<RemoteFolder> with SingleTickerProviderSt
                           Util.toast("请输入远程文件夹地址");
                           return;
                         }
-                        var res = await Api.mountFolder(serverIp, account, passwd, mountPoint, autoMount);
+                        var res = await Api.mountFolder(
+                            serverIp, account, passwd, mountPoint, autoMount);
                         if (res['success']) {
                           Util.toast("装载成功");
                           Util.vibrate(FeedbackType.light);

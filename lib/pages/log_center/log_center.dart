@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/util/neu_picker.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
@@ -12,9 +13,15 @@ class LogCenter extends StatefulWidget {
   _LogCenterState createState() => _LogCenterState();
 }
 
-class _LogCenterState extends State<LogCenter> with SingleTickerProviderStateMixin {
+class _LogCenterState extends State<LogCenter>
+    with SingleTickerProviderStateMixin {
   TabController _tabController;
-  List<String> logTypes = ['system,netbackup', 'connection', 'ftp,filestation,webdav,cifs,afp,tftp', 'disk'];
+  List<String> logTypes = [
+    'system,netbackup',
+    'connection',
+    'ftp,filestation,webdav,cifs,afp,tftp',
+    'disk'
+  ];
   List<String> logNames = ["常规", "连接", "文件传输", "硬盘"];
   List lastLogs = [];
   List logs = [];
@@ -97,7 +104,8 @@ class _LogCenterState extends State<LogCenter> with SingleTickerProviderStateMix
           children: [
             Row(
               children: [
-                Label(log['prio'] == "info" ? "信息" : log['prio'], log['prio'] == "info" ? Colors.green : Colors.red),
+                Label(log['prio'] == "info" ? "信息" : log['prio'],
+                    log['prio'] == "info" ? Colors.green : Colors.red),
                 SizedBox(
                   width: 5,
                 ),
@@ -142,7 +150,8 @@ class _LogCenterState extends State<LogCenter> with SingleTickerProviderStateMix
           children: [
             Row(
               children: [
-                Label(log['level'] == 0 ? "信息" : "${log['level']}", log['level'] == 0 ? Colors.green : Colors.red),
+                Label(log['level'] == 0 ? "信息" : "${log['level']}",
+                    log['level'] == 0 ? Colors.green : Colors.red),
                 SizedBox(
                   width: 5,
                 ),
@@ -265,15 +274,19 @@ class _LogCenterState extends State<LogCenter> with SingleTickerProviderStateMix
             margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             curveType: CurveType.flat,
             bevel: 10,
-            child: TabBar(
+            child: AdaptiveTabBar(
               isScrollable: true,
               controller: _tabController,
               indicatorSize: TabBarIndicatorSize.label,
-              labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              labelColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+              unselectedLabelColor:
+                  Theme.of(context).colorScheme.onSurfaceVariant,
               indicator: BubbleTabIndicator(
                 indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                shadowColor: Util.getAdjustColor(
+                    Theme.of(context).scaffoldBackgroundColor, -20),
               ),
               tabs: [
                 Padding(
@@ -394,7 +407,7 @@ class _LogCenterState extends State<LogCenter> with SingleTickerProviderStateMix
                               padding: EdgeInsets.all(20),
                               child: Row(
                                 children: [
-                                  if(logTypeIndex != 2) ...[
+                                  if (logTypeIndex != 2) ...[
                                     Icon(
                                       Icons.info,
                                       color: Colors.lightBlueAccent,
@@ -443,7 +456,8 @@ class _LogCenterState extends State<LogCenter> with SingleTickerProviderStateMix
                                     },
                                     child: NeuCard(
                                       decoration: NeumorphicDecoration(
-                                        color: Theme.of(context).scaffoldBackgroundColor,
+                                        color: Theme.of(context)
+                                            .scaffoldBackgroundColor,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       padding: EdgeInsets.all(10),

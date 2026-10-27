@@ -272,37 +272,60 @@ class _ApplicationListState extends State<ApplicationList> {
                                       color: Theme.of(context).cardColor,
                                       borderRadius: BorderRadius.circular(20)),
                                   child: Column(children: [
-                                    app.package != null
-                                        ? NasAppIcon(app.package,
-                                            appIds: app.iconApps,
-                                            key: ValueKey(
-                                                'icon:${Util.baseUrl}|${Util.sid}|${app.package.id}|${app.iconApps}'),
-                                            fallbackAsset: app.asset)
-                                        : app.asset == null
-                                            ? Icon(app.icon,
-                                                size: 45,
-                                                color: Theme.of(context)
-                                                    .primaryColor)
-                                            : Image.asset(app.asset,
-                                                height: 45,
-                                                width: 45,
-                                                errorBuilder: (_, __, ___) =>
-                                                    Icon(app.icon, size: 45)),
+                                    SizedBox(
+                                        height: 48,
+                                        child: Center(
+                                            child: app.package != null
+                                                ? NasAppIcon(app.package,
+                                                    appIds: app.iconApps,
+                                                    key: ValueKey(
+                                                        'icon:${Util.baseUrl}|${Util.sid}|${app.package.id}|${app.iconApps}'),
+                                                    fallbackAsset: app.asset)
+                                                : app.asset == null
+                                                    ? Icon(app.icon,
+                                                        size: 45,
+                                                        color: Theme.of(context)
+                                                            .primaryColor)
+                                                    : Image.asset(app.asset,
+                                                        height: 45,
+                                                        width: 45,
+                                                        errorBuilder: (_, __,
+                                                                ___) =>
+                                                            Icon(app.icon,
+                                                                size: 45)))),
                                     SizedBox(height: 10),
-                                    Text(app.title,
-                                        maxLines: 2,
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis),
-                                    if (app.id.startsWith('container:'))
-                                      Text('容器',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .caption),
-                                    if (app.caption != null)
-                                      Text(app.caption,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .caption),
+                                    SizedBox(
+                                        height: 2 *
+                                            (Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .fontSize ??
+                                                15) *
+                                            1.45 *
+                                            MediaQuery.of(context)
+                                                .textScaleFactor,
+                                        child: Center(
+                                            child: Text(app.title,
+                                                maxLines: 2,
+                                                textAlign: TextAlign.center,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2))),
+                                    SizedBox(
+                                        height: 20 *
+                                            MediaQuery.of(context)
+                                                .textScaleFactor,
+                                        child: Text(
+                                            app.caption ??
+                                                (app.id.startsWith('container:')
+                                                    ? '容器'
+                                                    : ''),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .caption)),
                                   ]),
                                 ))))
                         .toList()),

@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/pages/common/browser.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/widgets/bubble_tab_indicator.dart';
@@ -12,7 +13,8 @@ class UpdateReset extends StatefulWidget {
   _UpdateResetState createState() => _UpdateResetState();
 }
 
-class _UpdateResetState extends State<UpdateReset> with SingleTickerProviderStateMixin {
+class _UpdateResetState extends State<UpdateReset>
+    with SingleTickerProviderStateMixin {
   TapGestureRecognizer _updateNoteRecognizer = TapGestureRecognizer();
   TabController _tabController;
   String firmwareDate = "";
@@ -76,15 +78,19 @@ class _UpdateResetState extends State<UpdateReset> with SingleTickerProviderStat
             margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             curveType: CurveType.flat,
             bevel: 10,
-            child: TabBar(
+            child: AdaptiveTabBar(
               isScrollable: true,
               controller: _tabController,
               indicatorSize: TabBarIndicatorSize.label,
-              labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              labelColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+              unselectedLabelColor:
+                  Theme.of(context).colorScheme.onSurfaceVariant,
               indicator: BubbleTabIndicator(
                 indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                shadowColor: Util.getAdjustColor(
+                    Theme.of(context).scaffoldBackgroundColor, -20),
               ),
               tabs: [
                 Padding(
@@ -157,27 +163,34 @@ class _UpdateResetState extends State<UpdateReset> with SingleTickerProviderStat
                           Expanded(
                             child: checking
                                 ? CupertinoActivityIndicator()
-                                : update != null && (update['available'] ?? true)
+                                : update != null &&
+                                        (update['available'] ?? true)
                                     ? Text.rich(TextSpan(
                                         children: [
                                           TextSpan(
                                             text: "${update['version']}版本可下载",
-                                            style: TextStyle(color: Colors.green),
+                                            style:
+                                                TextStyle(color: Colors.green),
                                           ),
                                           TextSpan(
                                               text: " (说明)",
-                                              style: TextStyle(color: Colors.blue),
+                                              style:
+                                                  TextStyle(color: Colors.blue),
                                               recognizer: _updateNoteRecognizer
                                                 ..onTap = () {
-                                                  String url = "http://update.synology.com/autoupdate/whatsnew.php?model=${Uri.encodeComponent(model)}&update_version=${update['version_details']['buildnumber']}-0";
-                                                  Navigator.of(context).push(CupertinoPageRoute(
+                                                  String url =
+                                                      "http://update.synology.com/autoupdate/whatsnew.php?model=${Uri.encodeComponent(model)}&update_version=${update['version_details']['buildnumber']}-0";
+                                                  Navigator.of(context)
+                                                      .push(CupertinoPageRoute(
                                                     builder: (context) {
                                                       return Browser(
                                                         url: url,
-                                                        title: "${update['version']}版本更新说明",
+                                                        title:
+                                                            "${update['version']}版本更新说明",
                                                       );
                                                     },
-                                                    settings: RouteSettings(name: "browser"),
+                                                    settings: RouteSettings(
+                                                        name: "browser"),
                                                   ));
                                                 }),
                                         ],

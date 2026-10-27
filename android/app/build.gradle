@@ -34,13 +34,20 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
+    packagingOptions {
+        // Optional build markers are excluded from v1 signing by Android tools.
+        // Preserve runtime service descriptors and third-party license notices.
+        exclude 'META-INF/*.version'
+        exclude 'META-INF/*.kotlin_module'
+    }
+
     lintOptions {
         disable 'InvalidPackage'
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "fit.flutter.dsm_helper"
+        applicationId "io.github.user318182456.dsmclient"
         minSdkVersion 21
         targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()

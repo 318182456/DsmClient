@@ -1,3 +1,4 @@
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'dart:async';
 
 import 'package:dsm_client/themes/app_theme.dart';
@@ -150,7 +151,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: "现值：", style: TextStyle(fontWeight: FontWeight.w600)),
+                      TextSpan(
+                          text: "现值：",
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       TextSpan(text: "${smart['current']}"),
                     ],
                   ),
@@ -159,7 +162,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
               Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(text: "最差值：", style: TextStyle(fontWeight: FontWeight.w600)),
+                    TextSpan(
+                        text: "最差值：",
+                        style: TextStyle(fontWeight: FontWeight.w600)),
                     TextSpan(text: "${smart['worst']}"),
                   ],
                 ),
@@ -176,7 +181,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: "临界值：", style: TextStyle(fontWeight: FontWeight.w600)),
+                      TextSpan(
+                          text: "临界值：",
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       TextSpan(text: "${smart['threshold']}"),
                     ],
                   ),
@@ -185,7 +192,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
               Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(text: "原始资料：", style: TextStyle(fontWeight: FontWeight.w600)),
+                    TextSpan(
+                        text: "原始资料：",
+                        style: TextStyle(fontWeight: FontWeight.w600)),
                     TextSpan(text: "${smart['raw']}"),
                   ],
                 ),
@@ -223,7 +232,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
               SizedBox(
                 width: 10,
               ),
-              Text("${log['test_type'] == "quick" ? "S.M.A.R.T. 快速测试" : log['test_type']}"),
+              Text(
+                  "${log['test_type'] == "quick" ? "S.M.A.R.T. 快速测试" : log['test_type']}"),
             ],
           )
         ],
@@ -264,31 +274,39 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                   margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                   curveType: CurveType.flat,
                   bevel: 10,
-                  child: TabBar(
+                  child: AdaptiveTabBar(
                     isScrollable: true,
                     controller: _tabController,
                     indicatorSize: TabBarIndicatorSize.label,
-                    labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    labelColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                    unselectedLabelColor:
+                        Theme.of(context).colorScheme.onSurfaceVariant,
                     indicator: BubbleTabIndicator(
                       indicatorColor: Theme.of(context).scaffoldBackgroundColor,
-                      shadowColor: Util.getAdjustColor(Theme.of(context).scaffoldBackgroundColor, -20),
+                      shadowColor: Util.getAdjustColor(
+                          Theme.of(context).scaffoldBackgroundColor, -20),
                     ),
                     tabs: [
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("概述"),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("S.M.A.R.T. 检测"),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("S.M.A.R.T. 状态"),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                         child: Text("历史记录"),
                       ),
                     ],
@@ -301,7 +319,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                       ListView(
                         children: [
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 15),
                             curveType: CurveType.flat,
                             bevel: 20,
                             decoration: NeumorphicDecoration(
@@ -314,28 +333,42 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                 children: [
                                   CircleAvatar(
                                     child: Icon(
-                                      widget.disk['overview_status'] == "normal" ? Icons.check : Icons.clear,
+                                      widget.disk['overview_status'] == "normal"
+                                          ? Icons.check
+                                          : Icons.clear,
                                       color: Colors.white,
                                       size: 40,
                                     ),
                                     radius: 30,
-                                    backgroundColor: widget.disk['overview_status'] == "normal" ? Colors.green : Colors.red,
+                                    backgroundColor:
+                                        widget.disk['overview_status'] ==
+                                                "normal"
+                                            ? Colors.green
+                                            : Colors.red,
                                   ),
                                   SizedBox(
                                     width: 20,
                                   ),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "${widget.disk['overview_status'] == "normal" ? "正常" : widget.disk['overview_status']}",
-                                          style: TextStyle(fontSize: 20, color: widget.disk['overview_status'] == "normal" ? Colors.green : Colors.red),
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              color: widget.disk[
+                                                          'overview_status'] ==
+                                                      "normal"
+                                                  ? Colors.green
+                                                  : Colors.red),
                                         ),
                                         SizedBox(
                                           height: 5,
                                         ),
-                                        Text("${widget.disk['overview_status'] == "normal" ? "此硬盘的运行状况正常" : widget.disk['overview_status']}"),
+                                        Text(
+                                            "${widget.disk['overview_status'] == "normal" ? "此硬盘的运行状况正常" : widget.disk['overview_status']}"),
                                       ],
                                     ),
                                   ),
@@ -344,7 +377,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                             ),
                           ),
                           NeuCard(
-                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 15),
                             curveType: CurveType.flat,
                             bevel: 20,
                             decoration: NeumorphicDecoration(
@@ -361,7 +395,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                         width: 150,
                                         child: Text(
                                           "温度",
-                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       Text("${widget.disk['temp']} 摄氏度"),
@@ -376,7 +411,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                         width: 150,
                                         child: Text(
                                           "开机时间",
-                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       Text("${overview['poweron'] ?? "-"} 小时"),
@@ -391,7 +427,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                         width: 150,
                                         child: Text(
                                           "硬盘重新连接次数",
-                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       Text("${overview['retry']}"),
@@ -406,7 +443,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                         width: 150,
                                         child: Text(
                                           "坏扇区数量",
-                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       Text("${overview['unc']}"),
@@ -421,7 +459,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                         width: 150,
                                         child: Text(
                                           "硬盘重新识别次数",
-                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       Text("${overview['idnf']}"),
@@ -436,12 +475,16 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                         width: 150,
                                         child: Text(
                                           "S.M.A.R.T. 状态",
-                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       Text(
                                         "${overview['smart'] == "normal" ? "正常" : overview['smart_status']}",
-                                        style: TextStyle(color: overview['smart'] == "normal" ? Colors.green : Colors.red),
+                                        style: TextStyle(
+                                            color: overview['smart'] == "normal"
+                                                ? Colors.green
+                                                : Colors.red),
                                       ),
                                     ],
                                   ),
@@ -471,14 +514,17 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                 children: [
                                   Text(
                                     "检测结果",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 10,
                                   ),
                                   Text(
                                     "上次快速检测结果",
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 5,
@@ -487,7 +533,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                     children: [
                                       Text(
                                         "${quickLast.isNotBlank ? quickLast : "暂无快速检测结果"}",
-                                        style: TextStyle(color: AppTheme.of(context).placeholderColor),
+                                        style: TextStyle(
+                                            color: AppTheme.of(context)
+                                                .placeholderColor),
                                       ),
                                       SizedBox(
                                         width: 10,
@@ -495,7 +543,10 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                       if (quickLast.isNotBlank)
                                         Label(
                                           "${testInfo.last['quick_error_before'] == false ? "正常" : "错误"}",
-                                          testInfo.last['quick_error_before'] == false ? Colors.green : Colors.red,
+                                          testInfo.last['quick_error_before'] ==
+                                                  false
+                                              ? Colors.green
+                                              : Colors.red,
                                           fill: true,
                                         ),
                                     ],
@@ -505,7 +556,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                   ),
                                   Text(
                                     "上次完整检测结果",
-                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 5,
@@ -514,7 +566,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                     children: [
                                       Text(
                                         "${extendLast.isNotBlank ? extendLast : "暂无完整检测结果"}",
-                                        style: TextStyle(color: AppTheme.of(context).placeholderColor),
+                                        style: TextStyle(
+                                            color: AppTheme.of(context)
+                                                .placeholderColor),
                                       ),
                                       SizedBox(
                                         width: 10,
@@ -522,7 +576,10 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                       if (extendLast.isNotBlank)
                                         Label(
                                           "${testInfo.last['quick_error_before'] == false ? "正常" : "错误"}",
-                                          testInfo.last['quick_error_before'] == false ? Colors.green : Colors.red,
+                                          testInfo.last['quick_error_before'] ==
+                                                  false
+                                              ? Colors.green
+                                              : Colors.red,
                                           fill: true,
                                         ),
                                     ],
@@ -548,7 +605,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                 children: [
                                   Text(
                                     "S.M.A.R.T. 测试",
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(
                                     height: 10,
@@ -564,11 +623,13 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                       curveType: CurveType.flat,
                                       bevel: 20,
                                       decoration: NeumorphicDecoration(
-                                        color: Theme.of(context).scaffoldBackgroundColor,
+                                        color: Theme.of(context)
+                                            .scaffoldBackgroundColor,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 15, horizontal: 20),
                                         child: Row(
                                           children: [
                                             Expanded(
@@ -582,8 +643,10 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                                 doSmartTest("stop");
                                               },
                                               decoration: NeumorphicDecoration(
-                                                color: Theme.of(context).scaffoldBackgroundColor,
-                                                borderRadius: BorderRadius.circular(10),
+                                                color: Theme.of(context)
+                                                    .scaffoldBackgroundColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                               ),
                                               padding: EdgeInsets.all(5),
                                               bevel: 5,
@@ -606,20 +669,25 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                       curveType: CurveType.flat,
                                       bevel: 20,
                                       decoration: NeumorphicDecoration(
-                                        color: Theme.of(context).scaffoldBackgroundColor,
+                                        color: Theme.of(context)
+                                            .scaffoldBackgroundColor,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 15, horizontal: 20),
                                         child: Row(
                                           children: [
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     "快速检测",
-                                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600),
                                                   ),
                                                   Text("将执行基本诊断测试，以检测机械和电气误差。")
                                                 ],
@@ -633,8 +701,10 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                                 doSmartTest("quick");
                                               },
                                               decoration: NeumorphicDecoration(
-                                                color: Theme.of(context).scaffoldBackgroundColor,
-                                                borderRadius: BorderRadius.circular(10),
+                                                color: Theme.of(context)
+                                                    .scaffoldBackgroundColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                               ),
                                               padding: EdgeInsets.all(5),
                                               bevel: 5,
@@ -642,7 +712,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                                 width: 20,
                                                 height: 20,
                                                 child: Icon(
-                                                  CupertinoIcons.play_arrow_solid,
+                                                  CupertinoIcons
+                                                      .play_arrow_solid,
                                                   color: Color(0xffff9813),
                                                   size: 16,
                                                 ),
@@ -659,20 +730,25 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                       curveType: CurveType.flat,
                                       bevel: 20,
                                       decoration: NeumorphicDecoration(
-                                        color: Theme.of(context).scaffoldBackgroundColor,
+                                        color: Theme.of(context)
+                                            .scaffoldBackgroundColor,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 15, horizontal: 20),
                                         child: Row(
                                           children: [
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     "完整检测",
-                                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600),
                                                   ),
                                                   Text("将扫描整个硬盘以确保更准确的结果。"),
                                                 ],
@@ -686,8 +762,10 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                                 doSmartTest("extend");
                                               },
                                               decoration: NeumorphicDecoration(
-                                                color: Theme.of(context).scaffoldBackgroundColor,
-                                                borderRadius: BorderRadius.circular(10),
+                                                color: Theme.of(context)
+                                                    .scaffoldBackgroundColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                               ),
                                               padding: EdgeInsets.all(5),
                                               bevel: 5,
@@ -695,7 +773,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                                 width: 20,
                                                 height: 20,
                                                 child: Icon(
-                                                  CupertinoIcons.play_arrow_solid,
+                                                  CupertinoIcons
+                                                      .play_arrow_solid,
                                                   color: Color(0xffff9813),
                                                   size: 16,
                                                 ),
@@ -731,7 +810,8 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                                   padding: EdgeInsets.all(50),
                                   curveType: CurveType.flat,
                                   decoration: NeumorphicDecoration(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   bevel: 20,
@@ -756,7 +836,9 @@ class _SmartState extends State<Smart> with SingleTickerProviderStateMixin {
                               : Center(
                                   child: Text(
                                     "暂无历史记录",
-                                    style: TextStyle(color: AppTheme.of(context).placeholderColor),
+                                    style: TextStyle(
+                                        color: AppTheme.of(context)
+                                            .placeholderColor),
                                   ),
                                 ),
                     ],

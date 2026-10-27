@@ -138,7 +138,7 @@ flutter build apk --release
 flutter build ios --release
 ```
 
-Android applicationId、iOS Bundle ID、分享扩展关联配置及下载路径目前沿用原项目；后续独立发行时需统一规划应用标识与签名。
+Android applicationId 已独立为 `io.github.user318182456.dsmclient`。迁移到独立包名时需首次手动安装为新应用，原版及旧包的数据不会自动迁移；此后同包名版本可应用内更新。iOS 标识、分享扩展及下载路径暂沿用原项目。
 
 ## 应用内更新
 
@@ -209,3 +209,7 @@ test/             DSM 协议与套件元数据回归测试
 - 当前仓库：[318182456/DsmClient](https://github.com/318182456/DsmClient)。
 - 项目沿用 [Apache License 2.0](LICENSE)，保留原作者及贡献者版权声明。
 - 第三方依赖、框架与素材遵循各自许可证，发布前需核对相关许可要求。
+
+音视频长按菜单支持从头播放、从当前项按已加载列表顺序连续播放、文件详情及删除确认。连续队列分别处理音频与视频；Audio Station 仅在接口提供可用的 File Station 原始路径时开放删除。公共按钮内容统一居中，程序卡片预留两行名称及一行说明，Tab 根据文字宽度自动决定是否允许滚动。
+
+Android 发布包以同一固定密钥生成 v1/v2/v3 签名，构建中严格验证签名；保留第三方许可与运行时服务描述，去除不参与旧版 JAR 签名的可选版本标记。独立包名解决与原版的应用身份冲突，但厂商安装风险提示仍需 ColorOS 实机确认。
