@@ -304,7 +304,8 @@ class _ApplicationListState extends State<ApplicationList> {
                                             1.45 *
                                             MediaQuery.of(context)
                                                 .textScaleFactor,
-                                        child: Center(
+                                        child: Align(
+                                            alignment: Alignment.topCenter,
                                             child: Text(app.title,
                                                 maxLines: 2,
                                                 textAlign: TextAlign.center,

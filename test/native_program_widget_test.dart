@@ -145,6 +145,19 @@ void main() {
         tester.getSize(cards.at(i)).height
     ];
     expect(heights.toSet().length, 1);
+    final titleOffsets = [
+      for (var i = 0; i < cards.evaluate().length; i++)
+        ((tester
+                        .getTopLeft(find
+                            .descendant(
+                                of: cards.at(i), matching: find.byType(Text))
+                            .first)
+                        .dy -
+                    tester.getTopLeft(cards.at(i)).dy) *
+                100)
+            .round()
+    ];
+    expect(titleOffsets.toSet().length, 1);
     tester.binding.window.textScaleFactorTestValue = 1;
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'postgres');
