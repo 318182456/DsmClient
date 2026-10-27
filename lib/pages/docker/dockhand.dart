@@ -7,6 +7,9 @@ import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/pages/packages/program_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dsm_client/widgets/docker_stats.dart';
+import 'package:dsm_client/util/service_sessions.dart';
+import 'package:dsm_client/util/service_session_pool.dart';
+import 'package:dsm_client/util/service_auth_error.dart';
 
 class DockhandProgram extends StatefulWidget {
   final String profile;
@@ -29,6 +32,20 @@ class _DockhandProgramState extends State<DockhandProgram>
       password = TextEditingController();
   final token = TextEditingController(), otp = TextEditingController();
   DockhandClient client;
+  ServiceSessionLease<DockhandClient> session;
+  String sessionNamespace;
+  bool recoveryUsed = false;
+  void closeConnection({bool invalidate = false}) {
+    if (session != null) {
+      if (invalidate)
+        session.invalidate();
+      else
+        session.release();
+      session = null;
+    } else
+      client?.close();
+  }
+
   String authMode = 'local',
       env,
       resource = 'containers',
@@ -49,6 +66,7 @@ class _DockhandProgramState extends State<DockhandProgram>
   @override
   void initState() {
     super.initState();
+    sessionNamespace = ServiceSessions.namespace;
     WidgetsBinding.instance.addObserver(this);
     address.addListener(addressChanged);
     loadAddress();
@@ -79,7 +97,7 @@ class _DockhandProgramState extends State<DockhandProgram>
     credentialGeneration++;
     credentialTimer?.cancel();
     address.removeListener(addressChanged);
-    client?.close();
+    closeConnection();
     address.dispose();
     account.dispose();
     password.dispose();
@@ -120,6 +138,7 @@ class _DockhandProgramState extends State<DockhandProgram>
     final generation = ++statsGeneration;
     final source = client, environment = env;
     setState(() => statsLoading = true);
+    bool reconnect = false;
     try {
       final rows = await source.statistics(environment);
       if (mounted &&
@@ -135,12 +154,26 @@ class _DockhandProgramState extends State<DockhandProgram>
           statsUpdated = DateTime.now();
         });
     } catch (e) {
+      if (e is ServiceAuthException &&
+          !recoveryUsed &&
+          session != null &&
+          mounted &&
+          generation == statsGeneration) {
+        closeConnection(invalidate: true);
+        setState(() {
+          client = null;
+          clearStats();
+        });
+        reconnect = true;
+        recoveryUsed = true;
+      }
       if (mounted && generation == statsGeneration)
         setState(() => statsError = message(e));
     } finally {
       if (mounted && generation == statsGeneration)
         setState(() => statsLoading = false);
     }
+    if (reconnect && mounted) await connect(automaticRecovery: true);
   }
 
   void addressChanged() {
@@ -157,7 +190,9 @@ class _DockhandProgramState extends State<DockhandProgram>
       credentialsLoading = true;
     });
     final service = address.text.trim();
-    credentialTimer = Timer(Duration(milliseconds: 350), () async {
+    credentialTimer =
+        Timer(Duration(milliseconds: initialConnectionUrl == service ? 0 : 350),
+            () async {
       Map saved;
       try {
         saved = await widget.credentials.read(widget.profile, service);
@@ -196,33 +231,55 @@ class _DockhandProgramState extends State<DockhandProgram>
     }
   }
 
-  String message(Object e) => e is StateError
-      ? '${e.message}'
-      : e is FormatException
-          ? e.message
-          : 'Dockhand 连接失败，请检查服务地址、证书及网络';
-  Future<void> connect() async {
-    if (busy || credentialsLoading) return;
+  String message(Object e) => e is ServiceAuthException
+      ? e.message
+      : e is StateError
+          ? '${e.message}'
+          : e is FormatException
+              ? e.message
+              : 'Dockhand 连接失败，请检查服务地址、证书及网络';
+  Future<void> connect({bool automaticRecovery = false}) async {
+    if (busy ||
+        credentialsLoading ||
+        sessionNamespace != ServiceSessions.namespace) return;
+    if (!automaticRecovery) recoveryUsed = false;
     setState(() {
       busy = true;
       error = '';
     });
     DockhandClient candidate;
+    ServiceSessionLease<DockhandClient> acquired;
     String credentialWarning = '';
     try {
-      candidate = widget.clientFactory?.call(address.text) ??
-          DockhandClient(address.text);
       if (authMode == 'local' &&
           (account.text.trim().isEmpty || password.text.isEmpty))
         throw StateError('请输入 Dockhand 本地账号和密码');
       if (authMode == 'token' && token.text.trim().isEmpty)
         throw StateError('请输入 Dockhand API Token');
-      await candidate.login(
-          user: authMode == 'local' ? account.text.trim() : '',
-          password: password.text,
-          mfa: otp.text.trim(),
-          token: authMode == 'token' ? token.text : '');
-      final list = await candidate.environments();
+      List<Map> list;
+      if (remember && authMode != 'none' && widget.clientFactory == null) {
+        acquired = await ServiceSessions.dockhand(widget.profile, address.text,
+            authMode, account.text.trim(), password.text, token.text.trim(),
+            otp: otp.text.trim());
+        candidate = acquired.client;
+        list = List<Map>.from(acquired.data as List ?? []);
+      } else {
+        candidate = widget.clientFactory?.call(address.text) ??
+            DockhandClient(address.text);
+        await candidate.login(
+            user: authMode == 'local' ? account.text.trim() : '',
+            password: password.text,
+            mfa: otp.text.trim(),
+            token: authMode == 'token' ? token.text : '');
+        list = await candidate.environments();
+      }
+      if (!mounted || sessionNamespace != ServiceSessions.namespace) {
+        if (acquired != null)
+          acquired.release();
+        else
+          candidate.close();
+        return;
+      }
       String storageWarning = '';
       try {
         if (remember && authMode != 'none') {
@@ -239,17 +296,24 @@ class _DockhandProgramState extends State<DockhandProgram>
         storageWarning = '已连接，但登录信息保存失败。下次需重新输入。';
       }
       credentialWarning = storageWarning;
-      if (!mounted) {
-        candidate.close();
+      if (!mounted || sessionNamespace != ServiceSessions.namespace) {
+        if (acquired != null)
+          acquired.release();
+        else
+          candidate.close();
         return;
       }
       final saved = await Util.getStorage('dockhand_env_${widget.profile}');
       if (!mounted) {
-        candidate.close();
+        if (acquired != null)
+          acquired.release();
+        else
+          candidate.close();
         return;
       }
       setState(() {
         client = candidate;
+        session = acquired;
         environments = list;
         env = list.isEmpty
             ? null
@@ -268,14 +332,20 @@ class _DockhandProgramState extends State<DockhandProgram>
             'dockhand_url_${widget.profile}', address.text.trim());
       } catch (_) {}
     } on DockhandMfaRequired {
-      candidate?.close();
+      if (acquired != null)
+        acquired.invalidate();
+      else
+        candidate?.close();
       if (mounted)
         setState(() {
           mfa = true;
           error = '请输入 Dockhand 两步验证码后再次连接';
         });
     } catch (e) {
-      candidate?.close();
+      if (acquired != null)
+        acquired.invalidate();
+      else
+        candidate?.close();
       if (mounted) setState(() => error = message(e));
     } finally {
       if (mounted) setState(() => busy = false);
@@ -292,13 +362,30 @@ class _DockhandProgramState extends State<DockhandProgram>
       error = '';
       data = null;
     });
+    bool reconnect = false;
     try {
       final value = await client.resource(resource, env);
       if (mounted) setState(() => data = value);
     } catch (e) {
+      if (e is ServiceAuthException &&
+          session != null &&
+          mounted &&
+          !recoveryUsed) {
+        closeConnection(invalidate: true);
+        setState(() {
+          client = null;
+          clearStats();
+        });
+        reconnect = true;
+        recoveryUsed = true;
+      }
       if (mounted) setState(() => error = message(e));
     } finally {
       if (mounted) setState(() => busy = false);
+    }
+    if (reconnect && mounted) {
+      await connect(automaticRecovery: true);
+      return;
     }
     if (mounted && client != null) {
       scheduleStats();
@@ -809,7 +896,7 @@ class _DockhandProgramState extends State<DockhandProgram>
                   ? null
                   : () {
                       statsTimer?.cancel();
-                      client.close();
+                      closeConnection(invalidate: true);
                       setState(() {
                         clearStats();
                         client = null;

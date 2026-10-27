@@ -3,6 +3,7 @@ import 'package:dsm_client/util/torrent_client.dart';
 import 'package:dsm_client/util/torrent_rss.dart';
 import 'package:dsm_client/util/torrent_rss_store.dart';
 import 'package:dsm_client/widgets/workspace.dart';
+import 'qb_rss_rules.dart';
 
 class TorrentRssPage extends StatefulWidget {
   final TorrentClient client;
@@ -249,6 +250,19 @@ class _TorrentRssState extends State<TorrentRssPage> {
                             query = '';
                           })),
               actions: [
+                if (!local)
+                  IconButton(
+                      tooltip: '自动下载规则',
+                      icon: Icon(Icons.rule),
+                      onPressed: busy
+                          ? null
+                          : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => QbRssRulesPage(widget.client,
+                                      feedUrl: current == null
+                                          ? null
+                                          : '${current['url']}')))),
                 IconButton(
                     tooltip: '刷新订阅',
                     icon: Icon(Icons.refresh),
@@ -322,11 +336,30 @@ class _TorrentRssState extends State<TorrentRssPage> {
                                             : local
                                                 ? '本机订阅'
                                                 : '服务端订阅'),
-                                    trailing: IconButton(
-                                        tooltip: '移除订阅',
-                                        icon: Icon(Icons.delete_outline),
-                                        onPressed:
-                                            busy ? null : () => remove(f)),
+                                    trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (!local)
+                                            IconButton(
+                                                tooltip: '订阅自动下载设置',
+                                                icon: Icon(Icons.rule),
+                                                onPressed: busy
+                                                    ? null
+                                                    : () => Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                QbRssRulesPage(
+                                                                    widget
+                                                                        .client,
+                                                                    feedUrl:
+                                                                        '${f['url']}')))),
+                                          IconButton(
+                                              tooltip: '移除订阅',
+                                              icon: Icon(Icons.delete_outline),
+                                              onPressed:
+                                                  busy ? null : () => remove(f))
+                                        ]),
                                     onTap: busy
                                         ? null
                                         : () {

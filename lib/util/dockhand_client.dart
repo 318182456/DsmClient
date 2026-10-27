@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'torrent_client.dart';
+import 'service_auth_error.dart';
 
 class DockhandMfaRequired implements Exception {}
 
@@ -51,7 +52,8 @@ class DockhandClient {
         _cookies[cookie.name] = cookie.value;
     }
     if (response.statusCode == 401 || response.statusCode == 403)
-      throw StateError('Dockhand 认证失败或权限不足，请检查该程序的账号 / API Token');
+      throw ServiceAuthException(
+          'Dockhand 认证失败或权限不足，请检查该程序的账号 / API Token', response.statusCode);
     dynamic value;
     try {
       value =

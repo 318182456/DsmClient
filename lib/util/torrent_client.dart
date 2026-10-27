@@ -1,9 +1,10 @@
 // @dart=2.10
 import 'dart:convert';
 import 'dart:io';
+import 'service_auth_error.dart';
 
 /// An isolated service session. Never uses DSM cookies, credentials or TLS
-/// overrides. Credentials live only in this object until the page is closed.
+/// overrides. The session pool can retain this client between page visits.
 class TorrentClient {
   final Uri base;
   final bool transmission;
@@ -80,7 +81,8 @@ class TorrentClient {
         _cookie = '${cookie.name}=${cookie.value}';
     }
     if (response.statusCode == 401 || response.statusCode == 403)
-      throw HttpException('服务认证失败，请检查该程序的账号、密码和访问权限');
+      throw ServiceAuthException(
+          '服务认证失败，请检查该程序的账号、密码和访问权限', response.statusCode);
     if (response.isRedirect) throw HttpException('服务地址发生跳转，请填写程序的直接 API 地址');
     return _ServiceResponse(response.statusCode, utf8.decode(bytes));
   }

@@ -13,6 +13,9 @@ import 'torrent_detail.dart';
 import 'torrent_import.dart' show readIncomingTorrent;
 import 'package:dsm_client/widgets/torrent_filters.dart';
 import 'torrent_rss.dart';
+import 'package:dsm_client/util/service_sessions.dart';
+import 'package:dsm_client/util/service_session_pool.dart';
+import 'package:dsm_client/util/service_auth_error.dart';
 
 class TorrentProgram extends StatefulWidget {
   final String name;
@@ -34,6 +37,20 @@ class _TorrentProgramState extends State<TorrentProgram>
       account = TextEditingController(),
       password = TextEditingController();
   TorrentClient client;
+  ServiceSessionLease<TorrentClient> session;
+  String sessionNamespace;
+  bool recoveryUsed = false;
+  void closeConnection({bool invalidate = false}) {
+    if (session != null) {
+      if (invalidate)
+        session.invalidate();
+      else
+        session.release();
+      session = null;
+    } else
+      client?.close();
+  }
+
   List<Map> tasks = [];
   final selected = <String>{};
   bool busy = false,
@@ -57,6 +74,7 @@ class _TorrentProgramState extends State<TorrentProgram>
   @override
   void initState() {
     super.initState();
+    sessionNamespace = ServiceSessions.namespace;
     WidgetsBinding.instance.addObserver(this);
     address.addListener(addressChanged);
     loadAddress();
@@ -80,7 +98,9 @@ class _TorrentProgramState extends State<TorrentProgram>
     if (!mounted) return;
     setState(() => restoring = true);
     final url = address.text.trim();
-    restoreTimer = Timer(Duration(milliseconds: 350), () async {
+    restoreTimer =
+        Timer(Duration(milliseconds: initialConnectionUrl == url ? 0 : 350),
+            () async {
       Map record;
       try {
         record = await vault.read(profile, url);
@@ -120,7 +140,7 @@ class _TorrentProgramState extends State<TorrentProgram>
     refreshTimer?.cancel();
     restoreTimer?.cancel();
     restoreGeneration++;
-    client?.close();
+    closeConnection();
     address.removeListener(addressChanged);
     address.dispose();
     account.dispose();
@@ -135,21 +155,35 @@ class _TorrentProgramState extends State<TorrentProgram>
           : e is StateError
               ? '${e.message}'
               : '连接失败，请检查程序地址、证书和网络';
-  Future<void> connect() async {
-    if (busy || restoring) return;
+  Future<void> connect({bool automaticRecovery = false}) async {
+    if (busy || restoring || sessionNamespace != ServiceSessions.namespace)
+      return;
+    if (!automaticRecovery) recoveryUsed = false;
     setState(() {
       busy = true;
       error = '';
     });
     TorrentClient candidate;
+    ServiceSessionLease<TorrentClient> acquired;
     try {
-      candidate =
-          widget.clientFactory?.call(address.text, widget.transmission) ??
-              TorrentClient(address.text, transmission: widget.transmission);
-      await candidate.login(account.text.trim(), password.text);
-      final list = await candidate.list();
-      if (!mounted) {
-        candidate.close();
+      List<Map> list;
+      if (remember && widget.clientFactory == null) {
+        acquired = await ServiceSessions.torrent(profile, address.text,
+            widget.transmission, account.text.trim(), password.text);
+        candidate = acquired.client;
+        list = List<Map>.from(acquired.data as List ?? []);
+      } else {
+        candidate =
+            widget.clientFactory?.call(address.text, widget.transmission) ??
+                TorrentClient(address.text, transmission: widget.transmission);
+        await candidate.login(account.text.trim(), password.text);
+        list = await candidate.list();
+      }
+      if (!mounted || sessionNamespace != ServiceSessions.namespace) {
+        if (acquired != null)
+          acquired.release();
+        else
+          candidate.close();
         return;
       }
       String warning = '';
@@ -167,40 +201,60 @@ class _TorrentProgramState extends State<TorrentProgram>
         warning = '已连接，但登录信息保存失败，下次需重新输入。';
       }
       if (!mounted) {
-        candidate.close();
+        if (acquired != null)
+          acquired.release();
+        else
+          candidate.close();
         return;
       }
       setState(() {
         client = candidate;
+        session = acquired;
         tasks = list;
         error = warning;
         if (!remember) password.clear();
       });
       schedule();
     } catch (e) {
-      candidate?.close();
+      if (acquired != null)
+        acquired.invalidate();
+      else
+        candidate?.close();
       if (mounted) setState(() => error = message(e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
+    if (mounted && client != null && acquired?.reused == true) refresh();
   }
 
   Future<void> refresh() async {
     if (busy || client == null) return;
     setState(() => busy = true);
+    bool reconnect = false;
     try {
       final rows = await client.list();
       if (mounted)
         setState(() {
           tasks = rows;
+          session?.update(rows);
           error = '';
           selected.removeWhere((id) => !rows.any((t) => '${t['id']}' == id));
         });
     } catch (e) {
+      if (e is ServiceAuthException &&
+          session != null &&
+          mounted &&
+          !recoveryUsed) {
+        closeConnection(invalidate: true);
+        setState(() => client = null);
+        reconnect = true;
+        recoveryUsed = true;
+      }
       if (mounted) setState(() => error = message(e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
+    if (reconnect && mounted) await connect(automaticRecovery: true);
   }
 
   Future<void> forget() async {
@@ -467,14 +521,15 @@ class _TorrentProgramState extends State<TorrentProgram>
                           MaterialPageRoute(
                               builder: (_) => ContainerDetail(widget.name)))),
                 if (client != null) ...[
-                  IconButton(
-                      tooltip: 'RSS 订阅',
-                      icon: Icon(Icons.rss_feed),
-                      onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => TorrentRssPage(
-                                  client: client, profile: profile)))),
+                  if (!widget.transmission)
+                    IconButton(
+                        tooltip: 'RSS 订阅',
+                        icon: Icon(Icons.rss_feed),
+                        onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => TorrentRssPage(
+                                    client: client, profile: profile)))),
                   IconButton(
                       tooltip: automatic ? '关闭自动刷新' : '开启自动刷新',
                       icon: Icon(
@@ -494,7 +549,7 @@ class _TorrentProgramState extends State<TorrentProgram>
                           ? null
                           : () {
                               refreshTimer?.cancel();
-                              client.close();
+                              closeConnection(invalidate: true);
                               setState(() {
                                 client = null;
                                 tasks = [];

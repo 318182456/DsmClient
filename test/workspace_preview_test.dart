@@ -20,6 +20,8 @@ import 'package:dsm_client/pages/packages/torrent_program.dart';
 import 'torrent_workspace_test.dart' show FixtureTorrentClient;
 import 'dockhand_stats_widget_test.dart' show FixtureDockhandClient;
 import 'torrent_features_widget_test.dart' show RssFixtureClient;
+import 'program_cache_rss_widget_test.dart' show RuleFixtureClient;
+import 'package:dsm_client/pages/packages/qb_rss_rules.dart';
 import 'package:dsm_client/pages/packages/torrent_rss.dart';
 import 'package:dsm_client/util/program_pins.dart';
 
@@ -70,6 +72,10 @@ void main() {
               theme: reviewTheme(theme),
               home: page)));
       await tester.pumpAndSettle();
+      if (name == 'rss-rule-settings') {
+        await tester.ensureVisible(find.byKey(ValueKey('rss-rule-field:下载分类')));
+        await tester.pumpAndSettle();
+      }
       if (name == 'rss-articles') {
         await tester.tap(find.text('Linux'));
         await tester.pumpAndSettle();
@@ -99,10 +105,15 @@ void main() {
         await tester.pumpAndSettle();
       }
       if (name == 'program-picker') {
-        await tester.tap(find.text('添加')); await tester.pumpAndSettle();
-        await tester.tap(find.byKey(ValueKey('program-card:SYNO.SDS.AdminCenter.Application'))); await tester.pumpAndSettle();
+        await tester.tap(find.text('添加'));
+        await tester.pumpAndSettle();
+        await tester.tap(find
+            .byKey(ValueKey('program-card:SYNO.SDS.AdminCenter.Application')));
+        await tester.pumpAndSettle();
       }
-      if (name == 'program-cards' || name == 'program-pins' || name == 'program-picker') {
+      if (name == 'program-cards' ||
+          name == 'program-pins' ||
+          name == 'program-picker') {
         await tester.runAsync(() async {
           for (final icon in [
             'control_panel',
@@ -188,6 +199,36 @@ void main() {
         TorrentRssPage(client: RssFixtureClient(), profile: 'preview'),
         lightTheme);
     await ProgramPins.toggle('SYNO.SDS.AdminCenter.Application');
+    final rssClient = RuleFixtureClient();
+    rssClient.rules = {
+      'Linux ISO': {
+        'enabled': true,
+        'affectedFeeds': ['https://feed.test/rss'],
+        'mustContain': 'Ubuntu*',
+        'torrentParams': {
+          'category': 'Linux',
+          'tags': ['iso'],
+          'save_path': '/data/linux'
+        }
+      }
+    };
+    await capture('rss-rules', QbRssRulesPage(rssClient), lightTheme);
+    QbRssRuleEditor ruleEditor() => QbRssRuleEditor(rssClient,
+            name: 'Linux ISO',
+            rule: rssClient.rules['Linux ISO'],
+            feeds: [
+              {'url': 'https://feed.test/rss', 'name': 'Linux 发行版'}
+            ],
+            categories: {
+              'Linux': {}
+            },
+            knownTags: [
+              'iso',
+              'linux'
+            ]);
+    await capture('rss-rule-editor', ruleEditor(), lightTheme);
+    await capture('rss-rule-settings', ruleEditor(), lightTheme);
+    rssClient.close();
     await capture(
         'program-pins',
         Scaffold(
@@ -205,9 +246,25 @@ void main() {
                     })),
         lightTheme);
     await ProgramPins.toggle('SYNO.SDS.AdminCenter.Application');
-    await capture('program-picker', Scaffold(appBar:AppBar(title:Text('控制台')),
-      body:SingleChildScrollView(child:ApplicationList(['SYNO.SDS.AdminCenter.Application','SYNO.SDS.ResourceMonitor.Instance'],{},[],[],{},pinnedOnly:true,
-        packageLoader:()async=>{'success':true,'data':{'packages':[]}},containerLoader:()async=>{'success':true,'data':{'containers':[]}}))),lightTheme);
+    await capture(
+        'program-picker',
+        Scaffold(
+            appBar: AppBar(title: Text('控制台')),
+            body: SingleChildScrollView(
+                child: ApplicationList([
+              'SYNO.SDS.AdminCenter.Application',
+              'SYNO.SDS.ResourceMonitor.Instance'
+            ], {}, [], [], {},
+                    pinnedOnly: true,
+                    packageLoader: () async => {
+                          'success': true,
+                          'data': {'packages': []}
+                        },
+                    containerLoader: () async => {
+                          'success': true,
+                          'data': {'containers': []}
+                        }))),
+        lightTheme);
     await capture(
         'torrent-light',
         TorrentProgram('review',

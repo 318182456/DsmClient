@@ -18,6 +18,8 @@ import 'package:dsm_client/pages/virtual_machine/virtual_machine.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:flutter/material.dart';
 import 'package:dsm_client/util/program_pins.dart';
+import 'package:dsm_client/util/program_catalog_cache.dart';
+import 'package:dsm_client/widgets/service_app_icon.dart';
 
 class ApplicationList extends StatefulWidget {
   final List applications;
@@ -26,12 +28,14 @@ class ApplicationList extends StatefulWidget {
   final Map appNotify;
   final Future<Map> Function() packageLoader, containerLoader;
   final bool pinnedOnly, selectForHome;
+  final bool useCatalogCache;
   const ApplicationList(
       this.applications, this.system, this.volumes, this.disks, this.appNotify,
       {Key key,
       this.packageLoader,
       this.containerLoader,
       this.pinnedOnly = false,
+      this.useCatalogCache,
       this.selectForHome = false})
       : super(key: key);
   @override
@@ -45,8 +49,14 @@ class _MenuApp {
   final NasPackage package;
   final List<String> iconApps;
   final String caption;
+  final String service, nasIcon;
   _MenuApp(this.id, this.title, this.icon, this.page,
-      {this.asset, this.package, this.iconApps, this.caption});
+      {this.asset,
+      this.package,
+      this.iconApps,
+      this.caption,
+      this.service,
+      this.nasIcon});
 }
 
 class _ApplicationListState extends State<ApplicationList> {
@@ -57,6 +67,10 @@ class _ApplicationListState extends State<ApplicationList> {
   int generation = 0;
   List<String> pins = [];
   bool catalogLoaded = false;
+  bool refreshing = false;
+  bool get cacheEnabled =>
+      widget.useCatalogCache ??
+      (widget.packageLoader == null && widget.containerLoader == null);
   bool pinsLoaded = false, saving = false;
   String selectionScope;
   @override
@@ -90,13 +104,19 @@ class _ApplicationListState extends State<ApplicationList> {
       if (mounted) setState(() => loading = false);
     }
   }
+
   void openHomePicker() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => Scaffold(
-      appBar: AppBar(title: Text('选择常用程序')),
-      body: ApplicationList(widget.applications, widget.system, widget.volumes,
-        widget.disks, widget.appNotify, selectForHome: true,
-        packageLoader: widget.packageLoader, containerLoader: widget.containerLoader))));
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => Scaffold(
+            appBar: AppBar(title: Text('选择常用程序')),
+            body: ApplicationList(widget.applications, widget.system,
+                widget.volumes, widget.disks, widget.appNotify,
+                selectForHome: true,
+                packageLoader: widget.packageLoader,
+                containerLoader: widget.containerLoader,
+                useCatalogCache: widget.useCatalogCache))));
   }
+
   Future<void> saveHomeSelection() async {
     if (saving || !pinsLoaded) return;
     setState(() => saving = true);
@@ -104,7 +124,11 @@ class _ApplicationListState extends State<ApplicationList> {
       await ProgramPins.replace(pins, scope: selectionScope);
       if (mounted) Navigator.pop(context);
     } catch (_) {
-      if (mounted) setState(() {saving = false; error = '快捷方式保存失败，请确认 NAS 账号后重试';});
+      if (mounted)
+        setState(() {
+          saving = false;
+          error = '快捷方式保存失败，请确认 NAS 账号后重试';
+        });
     }
   }
 
@@ -148,14 +172,17 @@ class _ApplicationListState extends State<ApplicationList> {
     }
   }
 
-  Widget appIcon(_MenuApp app) => app.package != null
-      ? NasAppIcon(app.package, appIds: app.iconApps, fallbackAsset: app.asset)
-      : app.asset != null
-          ? Image.asset(app.asset,
-              width: 40,
-              height: 40,
-              errorBuilder: (_, __, ___) => Icon(app.icon, size: 40))
-          : Icon(app.icon, size: 40);
+  Widget appIcon(_MenuApp app) => app.service != null
+      ? ServiceAppIcon(app.service, nasIcon: app.nasIcon)
+      : app.package != null
+          ? NasAppIcon(app.package,
+              appIds: app.iconApps, fallbackAsset: app.asset)
+          : app.asset != null
+              ? Image.asset(app.asset,
+                  width: 40,
+                  height: 40,
+                  errorBuilder: (_, __, ___) => Icon(app.icon, size: 40))
+              : Icon(app.icon, size: 40);
   Widget pinnedHome() {
     final catalog = {for (final app in entries) app.id: app};
     final apps =
@@ -221,6 +248,9 @@ class _ApplicationListState extends State<ApplicationList> {
     if (connection != '${Util.baseUrl}|${Util.sid}') {
       connection = '${Util.baseUrl}|${Util.sid}';
       catalogLoaded = false;
+      packages = [];
+      containers = [];
+      refreshing = false;
       pins = [];
       readPins();
       if (!widget.pinnedOnly) load();
@@ -235,14 +265,31 @@ class _ApplicationListState extends State<ApplicationList> {
     }
   }
 
-  Future<void> load() async {
+  Future<void> load({bool force = false}) async {
     final current = ++generation;
+    final scope = ProgramCatalogCache.scope;
     connection = '${Util.baseUrl}|${Util.sid}';
+    if (cacheEnabled && !force) {
+      final cached = await ProgramCatalogCache.read(scope);
+      if (!mounted ||
+          generation != current ||
+          scope != ProgramCatalogCache.scope) return;
+      if (cached != null)
+        setState(() {
+          packages = (cached['packages'] as List)
+              .whereType<Map>()
+              .map((p) => NasPackage.fromJson(p))
+              .toList();
+          containers = (cached['containers'] as List).whereType<Map>().toList();
+          catalogLoaded = true;
+          loading = false;
+        });
+      if (cached != null && ProgramCatalogCache.fresh(cached)) return;
+    }
     setState(() {
-      loading = true;
+      loading = !catalogLoaded;
+      refreshing = catalogLoaded;
       error = '';
-      packages = [];
-      containers = [];
     });
     final result = await Future.wait([
       safe((widget.packageLoader ?? Api.nasPackages)()),
@@ -250,24 +297,34 @@ class _ApplicationListState extends State<ApplicationList> {
     ]);
     if (!mounted ||
         generation != current ||
-        connection != '${Util.baseUrl}|${Util.sid}') return;
+        connection != '${Util.baseUrl}|${Util.sid}' ||
+        scope != ProgramCatalogCache.scope) return;
     setState(() {
-      packages = ((result[0]['data'] ?? {})['packages'] as List ?? [])
-          .whereType<Map>()
-          .map((p) => NasPackage.fromJson(p))
-          .toList()
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      containers = ((result[1]['data'] ?? {})['containers'] as List ?? [])
-          .whereType<Map>()
-          .toList()
-        ..sort((a, b) => '${a['name']}'.compareTo('${b['name']}'));
+      if (result[0]['success'] == true)
+        packages = ((result[0]['data'] ?? {})['packages'] as List ?? [])
+            .whereType<Map>()
+            .map((p) => NasPackage.fromJson(p))
+            .toList()
+          ..sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      if (result[1]['success'] == true)
+        containers = ((result[1]['data'] ?? {})['containers'] as List ?? [])
+            .whereType<Map>()
+            .toList()
+          ..sort((a, b) => '${a['name']}'.compareTo('${b['name']}'));
       if (result[0]['success'] != true) error = '套件列表加载失败';
       if (result[1]['success'] != true &&
           (result[1]['error'] ?? {})['code'] != 102)
         error += '${error.isEmpty ? '' : '；'}容器列表加载失败';
       loading = false;
+      refreshing = false;
       catalogLoaded = true;
     });
+    if (cacheEnabled &&
+        result[0]['success'] == true &&
+        (result[1]['success'] == true ||
+            (result[1]['error'] ?? {})['code'] == 102))
+      await ProgramCatalogCache.save(scope, packages, containers);
   }
 
   List<_MenuApp> get entries {
@@ -373,6 +430,8 @@ class _ApplicationListState extends State<ApplicationList> {
           packages.where((p) => p.id == 'ContainerManager' || p.id == 'Docker');
       result.add(_MenuApp('container:$name', name, Icons.view_in_ar_outlined,
           () => nativeContainer(name, image: '${container['image'] ?? ''}'),
+          service: ServiceAppIcon.identify(name, '${container['image'] ?? ''}'),
+          nasIcon: container['icon'] is String ? container['icon'] : null,
           package: managers.isEmpty ? null : managers.first,
           asset: 'assets/applications/container_manager.png'));
     }
@@ -386,14 +445,18 @@ class _ApplicationListState extends State<ApplicationList> {
         .where((a) =>
             '${a.title} ${a.id}'.toLowerCase().contains(query.toLowerCase()))
         .toList();
-    final panelWidth = MediaQuery.of(context).size.width * (widget.selectForHome ? 1 : .8);
+    final panelWidth =
+        MediaQuery.of(context).size.width * (widget.selectForHome ? 1 : .8);
     return Container(
         width: panelWidth,
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
             child: Column(children: [
-          if (widget.selectForHome) Padding(padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Text('点击卡片勾选程序，保存后显示在控制台首页。', style: Theme.of(context).textTheme.caption)),
+          if (widget.selectForHome)
+            Padding(
+                padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
+                child: Text('点击卡片勾选程序，保存后显示在控制台首页。',
+                    style: Theme.of(context).textTheme.caption)),
           Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 12, 16),
               child: Row(children: [
@@ -404,10 +467,15 @@ class _ApplicationListState extends State<ApplicationList> {
                             prefixIcon: Icon(Icons.search), hintText: '搜索程序'))),
                 IconButton(
                     icon: Icon(Icons.refresh),
-                    onPressed: loading ? null : load),
-                if (widget.selectForHome) TextButton(onPressed: saving ? null : () => setState(() => pins = []),child: Text('清空')),
+                    onPressed:
+                        loading || refreshing ? null : () => load(force: true)),
+                if (widget.selectForHome)
+                  TextButton(
+                      onPressed:
+                          saving ? null : () => setState(() => pins = []),
+                      child: Text('清空')),
               ])),
-          if (loading) LinearProgressIndicator(),
+          if (loading || refreshing) LinearProgressIndicator(),
           if (error.isNotEmpty)
             Padding(padding: EdgeInsets.all(12), child: Text('$error，点击刷新重试')),
           Expanded(
@@ -421,14 +489,23 @@ class _ApplicationListState extends State<ApplicationList> {
                         .map((app) => Semantics(
                             key: ValueKey('program-card:${app.id}'),
                             button: true,
-                            selected: widget.selectForHome ? pins.contains(app.id) : null,
+                            selected: widget.selectForHome
+                                ? pins.contains(app.id)
+                                : null,
                             label: app.title,
                             child: GestureDetector(
-                                onLongPress: widget.selectForHome ? null : () => pinMenu(app),
+                                onLongPress: widget.selectForHome
+                                    ? null
+                                    : () => pinMenu(app),
                                 onTap: () {
                                   if (widget.selectForHome) {
                                     if (!pinsLoaded || saving) return;
-                                    setState(() {if (pins.contains(app.id)) pins.remove(app.id);else pins.add(app.id);});
+                                    setState(() {
+                                      if (pins.contains(app.id))
+                                        pins.remove(app.id);
+                                      else
+                                        pins.add(app.id);
+                                    });
                                     return;
                                   }
                                   final navigator = Navigator.of(context);
@@ -438,39 +515,47 @@ class _ApplicationListState extends State<ApplicationList> {
                                       settings: RouteSettings(name: app.id)));
                                 },
                                 child: Container(
-                                  width:
-                                      (panelWidth - 60) /
-                                          2,
+                                  width: (panelWidth - 60) / 2,
                                   padding: EdgeInsets.symmetric(
                                       vertical: 20, horizontal: 8),
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color:
-                                              widget.selectForHome && pins.contains(app.id) ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor),
+                                          color: widget.selectForHome &&
+                                                  pins.contains(app.id)
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                              : Theme.of(context).dividerColor),
                                       color: Theme.of(context).cardColor,
                                       borderRadius: BorderRadius.circular(20)),
                                   child: Column(children: [
                                     SizedBox(
                                         height: 48,
                                         child: Center(
-                                            child: app.package != null
-                                                ? NasAppIcon(app.package,
-                                                    appIds: app.iconApps,
-                                                    key: ValueKey(
-                                                        'icon:${Util.baseUrl}|${Util.sid}|${app.package.id}|${app.iconApps}'),
-                                                    fallbackAsset: app.asset)
-                                                : app.asset == null
-                                                    ? Icon(app.icon,
-                                                        size: 45,
-                                                        color: Theme.of(context)
-                                                            .primaryColor)
-                                                    : Image.asset(app.asset,
-                                                        height: 45,
-                                                        width: 45,
-                                                        errorBuilder: (_, __,
-                                                                ___) =>
-                                                            Icon(app.icon,
-                                                                size: 45)))),
+                                            child: app.service != null
+                                                ? ServiceAppIcon(app.service,
+                                                    nasIcon: app.nasIcon)
+                                                : app.package != null
+                                                    ? NasAppIcon(app.package,
+                                                        appIds: app.iconApps,
+                                                        key: ValueKey(
+                                                            'icon:${Util.baseUrl}|${Util.sid}|${app.package.id}|${app.iconApps}'),
+                                                        fallbackAsset:
+                                                            app.asset)
+                                                    : app.asset == null
+                                                        ? Icon(app.icon,
+                                                            size: 45,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .primaryColor)
+                                                        : Image.asset(app.asset,
+                                                            height: 45,
+                                                            width: 45,
+                                                            errorBuilder: (_,
+                                                                    __, ___) =>
+                                                                Icon(app.icon,
+                                                                    size:
+                                                                        45)))),
                                     SizedBox(height: 10),
                                     SizedBox(
                                         height: 2 *
@@ -495,28 +580,62 @@ class _ApplicationListState extends State<ApplicationList> {
                                         height: 20 *
                                             MediaQuery.of(context)
                                                 .textScaleFactor,
-                                        child: widget.selectForHome ? Row(mainAxisAlignment: MainAxisAlignment.center,children:[
-                                          Icon(pins.contains(app.id) ? Icons.check_circle : Icons.radio_button_unchecked,size:16,color:pins.contains(app.id)?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
-                                          SizedBox(width:4),Text(pins.contains(app.id)?'已选择':'点击选择',style:Theme.of(context).textTheme.caption),
-                                        ]) : Text(
-                                            app.caption ??
-                                                (app.id.startsWith('container:')
-                                                    ? '容器'
-                                                    : ''),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .caption)),
+                                        child: widget.selectForHome
+                                            ? Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                    Icon(
+                                                        pins.contains(app.id)
+                                                            ? Icons.check_circle
+                                                            : Icons
+                                                                .radio_button_unchecked,
+                                                        size: 16,
+                                                        color: pins.contains(
+                                                                app.id)
+                                                            ? Theme.of(context)
+                                                                .colorScheme
+                                                                .primary
+                                                            : Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurfaceVariant),
+                                                    SizedBox(width: 4),
+                                                    Text(
+                                                        pins.contains(app.id)
+                                                            ? '已选择'
+                                                            : '点击选择',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .caption),
+                                                  ])
+                                            : Text(
+                                                app.caption ??
+                                                    (app.id.startsWith(
+                                                            'container:')
+                                                        ? '容器'
+                                                        : ''),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .caption)),
                                   ]),
                                 ))))
                         .toList()),
                 if (shown.isEmpty && !loading)
                   Padding(padding: EdgeInsets.all(24), child: Text('没有匹配的程序')),
               ])),
-          if (widget.selectForHome) Padding(padding: EdgeInsets.all(20),child:SizedBox(width:double.infinity,
-            child: ElevatedButton(key:ValueKey('save-home-programs'),onPressed:loading||!pinsLoaded||saving?null:saveHomeSelection,
-              child:Text(saving?'正在保存…':'保存（${pins.length}）')))),
+          if (widget.selectForHome)
+            Padding(
+                padding: EdgeInsets.all(20),
+                child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                        key: ValueKey('save-home-programs'),
+                        onPressed: loading || !pinsLoaded || saving
+                            ? null
+                            : saveHomeSelection,
+                        child: Text(saving ? '正在保存…' : '保存（${pins.length}）')))),
         ])));
   }
 }
