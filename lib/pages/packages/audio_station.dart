@@ -228,7 +228,11 @@ class _AudioLibraryState extends State<AudioLibrary>
           ProgramSection('', 'SYNO.AudioStation.Stream', 'stream', version: 2),
           {'id': song['id'], 'format': 'raw'}));
   Future<void> mediaMenu(Map song) async {
-    if (song['type'] == 'folder' || song['id'] == null) {
+    final playable = widget.kind == 'Song' ||
+        widget.kind == 'Search' ||
+        widget.kind == 'Folder' ||
+        widget.method == 'getinfo';
+    if (!playable || song['type'] == 'folder' || song['id'] == null) {
       showInfo(song);
       return;
     }

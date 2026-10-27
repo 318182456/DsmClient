@@ -10,6 +10,27 @@ import 'package:dsm_client/util/media_delete.dart';
 import 'package:dsm_client/themes/light.dart';
 
 void main() {
+  testWidgets('Playlist identifiers are not sent to the song playback endpoint',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+        theme: lightTheme,
+        home: AudioLibrary('播放列表', 'Playlist', 'playlists',
+            loader: (section, params) async => {
+                  'success': true,
+                  'data': {
+                    'total': 1,
+                    'playlists': [
+                      {'id': 'playlist-1', 'name': '测试播放列表'}
+                    ]
+                  }
+                })));
+    await tester.pumpAndSettle();
+    await tester.longPress(find.text('测试播放列表'));
+    await tester.pumpAndSettle();
+    expect(find.text('从头播放'), findsNothing);
+    expect(find.text('音乐信息'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('Shared button content is centered in wide and round buttons',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
