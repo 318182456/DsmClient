@@ -59,7 +59,7 @@ void main() {
       'Program search reuses cached catalog, manual refresh forces read, stale failure retains entries',
       (tester) async {
     final oldBase = Util.baseUrl, oldAccount = Util.account;
-    Util.baseUrl = 'https://nas.test';
+    Util.baseUrl = '';
     Util.account = 'fixture';
     addTearDown(() {
       Util.baseUrl = oldBase;
@@ -98,6 +98,7 @@ void main() {
     expect(find.text('Cached Audio'), findsOneWidget);
     await tester.pumpWidget(SizedBox());
     await tester.pumpAndSettle();
+    ProgramCatalogCache.memory.clear();
     await tester.pumpWidget(page());
     await tester.pumpAndSettle();
     expect(calls, 1);
@@ -246,7 +247,7 @@ void main() {
     await tester.tap(find.text('确认'));
     await tester.pumpAndSettle();
     expect(client.writes, isEmpty);
-    await tester.ensureVisible(find.text('规则名称已存在，请使用其他名称'));
+    await tester.scrollUntilVisible(find.text('规则名称已存在，请使用其他名称'), 400);
     expect(find.text('规则名称已存在，请使用其他名称'), findsOneWidget);
     await tester.pumpWidget(
         MaterialApp(theme: lightTheme, home: QbRssRulesPage(client)));

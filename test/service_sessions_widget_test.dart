@@ -12,9 +12,10 @@ import 'package:dsm_client/util/service_sessions.dart';
 import 'package:dsm_client/util/service_session_pool.dart';
 
 void main() {
-  testWidgets(
+  TestWidgetsFlutterBinding.ensureInitialized();
+  test(
       'Startup warms saved qB, TR and Dockhand and page opening reuses authenticated clients',
-      (tester) async {
+      () async {
     final oldBase = Util.baseUrl, oldAccount = Util.account;
     Util.baseUrl = 'https://nas.test';
     Util.account = 'fixture';
@@ -25,8 +26,7 @@ void main() {
     ServiceSessions.warmed.clear();
     ServiceSessionPool.clear();
     FlutterSecureStorage.setMockInitialValues({});
-    final server = await tester
-        .runAsync(() => HttpServer.bind(InternetAddress.loopbackIPv4, 0));
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final address = 'http://127.0.0.1:${server.port}';
     SharedPreferences.setMockInitialValues({
       'torrent_url_false_$qp': address,
@@ -87,7 +87,7 @@ void main() {
             {'mode': 'local', 'account': 'demo', 'password': 'fixture'});
       await DockhandCredentials().save(nas, address,
           {'mode': 'local', 'account': 'demo', 'password': 'fixture'});
-      await tester.runAsync(() async {
+      await (() async {
         await ServiceSessions.warmUp();
         expect(counts['/api/v2/auth/login'], 1);
         expect(counts['/transmission/rpc'], 2);
@@ -107,11 +107,17 @@ void main() {
         expect(counts['/transmission/rpc'], 2);
         expect(counts['/api/auth/login'], 1);
         expect(errors, isEmpty);
-      });
+        ServiceSessions.clear();
+        await ServiceSessions.warmUp();
+        expect(counts['/api/v2/auth/login'], 2);
+        expect(counts['/transmission/rpc'], 4);
+        expect(counts['/api/auth/login'], 2);
+        expect(errors, isEmpty);
+      })();
     } finally {
       ServiceSessionPool.clear();
       ServiceSessions.warmed.clear();
-      await tester.runAsync(() => server.close(force: true));
+      await server.close(force: true);
       HttpOverrides.global = oldOverrides;
       Util.baseUrl = oldBase;
       Util.account = oldAccount;

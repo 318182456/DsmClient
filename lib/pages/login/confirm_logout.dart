@@ -1,4 +1,5 @@
 import 'package:dsm_client/util/function.dart';
+import 'package:dsm_client/util/service_sessions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:dsm_client/widgets/surfaces.dart';
@@ -86,6 +87,7 @@ class _ConfirmLogoutState extends State<ConfirmLogout> {
                           Util.removeStorage("sid");
                           Util.removeStorage("synotoken");
                           Util.sid = '';
+                          ServiceSessions.clear();
                           Util.sessionTokens.clear();
                           Api.apiList.clear();
                           // Util.removeStorage("smid");

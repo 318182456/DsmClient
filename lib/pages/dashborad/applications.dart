@@ -76,7 +76,7 @@ class _ApplicationListState extends State<ApplicationList> {
   @override
   void initState() {
     super.initState();
-    connection = '${Util.baseUrl}|${Util.sid}';
+    connection = '${Util.baseUrl}|${Util.sid}|${Util.account}';
     selectionScope = ProgramPins.key;
     if (!widget.selectForHome) ProgramPins.changed.addListener(readPins);
     readPins();
@@ -245,8 +245,8 @@ class _ApplicationListState extends State<ApplicationList> {
   @override
   void didUpdateWidget(ApplicationList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (connection != '${Util.baseUrl}|${Util.sid}') {
-      connection = '${Util.baseUrl}|${Util.sid}';
+    if (connection != '${Util.baseUrl}|${Util.sid}|${Util.account}') {
+      connection = '${Util.baseUrl}|${Util.sid}|${Util.account}';
       catalogLoaded = false;
       packages = [];
       containers = [];
@@ -268,7 +268,7 @@ class _ApplicationListState extends State<ApplicationList> {
   Future<void> load({bool force = false}) async {
     final current = ++generation;
     final scope = ProgramCatalogCache.scope;
-    connection = '${Util.baseUrl}|${Util.sid}';
+    connection = '${Util.baseUrl}|${Util.sid}|${Util.account}';
     if (cacheEnabled && !force) {
       final cached = await ProgramCatalogCache.read(scope);
       if (!mounted ||
@@ -297,7 +297,7 @@ class _ApplicationListState extends State<ApplicationList> {
     ]);
     if (!mounted ||
         generation != current ||
-        connection != '${Util.baseUrl}|${Util.sid}' ||
+        connection != '${Util.baseUrl}|${Util.sid}|${Util.account}' ||
         scope != ProgramCatalogCache.scope) return;
     setState(() {
       if (result[0]['success'] == true)

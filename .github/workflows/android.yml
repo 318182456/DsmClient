@@ -103,6 +103,7 @@ jobs:
           lib/pages/packages/torrent_rss.dart lib/util/program_pins.dart
           lib/models/qb_rss_rule.dart lib/pages/packages/qb_rss_rules.dart
           lib/util/service_auth_error.dart lib/util/service_session_pool.dart lib/util/service_sessions.dart
+          lib/pages/login/confirm_logout.dart
           lib/util/program_catalog_cache.dart lib/widgets/service_app_icon.dart
 
       - name: Upload optional UI review previews
