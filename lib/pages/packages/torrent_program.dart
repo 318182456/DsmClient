@@ -416,6 +416,7 @@ class _TorrentProgramState extends State<TorrentProgram>
                     onPressed: () => setState(
                         () => selected.addAll(shown.map((t) => '${t['id']}')))),
                 PopupMenuButton<String>(
+                    key: ValueKey('torrent-batch-menu'),
                     enabled: !busy,
                     onSelected: (action) => control(action, picked),
                     itemBuilder: (_) => actions.entries

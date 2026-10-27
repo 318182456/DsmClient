@@ -126,8 +126,7 @@ void main() {
       await tester.longPress(find.text('Ubuntu 24.04 LTS'));
       await tester.pumpAndSettle();
       expect(find.text('已选 1 项'), findsOneWidget);
-      await tester.tap(
-          find.byWidgetPredicate((w) => w is PopupMenuButton<String>).first);
+      await tester.tap(find.byKey(ValueKey('torrent-batch-menu')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('暂停').last);
       await tester.pumpAndSettle();

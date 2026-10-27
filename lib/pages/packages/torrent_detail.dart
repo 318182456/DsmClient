@@ -127,11 +127,11 @@ class _TorrentDetailState extends State<TorrentDetail> {
     final properties = data['properties'] as Map ?? {};
     final down = TextEditingController(
         text: widget.client.transmission
-            ? '${properties['downloadLimit'] ?? 0}'
+            ? '${properties['downloadLimited'] == false ? 0 : properties['downloadLimit'] ?? 0}'
             : '${(TorrentPresentation.number(properties['dl_limit']) / 1024).clamp(0, 10485760).round()}');
     final up = TextEditingController(
         text: widget.client.transmission
-            ? '${properties['uploadLimit'] ?? 0}'
+            ? '${properties['uploadLimited'] == false ? 0 : properties['uploadLimit'] ?? 0}'
             : '${(TorrentPresentation.number(properties['up_limit']) / 1024).clamp(0, 10485760).round()}');
     String errorText = '';
     final result = await showDialog<List<int>>(
@@ -140,7 +140,8 @@ class _TorrentDetailState extends State<TorrentDetail> {
             builder: (context, update) => AlertDialog(
                     title: Text('任务限速'),
                     content: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text('单位 KiB/s，0 表示不限速。'),
+                      Text(
+                          '单位 ${widget.client.transmission ? 'KB/s' : 'KiB/s'}，0 表示不限速。'),
                       SizedBox(height: 16),
                       TextField(
                           controller: down,
