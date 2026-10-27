@@ -17,10 +17,14 @@ import 'program_page.dart';
 import 'snapshots.dart';
 import 'torrent_program.dart';
 import 'rr_program.dart';
+import 'office_management.dart';
+import 'ai_console.dart';
+import 'package:dsm_client/util/drive_admin_api.dart';
 
 Widget nativeContainer(String name, {String image = ''}) {
   final service = '$name $image'.toLowerCase();
-  if (service.contains('dockhand')) return DockerWorkspace(initialBackend: 'dockhand');
+  if (service.contains('dockhand'))
+    return DockerWorkspace(initialBackend: 'dockhand');
   if (service.contains('qbittorrent')) return TorrentProgram(name);
   if (service.contains('transmission'))
     return TorrentProgram(name, transmission: true);
@@ -29,7 +33,8 @@ Widget nativeContainer(String name, {String image = ''}) {
 
 /// Every installed package has a native route. No WebView fallback.
 Widget nativeProgram(NasPackage package) {
-  if (!ProgramCapabilities.hasWorkspace(package.id)) return ProgramPage(package);
+  if (!ProgramCapabilities.hasWorkspace(package.id))
+    return ProgramPage(package);
   switch (package.id) {
     case 'rr-manager':
       return RrProgram();
@@ -55,6 +60,10 @@ Widget nativeProgram(NasPackage package) {
       return SnapshotProgram();
     case 'SynologyDrive':
       return DrivePage(package);
+    case 'Spreadsheet':
+      return OfficeConsole(package);
+    case 'AIConsole':
+      return AiConsolePage(DriveAdminApi());
     default:
       return ProgramPage(package);
   }

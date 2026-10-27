@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'program_page.dart';
+import 'drive_console.dart';
 import 'package:dsm_client/widgets/workspace.dart';
 
 class DrivePage extends StatefulWidget {
@@ -278,7 +279,7 @@ class _DrivePageState extends State<DrivePage> {
               onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => ProgramPage(widget.package)))),
+                      builder: (_) => DriveConsole(widget.package)))),
           PopupMenuButton<String>(
               enabled: !busy,
               onSelected: (v) async {

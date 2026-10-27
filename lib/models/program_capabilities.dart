@@ -49,6 +49,8 @@ class ProgramCapabilities {
         'Virtualization',
         'SnapshotReplication',
         'SynologyDrive',
+        'Spreadsheet',
+        'AIConsole',
         'HyperBackup',
         'CloudSync',
         'ScsiTarget',

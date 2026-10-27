@@ -30,7 +30,7 @@ class ProgramSection {
   }
 
   static bool sensitive(String key) => RegExp(
-          r'password|passwd|secret|token|cookie|(^|_)sid$|session|private_key|auth_key|credential',
+          r'password|passwd|secret|token|cookie|(^|_)sid$|session|private_key|auth_key|api[_-]?key|access[_-]?key|credential',
           caseSensitive: false)
       .hasMatch(key);
 

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:dsm_client/models/display_text.dart';
 import 'package:dsm_client/util/torrent_client.dart';
 import 'package:dsm_client/util/function.dart';
 import 'package:dsm_client/models/torrent_presentation.dart';
@@ -93,7 +94,7 @@ class _TorrentDetailState extends State<TorrentDetail> {
         context: context,
         builder: (dialog) => StatefulBuilder(
             builder: (context, update) => AlertDialog(
-                    title: Text('添加 Tracker'),
+                    title: Text('添加追踪服务器'),
                     content: TextField(
                         controller: text,
                         keyboardType: TextInputType.url,
@@ -216,7 +217,7 @@ class _TorrentDetailState extends State<TorrentDetail> {
                 bottom: AdaptiveTabBar(tabs: [
                   Tab(text: '概览'),
                   Tab(text: '文件'),
-                  Tab(text: 'Tracker'),
+                  Tab(text: '追踪服务器'),
                   Tab(text: '连接')
                 ])),
             body: Column(children: [
@@ -232,7 +233,10 @@ class _TorrentDetailState extends State<TorrentDetail> {
                 list([
                   Card(
                       child: NativeProperties(
-                          data['properties'] ?? widget.task['raw'] ?? {}))
+                          data['properties'] ?? widget.task['raw'] ?? {},
+                          contextName: widget.client.transmission
+                              ? 'transmission'
+                              : 'qbittorrent'))
                 ]),
                 list([
                   if (files.isEmpty && !busy)
@@ -264,7 +268,7 @@ class _TorrentDetailState extends State<TorrentDetail> {
                     TextButton.icon(
                         onPressed: busy ? null : tracker,
                         icon: Icon(Icons.add),
-                        label: Text('添加 Tracker')),
+                        label: Text('添加追踪服务器')),
                     TextButton.icon(
                         onPressed: busy
                             ? null
@@ -274,28 +278,32 @@ class _TorrentDetailState extends State<TorrentDetail> {
                         label: Text('重新通告'))
                   ]),
                   if (trackers.isEmpty && !busy)
-                    WorkspaceEmpty('暂无 Tracker', icon: Icons.public),
+                    WorkspaceEmpty('暂无追踪服务器', icon: Icons.public),
                   ...trackers.map((t) => Card(
                       child: ListTile(
                           title: Text(
                               '${t['url'] ?? t['announce'] ?? 'Tracker'}',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis),
-                          subtitle: Text(
-                              '${t['msg'] ?? t['lastAnnounceResult'] ?? t['status'] ?? ''}'),
+                          subtitle: Text(DisplayText.tracker(t,
+                              transmission: widget.client.transmission)),
                           onTap: () => showDialog(
                               context: context,
                               builder: (_) => AlertDialog(
-                                  title: Text('Tracker 信息'),
+                                  title: Text('追踪服务器信息'),
                                   content: SingleChildScrollView(
-                                      child: NativeProperties(t))))))),
+                                      child: NativeProperties(t,
+                                          contextName:
+                                              widget.client.transmission
+                                                  ? 'transmission-tracker'
+                                                  : 'qb-tracker'))))))),
                 ]),
                 list([
                   if (peers.isEmpty && !busy)
-                    WorkspaceEmpty('暂无连接的 Peer', icon: Icons.people_outline),
+                    WorkspaceEmpty('暂无连接节点', icon: Icons.people_outline),
                   ...peers.map((p) => Card(
                       child: ListTile(
-                          title: Text('${p['ip'] ?? p['address'] ?? 'Peer'}'),
+                          title: Text('${p['ip'] ?? p['address'] ?? '连接节点'}'),
                           subtitle: Text(
                               '${p['client'] ?? p['clientName'] ?? ''}\n'
                               '↓ ${Util.formatSize(TorrentPresentation.number(p['dl_speed'] ?? p['rateToClient']))}/s · ↑ ${Util.formatSize(TorrentPresentation.number(p['up_speed'] ?? p['rateToPeer']))}/s')))),

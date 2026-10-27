@@ -38,16 +38,24 @@ class _ServiceAppIconState extends State<ServiceAppIcon> {
         oldWidget.nasIcon != widget.nasIcon) index = 0;
   }
 
-  Widget fallback() => Image.asset('assets/applications/container_manager.png',
-      width: widget.size, height: widget.size);
+  Widget fallback() => Image.asset(
+      widget.service == 'transmission'
+          ? 'assets/applications/transmission.png'
+          : 'assets/applications/container_manager.png',
+      width: widget.size,
+      height: widget.size);
   @override
   Widget build(BuildContext context) {
+    // Container metadata can point at a generic Docker icon. TR always has its
+    // unmodified upstream artwork available, including on a first offline launch.
+    if (widget.service == 'transmission') return fallback();
     final native = DsmIcons.resolve(Util.baseUrl, widget.nasIcon);
     final original = ServiceAppIcon.originals[widget.service];
     final urls = [
       if (native != null) native,
-      if (original != null) 'https://edgeone.gh-proxy.org/$original',
-      if (original != null) original,
+      if (original != null && widget.service != 'transmission')
+        'https://edgeone.gh-proxy.org/$original',
+      if (original != null && widget.service != 'transmission') original,
     ];
     if (index >= urls.length) return fallback();
     return ExtendedImage.network(urls[index],

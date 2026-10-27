@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:dsm_client/util/program_pins.dart';
 import 'package:dsm_client/util/program_catalog_cache.dart';
 import 'package:dsm_client/widgets/service_app_icon.dart';
+import 'package:dsm_client/pages/packages/drive_console.dart';
 
 class ApplicationList extends StatefulWidget {
   final List applications;
@@ -389,7 +390,7 @@ class _ApplicationListState extends State<ApplicationList> {
               ProgramCapabilities.hasWorkspace(package.id) ? null : '套件管理'));
       if (package.id == 'SynologyDrive')
         result.add(_MenuApp('package:SynologyDrive:console', 'Drive 控制台',
-            Icons.cloud, () => ProgramPage(package),
+            Icons.cloud, () => DriveConsole(package),
             package: package, iconApps: ['SYNO.SDS.CSTN.Instance']));
     }
     if (!installed.contains('FileStation'))

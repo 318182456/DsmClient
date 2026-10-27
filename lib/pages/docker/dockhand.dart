@@ -10,6 +10,7 @@ import 'package:dsm_client/widgets/docker_stats.dart';
 import 'package:dsm_client/util/service_sessions.dart';
 import 'package:dsm_client/util/service_session_pool.dart';
 import 'package:dsm_client/util/service_auth_error.dart';
+import 'package:dsm_client/models/display_text.dart';
 
 class DockhandProgram extends StatefulWidget {
   final String profile;
@@ -443,7 +444,9 @@ class _DockhandProgramState extends State<DockhandProgram>
             context,
             MaterialPageRoute(
                 builder: (_) => Scaffold(
-                    appBar: AppBar(title: Text('${item['name']} · $view')),
+                    appBar: AppBar(
+                        title: Text(
+                            '${item['name']} · ${DisplayText.field(view)}')),
                     body: SingleChildScrollView(
                         padding: EdgeInsets.all(16),
                         child: view == 'logs' && value is Map
@@ -453,7 +456,8 @@ class _DockhandProgramState extends State<DockhandProgram>
                                     child: Padding(
                                         padding: EdgeInsets.all(18),
                                         child: DockerStatsPanel(value)))
-                                : NativeProperties(value)))));
+                                : NativeProperties(value,
+                                    contextName: 'docker')))));
     } catch (e) {
       if (mounted) setState(() => error = message(e));
     } finally {
@@ -525,7 +529,7 @@ class _DockhandProgramState extends State<DockhandProgram>
                             DropdownMenuItem(
                                 value: 'local', child: Text('账号与密码')),
                             DropdownMenuItem(
-                                value: 'token', child: Text('API Token')),
+                                value: 'token', child: Text('访问令牌')),
                             DropdownMenuItem(
                                 value: 'none', child: Text('服务未启用认证'))
                           ],
@@ -663,7 +667,10 @@ class _DockhandProgramState extends State<DockhandProgram>
                             if (state.isNotEmpty)
                               Padding(
                                   padding: EdgeInsets.only(top: 4),
-                                  child: Text(running ? '● 运行中' : state,
+                                  child: Text(
+                                      running
+                                          ? '● 运行中'
+                                          : DisplayText.status(state),
                                       style: TextStyle(
                                           color: statusColor, fontSize: 13))),
                             if (item['image'] != null)
@@ -681,7 +688,8 @@ class _DockhandProgramState extends State<DockhandProgram>
                                   body: SingleChildScrollView(
                                       padding: EdgeInsets.all(16),
                                       child: Card(
-                                          child: NativeProperties(item))))))),
+                                          child: NativeProperties(item,
+                                              contextName: 'docker'))))))),
                   if (resource == 'containers')
                     Padding(
                         padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -879,7 +887,8 @@ class _DockhandProgramState extends State<DockhandProgram>
                               : '没有匹配的项目',
                           icon: resourceIcons[resource]),
                     if (data != null && data is! List)
-                      Card(child: NativeProperties(data)),
+                      Card(
+                          child: NativeProperties(data, contextName: 'docker')),
                     ...visible.map(resourceCard),
                   ]))),
     ]);

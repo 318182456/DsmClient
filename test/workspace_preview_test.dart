@@ -24,6 +24,14 @@ import 'program_cache_rss_widget_test.dart' show RuleFixtureClient;
 import 'package:dsm_client/pages/packages/qb_rss_rules.dart';
 import 'package:dsm_client/pages/packages/torrent_rss.dart';
 import 'package:dsm_client/util/program_pins.dart';
+import 'drive_localization_widget_test.dart' show FixtureDriveAdmin;
+import 'package:dsm_client/models/nas_package.dart';
+import 'package:dsm_client/pages/packages/drive_console.dart';
+import 'package:dsm_client/pages/packages/drive_management.dart';
+import 'package:dsm_client/pages/packages/office_management.dart';
+import 'package:dsm_client/pages/packages/ai_console.dart';
+import 'package:dsm_client/pages/packages/program_page.dart';
+import 'package:dsm_client/widgets/service_app_icon.dart';
 
 void main() {
   testWidgets('Render temporary design review previews when requested',
@@ -72,6 +80,12 @@ void main() {
               theme: reviewTheme(theme),
               home: page)));
       await tester.pumpAndSettle();
+      if (name == 'transmission-icon') {
+        await tester.runAsync(() => precacheImage(
+            AssetImage('assets/applications/transmission.png'),
+            key.currentContext));
+        await tester.pumpAndSettle();
+      }
       if (name == 'rss-rule-settings') {
         await tester.ensureVisible(find.byKey(ValueKey('rss-rule-field:下载分类')));
         await tester.pumpAndSettle();
@@ -192,6 +206,55 @@ void main() {
                 ]
               }
             });
+    final driveApi = FixtureDriveAdmin();
+    await capture(
+        'drive-console',
+        DriveConsole(
+            NasPackage.fromJson({
+              'id': 'SynologyDrive',
+              'name': 'Synology Drive',
+              'version': '4.0.3'
+            }),
+            api: driveApi),
+        lightTheme);
+    await capture(
+        'drive-team-folder', DriveShareEditor(driveApi, '团队资料'), lightTheme);
+    await capture('drive-settings', DriveSettingsPage(driveApi), lightTheme);
+    await capture('office-fonts', OfficeFontsPage(driveApi), lightTheme);
+    await capture('ai-console', AiConsolePage(driveApi), lightTheme);
+    await capture(
+        'torrent-properties',
+        Scaffold(
+            appBar: AppBar(title: Text('任务详情')),
+            body: SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: NativeProperties({
+                  'downloadDir': '/data/downloads',
+                  'total_downloaded': 1048576,
+                  'uploadRatio': 1.5,
+                  'eta': 120,
+                  'state': 4
+                }, contextName: 'transmission'))),
+        lightTheme);
+    await capture(
+        'dockhand-properties',
+        Scaffold(
+            appBar: AppBar(title: Text('容器配置')),
+            body: SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: NativeProperties({
+                  'Name': 'example-service',
+                  'State': 'exited',
+                  'RestartPolicy': {'Name': 'always'},
+                  'NetworkSettings': {'IPAddress': '192.0.2.1'}
+                }, contextName: 'docker'))),
+        lightTheme);
+    await capture(
+        'transmission-icon',
+        Scaffold(
+            appBar: AppBar(title: Text('Transmission')),
+            body: Center(child: ServiceAppIcon('transmission', size: 128))),
+        lightTheme);
     await capture('music-light', music(), lightTheme);
     await capture('music-dark', music(), darkTheme);
     await capture(

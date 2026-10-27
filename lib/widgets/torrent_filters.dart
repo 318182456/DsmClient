@@ -64,9 +64,9 @@ Future<Map<String, String>> showTorrentFilters(
                                   '无标签'),
                               field(
                                   'tracker',
-                                  'Tracker',
+                                  '追踪服务器',
                                   tasks.expand(TorrentPresentation.trackers),
-                                  '无 Tracker'),
+                                  '无追踪服务器'),
                               field(
                                   'directory',
                                   '保存目录',

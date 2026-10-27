@@ -1,6 +1,7 @@
 import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/models/nas_package.dart';
 import 'package:dsm_client/models/program_section.dart';
+import 'package:dsm_client/models/display_text.dart';
 import 'package:dsm_client/pages/file/file.dart';
 import 'package:dsm_client/pages/terminal/select_server.dart';
 import 'package:dsm_client/util/function.dart';
@@ -419,7 +420,10 @@ class _ProgramDataViewState extends State<ProgramDataView>
 /// Nested native rows; session and credential fields are filtered recursively.
 class NativeProperties extends StatelessWidget {
   final dynamic value;
-  const NativeProperties(this.value);
+  final String contextName;
+  final bool literalKeys;
+  const NativeProperties(this.value,
+      {this.contextName = '', this.literalKeys = false});
   static const labels = {
     'name': '名称',
     'version': '版本',
@@ -481,25 +485,42 @@ class NativeProperties extends StatelessWidget {
       return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: safe.entries.map<Widget>((e) {
-            final name = labels['${e.key}'] ?? '${e.key}';
+            final key = '${e.key}';
+            final name = literalKeys
+                ? key
+                : contextName == 'ai' && key == 'model'
+                    ? '模型'
+                    : contextName.isNotEmpty &&
+                            DisplayText.fields
+                                .containsKey(DisplayText.normalize(key))
+                        ? DisplayText.field(key)
+                        : labels[key] ?? DisplayText.field(key);
+            final childContext = DisplayText.normalize(key) == 'restartpolicy'
+                ? 'restart-policy'
+                : contextName;
             if (e.value is Map || e.value is List)
               return ExpansionTile(title: Text(name), children: [
                 Padding(
                     padding: EdgeInsets.only(left: 12),
-                    child: NativeProperties(e.value))
+                    child: NativeProperties(e.value,
+                        contextName: childContext,
+                        literalKeys: literalKeys ||
+                            const {'labels', 'env', 'environment', 'options'}
+                                .contains(DisplayText.normalize(key))))
               ]);
             return ListTile(
                 title: Text(name, style: Theme.of(context).textTheme.caption),
                 subtitle: SelectableText(
-                    e.value is bool
-                        ? (e.value ? '是' : '否')
-                        : '${e.value ?? '—'}',
+                    literalKeys
+                        ? '${e.value ?? '—'}'
+                        : DisplayText.value(key, e.value, context: contextName),
                     style: Theme.of(context).textTheme.bodyText1));
           }).toList());
     if (safe is List)
       return Column(children: [
         if (safe.isEmpty) ListTile(title: Text('暂无记录')),
-        ...safe.map<Widget>((v) => NativeProperties(v))
+        ...safe.map<Widget>((v) => NativeProperties(v,
+            contextName: contextName, literalKeys: literalKeys))
       ]);
     return ListTile(title: SelectableText('${safe ?? '—'}'));
   }

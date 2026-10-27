@@ -61,6 +61,7 @@ jobs:
           dart --no-sound-null-safety test/torrent_rss_test.dart
           dart --no-sound-null-safety test/qb_rss_rule_test.dart
           dart --no-sound-null-safety test/service_session_pool_test.dart
+          dart --no-sound-null-safety test/presentation_font_test.dart
           dart --no-sound-null-safety test/update_release_test.dart
           dart --no-sound-null-safety test/update_download_test.dart
 
@@ -73,7 +74,7 @@ jobs:
             curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
               https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
           fi
-          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart test/torrent_workspace_test.dart test/dockhand_stats_widget_test.dart test/torrent_features_widget_test.dart test/program_cache_rss_widget_test.dart test/service_sessions_widget_test.dart
+          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart test/torrent_workspace_test.dart test/dockhand_stats_widget_test.dart test/torrent_features_widget_test.dart test/program_cache_rss_widget_test.dart test/service_sessions_widget_test.dart test/drive_admin_test.dart test/drive_localization_widget_test.dart
 
       - name: Analyze native program pages
         run: >-
@@ -105,6 +106,10 @@ jobs:
           lib/util/service_auth_error.dart lib/util/service_session_pool.dart lib/util/service_sessions.dart
           lib/pages/login/confirm_logout.dart
           lib/util/program_catalog_cache.dart lib/widgets/service_app_icon.dart
+          lib/models/display_text.dart lib/models/font_family_reader.dart
+          lib/util/drive_admin_api.dart lib/util/ai_console_api.dart
+          lib/pages/packages/drive_console.dart lib/pages/packages/drive_management.dart
+          lib/pages/packages/office_management.dart lib/pages/packages/ai_console.dart
 
       - name: Upload optional UI review previews
         if: github.event_name == 'workflow_dispatch' && inputs.ui_preview

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:dsm_client/widgets/service_app_icon.dart';
 import 'package:flutter/services.dart';
 import 'package:dsm_client/pages/download_station/add_task.dart';
 import 'package:dsm_client/widgets/workspace.dart';
@@ -37,7 +38,9 @@ class TorrentImport extends StatelessWidget {
         ])
           Card(
               child: ListTile(
-                  leading: Icon(Icons.download_outlined),
+                  leading: target == 'Download Station'
+                      ? Icon(Icons.download_outlined)
+                      : ServiceAppIcon(target.toLowerCase(), size: 36),
                   title: Text(target),
                   trailing: Icon(Icons.chevron_right),
                   onTap: () => Navigator.push(
