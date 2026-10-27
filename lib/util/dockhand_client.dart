@@ -61,6 +61,10 @@ class DockhandClient {
     return (value as List).whereType<Map>().toList();
   }
   Future<List<Map>> environments() async => records(await request('api/environments'));
+  Future<List<Map>> statistics(String env) async {
+    validateEnvironment(env);
+    return records(await request('api/containers/stats', query: {'env': env}));
+  }
   Future<dynamic> resource(String name, String env) async {
     if (!['containers', 'images', 'stacks', 'networks', 'volumes'].contains(name)) throw ArgumentError('Unsupported resource');
     if (int.tryParse(env ?? '') == null || int.parse(env) <= 0) throw ArgumentError('请选择有效的 Docker 环境');

@@ -42,6 +42,7 @@ class _TorrentProgramState extends State<TorrentProgram>
   String error = '', query = '', filter = 'all', sort = 'added';
   Timer refreshTimer, restoreTimer;
   int restoreGeneration = 0;
+  String initialConnectionUrl;
   bool incomingAdded = false;
   String get backend => widget.transmission ? 'Transmission' : 'qBittorrent';
   String get profile =>
@@ -60,8 +61,10 @@ class _TorrentProgramState extends State<TorrentProgram>
   Future<void> loadAddress() async {
     try {
       final saved = await Util.getStorage(storageKey);
-      if (mounted && address.text.isEmpty && (saved ?? '').isNotEmpty)
+      if (mounted && address.text.isEmpty && (saved ?? '').isNotEmpty) {
+        initialConnectionUrl = saved.trim();
         address.text = saved;
+      }
     } catch (_) {}
   }
 
@@ -79,6 +82,8 @@ class _TorrentProgramState extends State<TorrentProgram>
         record = await vault.read(profile, url);
       } catch (_) {}
       if (!mounted || generation != restoreGeneration) return;
+      final reconnect = record != null && initialConnectionUrl == url;
+      initialConnectionUrl = null;
       setState(() {
         restoring = false;
         if (record != null) {
@@ -87,6 +92,7 @@ class _TorrentProgramState extends State<TorrentProgram>
           remember = true;
         }
       });
+      if (reconnect) await connect();
     });
   }
 

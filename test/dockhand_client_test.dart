@@ -35,6 +35,7 @@ Future<void> main() async {
         } else {
           expect(r.uri.queryParameters['env'] == '2', 'Every resource and action must retain environment scope');
           if (path == '/dock/api/containers') r.response.write('[{"id":"c1","name":"demo","state":"running"}]');
+          else if (path == '/dock/api/containers/stats') r.response.write('[{"id":"c1","cpuPercent":125,"memoryUsage":1024,"memoryLimit":8192}]');
           else if (path.endsWith('/logs')) r.response.write('{"logs":"example log"}');
           else if (path.endsWith('/stop') || path.endsWith('/restart')) {
             expect(r.method == 'POST', 'State changes require POST'); actions++;
@@ -52,6 +53,8 @@ Future<void> main() async {
     await tokenClient.login(token: 'dh_demo');
     expect((await tokenClient.environments()).single['id'] == 2, 'Load environments');
     expect(DockhandClient.records(await tokenClient.resource('containers', '2')).single['id'] == 'c1', 'Load native container data');
+    expect((await tokenClient.statistics('2')).single['cpuPercent'] == 125, 'Read environment-scoped container metrics without clamping multicore CPU');
+    await rejects(tokenClient.statistics(null), 'Reject stats requests without an environment');
     expect((await tokenClient.container('c1','logs','2'))['logs'] == 'example log', 'Read logs');
     await tokenClient.control('c1','stop','2'); await tokenClient.control('my-stack','restart','2',stack:true);
     expect(actions == 2, 'Only explicit requested actions execute');

@@ -75,7 +75,8 @@ class TorrentClient {
     final session = response.headers.value('X-Transmission-Session-Id');
     if (session != null && session.isNotEmpty) _rpcSession = session;
     for (final cookie in response.cookies) {
-      if (cookie.name == 'SID') _cookie = '${cookie.name}=${cookie.value}';
+      if (cookie.name == 'SID' || RegExp(r'^QBT_SID_\d+$').hasMatch(cookie.name))
+        _cookie = '${cookie.name}=${cookie.value}';
     }
     if (response.statusCode == 401 || response.statusCode == 403)
       throw HttpException('服务认证失败，请检查该程序的账号、密码和访问权限');

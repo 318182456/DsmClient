@@ -18,6 +18,7 @@ import 'package:dsm_client/pages/dashborad/applications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dsm_client/pages/packages/torrent_program.dart';
 import 'torrent_workspace_test.dart' show FixtureTorrentClient;
+import 'dockhand_stats_widget_test.dart' show FixtureDockhandClient;
 
 void main() {
   testWidgets('Render temporary design review previews when requested',
@@ -66,6 +67,14 @@ void main() {
               theme: reviewTheme(theme),
               home: page)));
       await tester.pumpAndSettle();
+      if (name == 'dockhand-stats') {
+        await tester.enterText(find.byType(TextField).first, 'https://example.test');
+        await tester.pump(Duration(milliseconds: 400));await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField).at(1), 'demo');
+        await tester.enterText(find.byType(TextField).last, 'fixture');
+        await tester.ensureVisible(find.text('连接 Dockhand'));await tester.tap(find.text('连接 Dockhand'));
+        await tester.pumpAndSettle();
+      }
       if (name.startsWith('torrent-')) {
         await tester.enterText(
             find.byType(TextField).first, 'https://example.test');
@@ -173,6 +182,7 @@ void main() {
         darkTheme);
     await capture(
         'dockhand-connect', DockhandProgram(profile: 'review'), lightTheme);
+    await capture('dockhand-stats', DockhandProgram(profile: 'review-stats', clientFactory: (_) => FixtureDockhandClient()), lightTheme);
     await capture('control-panel', ControlPanel({}, [], [], {}), lightTheme);
     SharedPreferences.setMockInitialValues({'agreement': '1', 'read': '1'});
     Login login() => Login(server: {

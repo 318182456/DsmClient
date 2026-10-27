@@ -15,10 +15,14 @@ import 'dart:convert';
 
 class FixtureTorrentClient extends TorrentClient {
   final calls = <List>[];
+  int loginCount = 0;
+  bool rejectLogin = false;
   FixtureTorrentClient({bool transmission = false})
       : super('https://example.test', transmission: transmission);
   @override
   Future<void> login(String user, String password) async {
+    loginCount++;
+    if (rejectLogin) throw HttpException('fixture authentication rejected');
     version = '5.2.0';
   }
 
@@ -94,6 +98,47 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
   });
+  for (final transmission in [false, true]) {
+    testWidgets('Remembered service reconnects once; disconnect, failure and forgetting stay editable ($transmission)', (tester) async {
+      Future<void> open(FixtureTorrentClient client) async {
+        await tester.pumpWidget(MaterialApp(key: UniqueKey(), theme: lightTheme,
+          home: TorrentProgram('reconnect-fixture', transmission: transmission, clientFactory: (_, __) => client)));
+        await tester.pumpAndSettle();
+        await tester.pump(Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+      }
+      final first = FixtureTorrentClient(transmission: transmission);
+      await open(first);
+      await tester.enterText(find.byType(TextField).first, 'https://example.test');
+      await tester.pump(Duration(milliseconds: 400));await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 'demo');
+      await tester.enterText(find.byType(TextField).last, 'fixture');
+      await tester.ensureVisible(find.text('连接'));await tester.tap(find.text('连接'));await tester.pumpAndSettle();
+      expect(first.loginCount, 1);
+      await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+      final second = FixtureTorrentClient(transmission: transmission);
+      await open(second);
+      expect(second.loginCount, 1);
+      expect(find.byType(TorrentTaskCard), findsNWidgets(3));
+      await tester.tap(find.byTooltip('断开连接'));await tester.pumpAndSettle();
+      await tester.pump(Duration(seconds: 1));
+      expect(second.loginCount, 1);
+      final failed = FixtureTorrentClient(transmission: transmission)..rejectLogin = true;
+      await open(failed);
+      expect(failed.loginCount, 1);
+      expect(find.text('fixture authentication rejected'), findsOneWidget);
+      await tester.pump(Duration(seconds: 6));await tester.pumpAndSettle();
+      expect(failed.loginCount, 1);
+      expect(tester.widget<TextField>(find.byType(TextField).last).controller.text, 'fixture');
+      await tester.ensureVisible(find.text('记住登录信息'));await tester.tap(find.text('记住登录信息'));await tester.pumpAndSettle();
+      final forgotten = FixtureTorrentClient(transmission: transmission);
+      await open(forgotten);
+      expect(forgotten.loginCount, 0);
+      expect(tester.widget<TextField>(find.byType(TextField).last).controller.text, isEmpty);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+    });
+  }
   testWidgets(
       'External seed selection forwards the file and waits for explicit upload confirmation',
       (tester) async {

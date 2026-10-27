@@ -30,10 +30,11 @@ Future<void> main() async {
       final path = request.uri.path.split('/').last;
       if (request.uri.path.startsWith('/qb/')) {
         if (path == 'login') {
-          request.response.cookies.add(Cookie('SID', 'demo-session'));
+          request.response.cookies.add(Cookie('QBT_SID_8086', 'demo-session'));
+          request.response.cookies.add(Cookie('unrelated', 'must-not-reuse'));
           request.response.statusCode = 204;
         } else {
-          expect(request.headers.value('cookie') == 'SID=demo-session',
+          expect(request.headers.value('cookie') == 'QBT_SID_8086=demo-session',
               'Reuse service cookie after 204 login');
           if (path == 'version') {
             if (emptyVersion)
