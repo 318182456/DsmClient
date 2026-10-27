@@ -53,7 +53,11 @@ class GithubUpdates {
   }
 
   static Future<dynamic> _json(HttpClient client, Uri uri) async =>
-      jsonDecode(await _body(client, uri));
+      jsonDecode(await routedBody(uri, (target) async {
+        final body = await _directBody(client, target);
+        jsonDecode(body); // A proxy HTML error page must also trigger fallback.
+        return body;
+      }));
 
   static List<String> tagsFromFeed(String feed) {
     final expression = RegExp('<link\\b[^>]*\\bhref="https://github\\.com/' +
@@ -76,6 +80,13 @@ class GithubUpdates {
         Uri.https('api.github.com', '/repos/${AppRelease.repository}/releases',
             {'per_page': '10'}));
     if (releases is! List) throw FormatException('Invalid release list');
+    return resolveApi(releases, (uri) async => await _json(client, uri) as Map);
+  }
+
+  /// Historical DSM Helper releases are incompatible with the independent app.
+  /// One old or malformed manifest must not discard an already valid update.
+  static Future<AppRelease> resolveApi(
+      List releases, Future<Map> Function(Uri) read) async {
     AppRelease latest;
     for (final release in releases.whereType<Map>()) {
       if (release['draft'] == true) continue;
@@ -89,11 +100,16 @@ class GithubUpdates {
       if (manifest == null ||
           !AppRelease.trustedAssetUrl(manifest['browser_download_url'], tag))
         continue;
-      final value =
-          await _json(client, Uri.parse(manifest['browser_download_url']));
-      final candidate = AppRelease.fromManifest(value, release);
-      if (latest == null || candidate.buildNumber > latest.buildNumber)
-        latest = candidate;
+      try {
+        final value = await read(Uri.parse(manifest['browser_download_url']));
+        final candidate = AppRelease.fromManifest(value, release);
+        if (latest == null || candidate.buildNumber > latest.buildNumber)
+          latest = candidate;
+      } on FormatException {
+        continue;
+      } on HttpException catch (error) {
+        if (error.message != 'GitHub returned 404' && latest == null) rethrow;
+      }
     }
     return latest;
   }
@@ -113,6 +129,9 @@ class GithubUpdates {
             notes: '修复与功能改进，详细说明可在版本页面查看。');
         if (latest == null || candidate.buildNumber > latest.buildNumber)
           latest = candidate;
+      } on FormatException {
+        // Includes manifests for the former DSM Helper package.
+        continue;
       } on HttpException catch (error) {
         // Older releases predate the in-app update manifest.
         if (error.message != 'GitHub returned 404') rethrow;

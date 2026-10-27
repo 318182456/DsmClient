@@ -866,6 +866,15 @@ class DisplayText {
             'db': 'Dropbox'
           }['$value'] ??
           '$value';
+    if (context == 'CloudSync' &&
+        ['status', 'state', 'syncstatus', 'cloudstatus'].contains(k))
+      return const {
+            'uploading': '上传中',
+            'downloading': '下载中',
+            'uptodate': '已是最新',
+            'pause': '已暂停'
+          }['$value'] ??
+          status(value);
     if (context == 'HyperBackup' && k == 'status' && value == 'none')
       return '无活动任务';
     if (k == 'type' || k == 'typestr')

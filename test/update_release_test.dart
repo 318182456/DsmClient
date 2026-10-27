@@ -67,6 +67,44 @@ Future<void> main() async {
   </feed>''';
   expect(GithubUpdates.tagsFromFeed(feed).join(',') == 'dev-7',
       'Accept only valid, unique release links in this repository feed');
+  Map withManifest(String tag, int build, String package) {
+    final r = release();
+    r['tag_name'] = tag;
+    r['assets'] = [
+      {
+        'name': 'update-arm64.json',
+        'state': 'uploaded',
+        'browser_download_url':
+            'https://github.com/318182456/DsmClient/releases/download/$tag/update-arm64.json'
+      },
+      {
+        'name': 'DsmClient-dev-7-arm64.apk',
+        'state': 'uploaded',
+        'size': 1024,
+        'browser_download_url':
+            'https://github.com/318182456/DsmClient/releases/download/$tag/DsmClient-dev-7-arm64.apk'
+      }
+    ];
+    return r;
+  }
+
+  final selected = await GithubUpdates.resolveApi([
+    withManifest('dev-45', 10045, AppRelease.packageId),
+    withManifest('dev-28', 10028, 'fit.flutter.dsm_helper'),
+    withManifest('dev-39', 10039, AppRelease.packageId),
+  ], (uri) async {
+    final tag = uri.pathSegments[4];
+    return manifest()
+      ..['buildNumber'] = tag == 'dev-45'
+          ? 10045
+          : tag == 'dev-39'
+              ? 10039
+              : 10028
+      ..['packageId'] =
+          tag == 'dev-28' ? 'fit.flutter.dsm_helper' : AppRelease.packageId;
+  });
+  expect(selected.buildNumber == 10045,
+      'Old package manifests cannot discard a valid new release');
   expect(update.newerThan('10006'), 'Offer a newer build');
   expect(!update.newerThan('10007'), 'Do not offer the same build repeatedly');
   expect(

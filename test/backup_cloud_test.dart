@@ -130,7 +130,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Source'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('创建备份任务'));
+    await tester.scrollUntilVisible(find.text('创建备份任务'), 250,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('创建备份任务'));
     await tester.pumpAndSettle();
     expect(writes, isEmpty);

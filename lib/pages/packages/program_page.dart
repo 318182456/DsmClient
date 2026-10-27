@@ -13,11 +13,20 @@ import 'backup_cloud_create.dart';
 
 /// Native package workspace: requests business APIs and renders Flutter widgets.
 /// Packages without a business adapter explicitly show their supported scope.
-class ProgramPage extends StatelessWidget {
+class ProgramPage extends StatefulWidget {
   final NasPackage package;
   final List<ProgramSection> sections;
   ProgramPage(this.package, {List<ProgramSection> sections})
       : sections = sections ?? ProgramApi.sections(package.id);
+
+  @override
+  State<ProgramPage> createState() => _ProgramPageState();
+}
+
+class _ProgramPageState extends State<ProgramPage> {
+  NasPackage get package => widget.package;
+  List<ProgramSection> get sections => widget.sections;
+  int generation = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +51,10 @@ class ProgramPage extends StatelessWidget {
                                 builder: (_) => package.id == 'HyperBackup'
                                     ? LocalBackupCreate()
                                     : CloudSyncCreate()));
-                        if (added == true) Util.toast('任务已创建，请下拉刷新查看');
+                        if (added == true && mounted) {
+                          setState(() => generation++);
+                          Util.toast('任务已创建');
+                        }
                       }),
               ],
               bottom: tabs.length > 1
@@ -64,7 +76,10 @@ class ProgramPage extends StatelessWidget {
                 leading: NasAppIcon(package, size: 44)),
             Expanded(
                 child: TabBarView(children: [
-              ...sections.map((s) => ProgramDataView(s, packageId: package.id)),
+              ...sections.map((s) => ProgramDataView(s,
+                  packageId: package.id,
+                  key: ValueKey(
+                      '$generation:${s.api}:${s.method}:${s.listKey}'))),
               ListView(padding: EdgeInsets.all(16), children: [
                 Text(DisplayText.packageSummary(package.id) ??
                     '查看套件版本、运行状态及可用管理功能。'),
@@ -298,7 +313,9 @@ class _ProgramDataViewState extends State<ProgramDataView>
             item['sync_status'] ??
             item['last_bkp_result'];
     final subtitle = [
-      state == null ? item['desc'] : DisplayText.status(state),
+      state == null
+          ? item['desc']
+          : DisplayText.value('status', state, context: widget.packageId),
       if (widget.packageId == 'HyperBackup' && item['last_bkp_result'] != null)
         DisplayText.status(item['last_bkp_result']),
       item['last_bkp_time'] ??
