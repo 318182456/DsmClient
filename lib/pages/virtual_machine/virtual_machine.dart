@@ -1,3 +1,4 @@
+import 'package:dsm_client/models/display_text.dart';
 import 'dart:async';
 
 import 'package:dsm_client/util/function.dart';
@@ -597,8 +598,8 @@ class _VirtualMachineState extends State<VirtualMachine> {
                 repo['type'] == "healthy"
                     ? Label("正常", Colors.green)
                     : repo['type'] == "warning"
-                        ? Label(repo['status'] == "provision_warning" ? "空间不足" : repo['status'], Colors.orange)
-                        : Label("${repo['status']}", Colors.red),
+                        ? Label(repo['status'] == "provision_warning" ? "空间不足" : DisplayText.status(repo['status']), Colors.orange)
+                        : Label(DisplayText.status(repo['status']), Colors.red),
               ],
             ),
             Padding(

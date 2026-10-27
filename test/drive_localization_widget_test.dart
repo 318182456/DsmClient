@@ -128,6 +128,45 @@ class FixtureDriveAdmin extends DriveAdminApi {
 
 void main() {
   testWidgets(
+      'Shared program details localize backup, cloud, SAN, snapshot and WebDAV schemas',
+      (tester) async {
+    final cases = <String, Map>{
+      'HyperBackup': {
+        'state': 'backupable',
+        'last_bkp_result': 'done',
+        'repo_id': 7
+      },
+      'CloudSync': {
+        'sync_status': 'syncing',
+        'remote_path': '/original-english-name'
+      },
+      'ScsiTarget': {'type_str': 'THIN', 'block_size': 4096},
+      'SnapshotReplication': {'snapshot_count': 3, 'worm_lock': true},
+      'WebDAVServer': {'enable_depth_infinity': true, 'max_connections': 200},
+    };
+    final expected = <String, List<String>>{
+      'HyperBackup': ['可备份', '已完成', '存储库标识'],
+      'CloudSync': ['同步中', '远程路径', '/original-english-name'],
+      'ScsiTarget': ['精简配置', '区块大小'],
+      'SnapshotReplication': ['快照数量', '不可变锁定'],
+      'WebDAVServer': ['允许递归目录查询', '最大连接数'],
+    };
+    for (final entry in cases.entries) {
+      await tester.pumpWidget(MaterialApp(
+          theme: lightTheme,
+          home: Scaffold(
+              body: SingleChildScrollView(
+                  child:
+                      NativeProperties(entry.value, contextName: entry.key)))));
+      await tester.pumpAndSettle();
+      for (final text in expected[entry.key])
+        expect(find.text(text), findsOneWidget);
+    }
+    expect(cases['CloudSync']['remote_path'], '/original-english-name');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(SizedBox());
+  });
+  testWidgets(
       'Transmission artwork is bundled even when NAS supplies a generic container icon',
       (tester) async {
     final old = Util.baseUrl;

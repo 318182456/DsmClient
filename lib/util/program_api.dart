@@ -21,7 +21,9 @@ class ProgramApi {
   }
 
   static Future<Map> call(ProgramSection section,
-      {Map<String, dynamic> params = const {}, int offset = 0}) async {
+      {Map<String, dynamic> params = const {},
+      int offset = 0,
+      int timeout = 20}) async {
     if (Api.apiList.isNotEmpty && !Api.apiList.containsKey(section.api)) {
       return {
         'success': false,
@@ -39,7 +41,7 @@ class ProgramApi {
           ? jsonEncode(value)
           : value;
     });
-    return await Util.post('entry.cgi', data: encoded);
+    return await Util.post('entry.cgi', data: encoded, timeout: timeout);
   }
 
   static String error(Map result) {

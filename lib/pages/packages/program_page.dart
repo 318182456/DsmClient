@@ -9,6 +9,7 @@ import 'package:dsm_client/util/program_api.dart';
 import 'package:dsm_client/widgets/nas_app_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:dsm_client/widgets/workspace.dart';
+import 'backup_cloud_create.dart';
 
 /// Native package workspace: requests business APIs and renders Flutter widgets.
 /// Packages without a business adapter explicitly show their supported scope.
@@ -29,6 +30,21 @@ class ProgramPage extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
               title: Text(package.name),
+              actions: [
+                if (package.id == 'HyperBackup' || package.id == 'CloudSync')
+                  IconButton(
+                      tooltip: '新建任务',
+                      icon: Icon(Icons.add),
+                      onPressed: () async {
+                        final added = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => package.id == 'HyperBackup'
+                                    ? LocalBackupCreate()
+                                    : CloudSyncCreate()));
+                        if (added == true) Util.toast('任务已创建，请下拉刷新查看');
+                      }),
+              ],
               bottom: tabs.length > 1
                   ? AdaptiveTabBar(isScrollable: true, tabs: tabs)
                   : null),
@@ -44,13 +60,21 @@ class ProgramPage extends StatelessWidget {
                     }[package.id] ??
                     '套件管理',
                 subtitle:
-                    '${package.version} · ${package.status == 'running' ? '运行中' : package.status}',
+                    '${package.version} · ${DisplayText.status(package.status)}',
                 leading: NasAppIcon(package, size: 44)),
             Expanded(
                 child: TabBarView(children: [
               ...sections.map((s) => ProgramDataView(s, packageId: package.id)),
               ListView(padding: EdgeInsets.all(16), children: [
-                Text(package.description.replaceAll(RegExp(r'<[^>]*>'), '')),
+                Text(DisplayText.packageSummary(package.id) ??
+                    '查看套件版本、运行状态及可用管理功能。'),
+                if (package.description.isNotEmpty)
+                  ExpansionTile(title: Text('套件原始说明'), children: [
+                    Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text(package.description
+                            .replaceAll(RegExp(r'<[^>]*>'), '')))
+                  ]),
                 SizedBox(height: 16),
                 Card(child: NativePackageControls(package)),
                 SizedBox(height: 20),
@@ -151,8 +175,7 @@ class _NativePackageControlsState extends State<NativePackageControls> {
         if (busy) LinearProgressIndicator(),
         ListTile(
             title: Text('套件运行管理'),
-            subtitle:
-                Text(package.status == 'running' ? '运行中' : package.status),
+            subtitle: Text(DisplayText.status(package.status)),
             trailing: IconButton(
                 icon: Icon(Icons.refresh), onPressed: busy ? null : refresh)),
         if (package.canControl)
@@ -267,13 +290,17 @@ class _ProgramDataViewState extends State<ProgramDataView>
 
   Widget row(Map item) {
     final title =
-        '${item['title'] ?? item['name'] ?? item['task_display_name'] ?? item['client_name'] ?? item['file_name'] ?? item['local_sync_path'] ?? item['s1'] ?? item['share'] ?? item['path'] ?? item['time'] ?? item['id'] ?? '详细信息'}';
+        '${item['title'] ?? item['name'] ?? item['task_display_name'] ?? item['client_name'] ?? item['file_name'] ?? item['local_sync_path'] ?? item['event'] ?? item['s1'] ?? item['share'] ?? item['path'] ?? item['time'] ?? item['id'] ?? '详细信息'}';
+    final state = widget.packageId == 'HyperBackup'
+        ? item['state'] ?? item['status']
+        : item['status'] ??
+            item['state'] ??
+            item['sync_status'] ??
+            item['last_bkp_result'];
     final subtitle = [
-      item['status'] ??
-          item['state'] ??
-          item['sync_status'] ??
-          item['last_bkp_result'] ??
-          item['desc'],
+      state == null ? item['desc'] : DisplayText.status(state),
+      if (widget.packageId == 'HyperBackup' && item['last_bkp_result'] != null)
+        DisplayText.status(item['last_bkp_result']),
       item['last_bkp_time'] ??
           item['client_ip'] ??
           item['user_name'] ??
@@ -298,7 +325,8 @@ class _ProgramDataViewState extends State<ProgramDataView>
                       appBar: AppBar(title: Text(title)),
                       body: SingleChildScrollView(
                           padding: EdgeInsets.all(16),
-                          child: NativeProperties(item)))))),
+                          child: NativeProperties(item,
+                              contextName: widget.packageId)))))),
       if (backupTask)
         Wrap(children: [
           TextButton(
@@ -320,7 +348,7 @@ class _ProgramDataViewState extends State<ProgramDataView>
                   : () => action(
                       '取消备份',
                       ProgramSection('', 'SYNO.Backup.Task', 'cancel'),
-                      {'task_id': taskId, 'task_state': 'backupable'}),
+                      {'task_id': taskId, 'task_state': item['state']}),
               child: Text('取消任务')),
         ]),
       if (cloudConnection)
@@ -407,7 +435,9 @@ class _ProgramDataViewState extends State<ProgramDataView>
                   rows.isEmpty)
                 WorkspaceEmpty('暂无记录', detail: '下拉刷新，查看最新状态。'),
               if (widget.section.listKey == null && data != null)
-                Card(child: NativeProperties(data)),
+                Card(
+                    child:
+                        NativeProperties(data, contextName: widget.packageId)),
               ...shown.map(row),
               if (more)
                 TextButton(

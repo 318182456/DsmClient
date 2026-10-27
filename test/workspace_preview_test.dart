@@ -32,6 +32,8 @@ import 'package:dsm_client/pages/packages/office_management.dart';
 import 'package:dsm_client/pages/packages/ai_console.dart';
 import 'package:dsm_client/pages/packages/program_page.dart';
 import 'package:dsm_client/widgets/service_app_icon.dart';
+import 'package:dsm_client/pages/packages/backup_cloud_create.dart';
+import 'package:dsm_client/util/backup_cloud_api.dart';
 
 void main() {
   testWidgets('Render temporary design review previews when requested',
@@ -206,6 +208,39 @@ void main() {
                 ]
               }
             });
+    final backupApi = BackupCloudApi(
+        request: (s, p) async => {
+              'success': true,
+              'data': s.api.endsWith('Share.Local')
+                  ? {
+                      'share_list': [
+                        ['Backup', 0, '', '/volume1', false]
+                      ]
+                    }
+                  : {
+                      'folder': [
+                        {'id': '/Documents', 'text': '文档', 'disabled': false},
+                        {'id': '/Photos', 'text': '照片', 'disabled': false}
+                      ]
+                    }
+            });
+    await capture(
+        'backup-create', LocalBackupCreate(api: backupApi), lightTheme);
+    await capture('cloud-create', CloudSyncCreate(api: backupApi), lightTheme);
+    await capture(
+        'backup-properties',
+        Scaffold(
+            appBar: AppBar(title: Text('备份存储库')),
+            body: NativeProperties({
+              'name': '重要文件备份',
+              'share': 'Backup',
+              'target_type': 'image',
+              'transfer_type': 'image_local',
+              'repo_id': 1,
+              'state': 'backupable',
+              'last_bkp_result': 'done'
+            }, contextName: 'HyperBackup')),
+        lightTheme);
     final driveApi = FixtureDriveAdmin();
     await capture(
         'drive-console',

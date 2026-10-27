@@ -1,3 +1,4 @@
+import 'package:dsm_client/models/display_text.dart';
 import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/pages/storage_manager/smart.dart';
 import 'package:dsm_client/util/function.dart';
@@ -128,7 +129,7 @@ class _StorageManagerState extends State<StorageManager>
                       width: 5,
                     ),
                     Label(
-                      volume['status'] == "normal" ? "正常" : volume['status'],
+                      volume['status'] == "normal" ? "正常" : DisplayText.status(volume['status']),
                       volume['status'] == "normal" ? Colors.green : Colors.red,
                       fill: true,
                     ),
@@ -257,7 +258,7 @@ class _StorageManagerState extends State<StorageManager>
                                     fill: true,
                                   )
                                 : Label(
-                                    volume['status'],
+                                    DisplayText.status(volume['status']),
                                     Colors.red,
                                     fill: true,
                                   ),
@@ -342,7 +343,7 @@ class _StorageManagerState extends State<StorageManager>
                           Label(
                             disk['overview_status'] == "normal"
                                 ? "正常"
-                                : disk['overview_status'],
+                                : DisplayText.status(disk['overview_status']),
                             disk['overview_status'] == "normal"
                                 ? Colors.green
                                 : Colors.red,
@@ -451,7 +452,7 @@ class _StorageManagerState extends State<StorageManager>
                           ),
                         ),
                         Text(
-                          "${disk['status'] == "normal" ? "正常" : disk['status'] == "not_use" ? "未初始化" : disk['status'] == "sys_partition_normal" ? "已初始化" : "${disk['status']}"}",
+                          "${disk['status'] == "normal" ? "正常" : disk['status'] == "not_use" ? "未初始化" : disk['status'] == "sys_partition_normal" ? "已初始化" : "${DisplayText.status(disk['status'])}"}",
                           style: TextStyle(
                               color: disk['status'] == "normal"
                                   ? Colors.green
@@ -472,7 +473,7 @@ class _StorageManagerState extends State<StorageManager>
                           ),
                         ),
                         Text(
-                          "${disk['smart_status'] == "normal" ? "正常" : disk['smart_status']}",
+                          "${disk['smart_status'] == "normal" ? "正常" : DisplayText.status(disk['smart_status'])}",
                           style: TextStyle(
                               color: disk['smart_status'] == "normal"
                                   ? Colors.green
@@ -633,7 +634,7 @@ class _StorageManagerState extends State<StorageManager>
                                 fill: true,
                               )
                             : Label(
-                                pool['status'],
+                                DisplayText.status(pool['status']),
                                 Colors.red,
                                 fill: true,
                               ),
@@ -828,7 +829,7 @@ class _StorageManagerState extends State<StorageManager>
                                 fill: true,
                               )
                             : Label(
-                                pool['status'],
+                                DisplayText.status(pool['status']),
                                 Colors.red,
                                 fill: true,
                               ),

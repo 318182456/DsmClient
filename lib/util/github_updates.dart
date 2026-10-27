@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../models/app_release.dart';
+import 'update_route.dart';
 
 /// Independent HTTPS client; no NAS cookies, tokens or TLS overrides.
 class GithubUpdates {
@@ -23,7 +24,22 @@ class GithubUpdates {
     }).whenComplete(() => _pending = null);
   }
 
+  /// Keep discovery on the same domestic route as APK downloads. The reader
+  /// remains independent of NAS authentication and certificate overrides.
+  static Future<String> routedBody(
+      Uri uri, Future<String> Function(Uri) reader) async {
+    try {
+      return await reader(Uri.parse('${UpdateRoute.domestic}$uri'));
+    } catch (_) {
+      return await reader(uri);
+    }
+  }
+
   static Future<String> _body(HttpClient client, Uri uri,
+          {String accept = 'application/vnd.github+json'}) =>
+      routedBody(uri, (target) => _directBody(client, target, accept: accept));
+
+  static Future<String> _directBody(HttpClient client, Uri uri,
       {String accept = 'application/vnd.github+json'}) async {
     final request = await client.getUrl(uri).timeout(Duration(seconds: 15));
     request.headers.set(HttpHeaders.acceptHeader, accept);

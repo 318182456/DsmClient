@@ -1,3 +1,4 @@
+import 'package:dsm_client/models/display_text.dart';
 import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/pages/docker/detail.dart';
 import 'package:dsm_client/util/function.dart';
@@ -300,7 +301,7 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                                 ? Label("运行中", Colors.green)
                                 : container['status'] == "stopped"
                                     ? Label("已停止", Colors.red)
-                                    : Label(container['status'], Colors.orange),
+                                    : Label(DisplayText.status(container['status']), Colors.orange),
                           ],
                         ),
                         SizedBox(
@@ -320,7 +321,7 @@ class _DockerState extends State<Docker> with SingleTickerProviderStateMixin {
                             ),
                             if (container['status'] == "running")
                               Text(
-                                "${container['up_time'] != null ? DateTime.fromMillisecondsSinceEpoch(container['up_time'] * 1000).timeAgo : container['up_status']}",
+                                "${container['up_time'] != null ? DateTime.fromMillisecondsSinceEpoch(container['up_time'] * 1000).timeAgo : DisplayText.status(container['up_status'])}",
                                 style:
                                     TextStyle(fontSize: 12, color: Colors.grey),
                               ),

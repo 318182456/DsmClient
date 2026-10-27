@@ -6,7 +6,28 @@ void expect(bool value, String message) {
   if (!value) throw StateError(message);
 }
 
-void main() {
+Future<void> main() async {
+  final calls = <Uri>[];
+  final endpoint =
+      Uri.parse('https://api.github.com/repos/318182456/DsmClient/releases');
+  final body = await GithubUpdates.routedBody(endpoint, (uri) async {
+    calls.add(uri);
+    return 'proxy-response';
+  });
+  expect(
+      body == 'proxy-response' && calls.single.host == 'edgeone.gh-proxy.org',
+      'Metadata uses the domestic proxy first');
+  calls.clear();
+  final fallback = await GithubUpdates.routedBody(endpoint, (uri) async {
+    calls.add(uri);
+    if (uri.host == 'edgeone.gh-proxy.org') throw StateError('offline');
+    return 'direct-response';
+  });
+  expect(
+      fallback == 'direct-response' &&
+          calls.length == 2 &&
+          calls.last == endpoint,
+      'Direct fallback when the proxy cannot serve metadata');
   final digest = List.filled(64, 'a').join();
   Map manifest() => {
         'packageId': AppRelease.packageId,
