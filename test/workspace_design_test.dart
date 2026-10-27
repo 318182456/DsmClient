@@ -14,6 +14,15 @@ import 'package:dsm_client/models/program_capabilities.dart';
 import 'package:dsm_client/pages/control_panel/control_panel.dart';
 import 'package:dsm_client/widgets/surfaces.dart' as surfaces;
 import 'package:dsm_client/pages/login/login.dart';
+import 'package:dsm_client/util/dockhand_client.dart';
+
+class RejectedDockhandClient extends DockhandClient {
+  RejectedDockhandClient() : super('https://example.test');
+  @override
+  Future<void> login({String user = '', String password = '', String mfa = '', String token = ''}) async {
+    throw StateError('fixture rejection');
+  }
+}
 
 double contrast(Color a, Color b) =>
     (max(a.computeLuminance(), b.computeLuminance()) + .05) /
@@ -216,7 +225,7 @@ void main() {
         isFalse);
     for (var i = 0; i < 2; i++) {
       await tester.pumpWidget(MaterialApp(
-          theme: lightTheme, home: DockhandProgram(profile: 'test')));
+          theme: lightTheme, home: DockhandProgram(profile: 'test', clientFactory: (_) => RejectedDockhandClient())));
       await tester.pumpAndSettle();
       await tester.pump(Duration(milliseconds: 400));
       await tester.pumpAndSettle();

@@ -35,6 +35,7 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
       search = '';
   bool busy = false, mfa = false, remember = true, credentialsLoading = false;
   int credentialGeneration = 0;
+  String initialConnectionUrl;
   Timer credentialTimer;
   Timer statsTimer;
   bool statsLoading = false, foreground = true;
@@ -56,7 +57,10 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
     try {
       final value = await Util.getStorage('dockhand_url_${widget.profile}');
       if ((value ?? '').isNotEmpty) {
-        if (mounted && address.text.isEmpty) address.text = value;
+        if (mounted && address.text.isEmpty) {
+          initialConnectionUrl = value.trim();
+          address.text = value;
+        }
       } else {
         final details = await Api.dockerDetail('dockhand', 'get');
         final inferred = DockerConnection.dockhandAddress(
@@ -141,6 +145,8 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
         saved = await widget.credentials.read(widget.profile, service);
       } catch (_) {}
       if (!mounted || generation != credentialGeneration) return;
+      final reconnect = saved != null && initialConnectionUrl == service;
+      initialConnectionUrl = null;
       setState(() {
         credentialsLoading = false;
         if (saved != null) {
@@ -151,6 +157,7 @@ class _DockhandProgramState extends State<DockhandProgram> with WidgetsBindingOb
           remember = true;
         }
       });
+      if (reconnect) await connect();
     });
   }
 
