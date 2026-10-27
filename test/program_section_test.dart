@@ -42,6 +42,9 @@ void main() {
   expect(repository.rowTitle(unnamed) == 'Backup',
       'Empty repository names fall back to the shared folder');
   expect(unnamed['name'] == '', 'A display fallback does not rename NAS data');
+  expect(repository.displayRecord(unnamed)['name'] == 'Backup',
+      'The detail record uses the same name fallback as the list');
+  expect(unnamed['name'] == '', 'Detail display never mutates the NAS record');
   expect(repository.rowTitle({'title': '  ', 'name': '文档备份', 'share': 'Backup'}) == '文档备份',
       'Whitespace labels cannot hide a valid user name');
   expect(repository.rowTitle({'name': '', 'share': ' ', 'repo_id': 7}) == '存储库 #7',

@@ -127,6 +127,30 @@ class FixtureDriveAdmin extends DriveAdminApi {
 }
 
 void main() {
+  testWidgets('Repository detail name is visible for empty, whitespace and missing NAS names',
+      (tester) async {
+    const section = ProgramSection('备份存储库', 'SYNO.Backup.Repository', 'list');
+    final cases = <Map>[
+      {'name': '', 'repo_id': 4, 'share': 'sync', 'target_type': 'image', 'transfer_type': 'image_local'},
+      {'name': '   ', 'repo_id': 4, 'share': 'sync'},
+      {'repo_id': 4},
+      {'name': '我的备份', 'repo_id': 4, 'share': 'sync'},
+    ];
+    for (var i = 0; i < cases.length; i++) {
+      final record = cases[i];
+      final expected = i < 2 ? 'sync' : i == 2 ? '存储库 #4' : '我的备份';
+      final original = record['name'];
+      await tester.pumpWidget(MaterialApp(theme: lightTheme,
+          home: ProgramRecordDetails(section, record, packageId: 'HyperBackup')));
+      await tester.pumpAndSettle();
+      final nameRow = find.ancestor(of: find.text('名称'), matching: find.byType(ListTile));
+      expect(find.descendant(of: nameRow, matching: find.text(expected)), findsOneWidget);
+      expect(find.descendant(of: find.byType(AppBar), matching: find.text(expected)), findsOneWidget);
+      expect(record['name'], original);
+      expect(tester.takeException(), isNull);
+    }
+    await tester.pumpWidget(SizedBox());
+  });
   testWidgets(
       'Shared program details localize backup, cloud, SAN, snapshot and WebDAV schemas',
       (tester) async {

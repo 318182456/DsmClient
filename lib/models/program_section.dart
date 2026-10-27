@@ -48,6 +48,15 @@ class ProgramSection {
         : '详细信息';
   }
 
+  Map displayRecord(Map record) {
+    final display = Map.from(record);
+    if (api == 'SYNO.Backup.Repository' &&
+        (record['name'] == null || '${record['name']}'.trim().isEmpty)) {
+      display['name'] = rowTitle(record);
+    }
+    return display;
+  }
+
   static bool sensitive(String key) => RegExp(
           r'password|passwd|(^|_)(pwd|pass)(_|$)|secret|token|cookie|(^|_)sid$|session|private_key|auth_key|api[_-]?key|access[_-]?key|credential',
           caseSensitive: false)

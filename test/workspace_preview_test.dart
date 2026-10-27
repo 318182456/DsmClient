@@ -26,6 +26,7 @@ import 'package:dsm_client/pages/packages/torrent_rss.dart';
 import 'package:dsm_client/util/program_pins.dart';
 import 'drive_localization_widget_test.dart' show FixtureDriveAdmin;
 import 'package:dsm_client/models/nas_package.dart';
+import 'package:dsm_client/models/program_section.dart';
 import 'package:dsm_client/pages/packages/drive_console.dart';
 import 'package:dsm_client/pages/packages/drive_management.dart';
 import 'package:dsm_client/pages/packages/office_management.dart';
@@ -229,17 +230,11 @@ void main() {
     await capture('cloud-create', CloudSyncCreate(api: backupApi), lightTheme);
     await capture(
         'backup-properties',
-        Scaffold(
-            appBar: AppBar(title: Text('备份存储库')),
-            body: NativeProperties({
-              'name': '重要文件备份',
-              'share': 'Backup',
-              'target_type': 'image',
-              'transfer_type': 'image_local',
-              'repo_id': 1,
-              'state': 'backupable',
-              'last_bkp_result': 'done'
-            }, contextName: 'HyperBackup')),
+        ProgramRecordDetails(
+            const ProgramSection('备份存储库', 'SYNO.Backup.Repository', 'list'),
+            {'name': '', 'repo_id': 4, 'share': 'sync',
+              'target_type': 'image', 'transfer_type': 'image_local'},
+            packageId: 'HyperBackup'),
         lightTheme);
     final driveApi = FixtureDriveAdmin();
     await capture(

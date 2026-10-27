@@ -343,12 +343,8 @@ class _ProgramDataViewState extends State<ProgramDataView>
           onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => Scaffold(
-                      appBar: AppBar(title: Text(title)),
-                      body: SingleChildScrollView(
-                          padding: EdgeInsets.all(16),
-                          child: NativeProperties(item,
-                              contextName: widget.packageId)))))),
+                  builder: (_) => ProgramRecordDetails(widget.section, item,
+                      packageId: widget.packageId)))),
       if (backupTask)
         Wrap(children: [
           TextButton(
@@ -467,6 +463,22 @@ class _ProgramDataViewState extends State<ProgramDataView>
                     child: Text(busy ? '正在加载…' : '加载更多')),
             ]));
   }
+}
+
+/// List and detail use the same display record; the original NAS record is not
+/// renamed or changed when its name needs a presentation fallback.
+class ProgramRecordDetails extends StatelessWidget {
+  final ProgramSection section;
+  final Map record;
+  final String packageId;
+  const ProgramRecordDetails(this.section, this.record, {this.packageId = ''});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: Text(section.rowTitle(record))),
+      body: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: NativeProperties(section.displayRecord(record),
+              contextName: packageId)));
 }
 
 /// Nested native rows; session and credential fields are filtered recursively.
