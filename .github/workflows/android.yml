@@ -7,6 +7,14 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      build_apk:
+        description: "Build a signed APK after validation (no Release)"
+        type: boolean
+        default: false
+      publish_release:
+        description: "Build and publish the final development Release"
+        type: boolean
+        default: false
       ui_preview:
         description: 'Render temporary UI review previews in the build artifact'
         type: boolean
@@ -16,12 +24,95 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-${{ github.workflow }}-${{ github.ref }}
+  group: android-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && (inputs.build_apk || inputs.publish_release) && 'package' || 'checks' }}
   cancel-in-progress: true
 
 jobs:
+  validate:
+    name: Validate source
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.7.12'
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Test DSM and update protocols
+        run: |
+          dart --no-sound-null-safety test/dsm_compatibility_test.dart
+          dart --no-sound-null-safety test/program_section_test.dart
+          dart --no-sound-null-safety test/update_route_test.dart
+          dart --no-sound-null-safety test/rr_icons_test.dart
+          dart --no-sound-null-safety test/dockhand_client_test.dart
+          dart --no-sound-null-safety test/torrent_client_test.dart
+          dart --no-sound-null-safety test/torrent_advanced_test.dart
+          dart --no-sound-null-safety test/torrent_filters_test.dart
+          dart --no-sound-null-safety test/torrent_rss_test.dart
+          dart --no-sound-null-safety test/update_release_test.dart
+          dart --no-sound-null-safety test/update_download_test.dart
+
+      - name: Test native program navigation
+        env:
+          DSM_UI_PREVIEW_DIR: ${{ github.event.inputs.ui_preview == 'true' && format('{0}/dsmclient-artifacts', runner.temp) || '' }}
+        shell: bash
+        run: |
+          if [[ -n "$DSM_UI_PREVIEW_DIR" ]]; then
+            curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
+              https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
+          fi
+          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart test/torrent_workspace_test.dart test/dockhand_stats_widget_test.dart test/torrent_features_widget_test.dart
+
+      - name: Analyze native program pages
+        run: >-
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          lib/models/program_section.dart lib/util/program_api.dart
+          lib/pages/packages/program_page.dart lib/pages/packages/program_launcher.dart
+          lib/pages/packages/audio_station.dart lib/pages/packages/drive.dart
+          lib/pages/dashborad/applications.dart
+          lib/pages/packages/torrent_program.dart lib/util/torrent_client.dart
+          lib/pages/packages/torrent_detail.dart lib/models/torrent_presentation.dart lib/util/service_credentials.dart
+          lib/pages/packages/torrent_import.dart lib/pages/home.dart
+          lib/pages/packages/snapshots.dart
+          lib/pages/setting/about.dart lib/pages/setting/license.dart lib/pages/setting/privacy.dart
+          lib/pages/dashborad/shortcut_list.dart lib/pages/packages/package_shortcut.dart
+          lib/models/program_capabilities.dart lib/util/update_route.dart lib/pages/update/update.dart
+          lib/models/rr_protocol.dart lib/models/dsm_icons.dart lib/models/docker_connection.dart
+          lib/util/rr_api.dart lib/util/dockhand_client.dart lib/widgets/nas_app_icon.dart
+          lib/pages/packages/rr_program.dart lib/pages/docker/workspace.dart lib/pages/docker/dockhand.dart
+          lib/themes/app_theme.dart lib/themes/light.dart lib/themes/dark.dart
+          lib/widgets/workspace.dart lib/util/dockhand_credentials.dart lib/pages/common/audio_player.dart
+          lib/widgets/surfaces.dart lib/widgets/label.dart lib/pages/control_panel/control_panel.dart
+          lib/pages/login/login.dart
+          lib/widgets/adaptive_tab_bar.dart lib/widgets/media_actions.dart lib/models/media_queue.dart
+          lib/util/media_delete.dart lib/providers/audio_player_provider.dart lib/pages/common/video_player.dart
+          lib/widgets/docker_stats.dart
+          lib/widgets/torrent_filters.dart lib/util/torrent_rss.dart lib/util/torrent_rss_store.dart
+          lib/pages/packages/torrent_rss.dart lib/util/program_pins.dart
+
+      - name: Upload optional UI review previews
+        if: github.event_name == 'workflow_dispatch' && inputs.ui_preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: DsmClient-ui-review-${{ github.run_number }}
+          path: ${{ runner.temp }}/dsmclient-artifacts/*.png
+          if-no-files-found: error
+          retention-days: 1
+
   build:
     name: Build Android APK
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && (inputs.build_apk || inputs.publish_release)
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
@@ -86,58 +177,6 @@ jobs:
 
       - name: Resolve dependencies
         run: flutter pub get
-
-      - name: Test DSM and update protocols
-        run: |
-          dart --no-sound-null-safety test/dsm_compatibility_test.dart
-          dart --no-sound-null-safety test/program_section_test.dart
-          dart --no-sound-null-safety test/update_route_test.dart
-          dart --no-sound-null-safety test/rr_icons_test.dart
-          dart --no-sound-null-safety test/dockhand_client_test.dart
-          dart --no-sound-null-safety test/torrent_client_test.dart
-          dart --no-sound-null-safety test/torrent_advanced_test.dart
-          dart --no-sound-null-safety test/torrent_filters_test.dart
-          dart --no-sound-null-safety test/torrent_rss_test.dart
-          dart --no-sound-null-safety test/update_release_test.dart
-          dart --no-sound-null-safety test/update_download_test.dart
-
-      - name: Test native program navigation
-        env:
-          DSM_UI_PREVIEW_DIR: ${{ github.event.inputs.ui_preview == 'true' && format('{0}/dsmclient-artifacts', runner.temp) || '' }}
-        shell: bash
-        run: |
-          if [[ -n "$DSM_UI_PREVIEW_DIR" ]]; then
-            curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
-              https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
-          fi
-          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart test/torrent_workspace_test.dart test/dockhand_stats_widget_test.dart test/torrent_features_widget_test.dart
-
-      - name: Analyze native program pages
-        run: >-
-          flutter analyze --no-fatal-infos --no-fatal-warnings
-          lib/models/program_section.dart lib/util/program_api.dart
-          lib/pages/packages/program_page.dart lib/pages/packages/program_launcher.dart
-          lib/pages/packages/audio_station.dart lib/pages/packages/drive.dart
-          lib/pages/dashborad/applications.dart
-          lib/pages/packages/torrent_program.dart lib/util/torrent_client.dart
-          lib/pages/packages/torrent_detail.dart lib/models/torrent_presentation.dart lib/util/service_credentials.dart
-          lib/pages/packages/torrent_import.dart lib/pages/home.dart
-          lib/pages/packages/snapshots.dart
-          lib/pages/setting/about.dart lib/pages/setting/license.dart lib/pages/setting/privacy.dart
-          lib/pages/dashborad/shortcut_list.dart lib/pages/packages/package_shortcut.dart
-          lib/models/program_capabilities.dart lib/util/update_route.dart lib/pages/update/update.dart
-          lib/models/rr_protocol.dart lib/models/dsm_icons.dart lib/models/docker_connection.dart
-          lib/util/rr_api.dart lib/util/dockhand_client.dart lib/widgets/nas_app_icon.dart
-          lib/pages/packages/rr_program.dart lib/pages/docker/workspace.dart lib/pages/docker/dockhand.dart
-          lib/themes/app_theme.dart lib/themes/light.dart lib/themes/dark.dart
-          lib/widgets/workspace.dart lib/util/dockhand_credentials.dart lib/pages/common/audio_player.dart
-          lib/widgets/surfaces.dart lib/widgets/label.dart lib/pages/control_panel/control_panel.dart
-          lib/pages/login/login.dart
-          lib/widgets/adaptive_tab_bar.dart lib/widgets/media_actions.dart lib/models/media_queue.dart
-          lib/util/media_delete.dart lib/providers/audio_player_provider.dart lib/pages/common/video_player.dart
-          lib/widgets/docker_stats.dart
-          lib/widgets/torrent_filters.dart lib/util/torrent_rss.dart lib/util/torrent_rss_store.dart
-          lib/pages/packages/torrent_rss.dart lib/util/program_pins.dart
 
       - name: Prepare signing
         env:
@@ -233,7 +272,7 @@ jobs:
   publish:
     name: Publish development APK
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
