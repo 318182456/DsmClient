@@ -10,13 +10,18 @@ import 'package:dsm_client/util/torrent_client.dart';
 import 'package:dsm_client/widgets/workspace.dart';
 import 'package:dsm_client/pages/docker/detail.dart';
 import 'torrent_detail.dart';
+import 'torrent_import.dart' show readIncomingTorrent;
 
 class TorrentProgram extends StatefulWidget {
   final String name;
   final bool transmission;
+  final String torrentPath, torrentName;
   final TorrentClient Function(String, bool) clientFactory;
   const TorrentProgram(this.name,
-      {this.transmission = false, this.clientFactory});
+      {this.transmission = false,
+      this.clientFactory,
+      this.torrentPath,
+      this.torrentName});
   @override
   State<TorrentProgram> createState() => _TorrentProgramState();
 }
@@ -37,6 +42,7 @@ class _TorrentProgramState extends State<TorrentProgram>
   String error = '', query = '', filter = 'all', sort = 'added';
   Timer refreshTimer, restoreTimer;
   int restoreGeneration = 0;
+  bool incomingAdded = false;
   String get backend => widget.transmission ? 'Transmission' : 'qBittorrent';
   String get profile =>
       '${DsmCompatibility.connectionKey(Util.baseUrl)}|${widget.name}';
@@ -281,6 +287,15 @@ class _TorrentProgramState extends State<TorrentProgram>
     }
   }
 
+  Future<void> addIncoming() async {
+    if (busy || client == null || incomingAdded) return;
+    await mutate(() async {
+      final bytes = await readIncomingTorrent(widget.torrentPath);
+      await client.addFile(bytes);
+      if (mounted) setState(() => incomingAdded = true);
+    });
+  }
+
   Future<void> mutate(Future<void> Function() operation) async {
     if (busy) return;
     setState(() => busy = true);
@@ -478,6 +493,14 @@ class _TorrentProgramState extends State<TorrentProgram>
                 ? connection()
                 : Column(children: [
                     if (busy) LinearProgressIndicator(minHeight: 2),
+                    if (widget.torrentPath != null && !incomingAdded)
+                      Card(
+                          child: ListTile(
+                              title: Text(widget.torrentName ?? '待添加种子'),
+                              subtitle: Text('来自外部应用，确认后提交到 $backend'),
+                              trailing: TextButton(
+                                  onPressed: busy ? null : addIncoming,
+                                  child: Text('确认添加')))),
                     TorrentTransferSummary(tasks: tasks),
                     Padding(
                         padding: EdgeInsets.fromLTRB(16, 8, 16, 8),

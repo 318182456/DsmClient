@@ -20,6 +20,7 @@ import 'dashborad/dashboard.dart';
 import 'download_station/add_task.dart';
 import 'file/upload.dart';
 import 'login/auth_page.dart';
+import 'packages/torrent_import.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -38,10 +39,40 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   bool biometrics = false;
   bool authPage = false;
   List<SharedFile> _sharedFiles;
+  StreamSubscription<List<SharedFile>> sharingSubscription;
+  bool importingTorrent = false;
+
+  Future<void> receiveTorrents() async {
+    if (!Platform.isAndroid || !mounted || importingTorrent || Util.isAuthPage) return;
+    importingTorrent = true;
+    try {
+      Map item;
+      while (mounted && !Util.isAuthPage && (item = await TorrentInbox.take()) != null) {
+        if (!mounted) break;
+        if (item['error'] != null) {
+          await showDialog(context: context, builder: (dialog) => AlertDialog(
+              title: Text('种子导入失败'), content: Text('${item['error']}'),
+              actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text('知道了'))]));
+        } else {
+          try {
+            await Navigator.of(context).push(MaterialPageRoute(builder: (_) => TorrentImport(path: item['path'], name: item['name'])));
+          } finally {
+            await TorrentInbox.discard(item['path']);
+          }
+        }
+      }
+    } catch (_) {
+      if (mounted) Util.toast('无法读取外部种子，请在下载程序中选择本地种子文件');
+    } finally { importingTorrent = false; }
+  }
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && Platform.isAndroid) Util.checkUpdate(false, context);
+      receiveTorrents();
+    });
+    if (Platform.isAndroid) TorrentInbox.channel.setMethodCallHandler((call) async {
+      if (call.method == 'available') receiveTorrents();
     });
     WidgetsBinding.instance.addObserver(this);
     getData();
@@ -51,7 +82,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       handleFiles(value);
     });
     // For sharing images coming from outside the app while the app is in the memory
-    FlutterSharingIntent.instance.getMediaStream().listen((List<SharedFile> value) {
+    sharingSubscription = FlutterSharingIntent.instance.getMediaStream().listen((List<SharedFile> value) {
       handleFiles(value);
       print("Shared: getMediaStream ${value.map((f) => f.path).join(",")}");
     }, onError: (err) {
@@ -88,6 +119,11 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   }
 
   handleFiles(List<SharedFile> files) async {
+    if (Platform.isAndroid && await TorrentInbox.handlesCurrentIntent()) {
+      receiveTorrents();
+      return;
+    }
+    if (!mounted) return;
     _sharedFiles = files;
     if (_sharedFiles != null && _sharedFiles.length > 0) {
       if (_sharedFiles.length == 1 && _sharedFiles.first.path.endsWith(".torrent")) {
@@ -133,6 +169,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    sharingSubscription?.cancel();
+    if (Platform.isAndroid) TorrentInbox.channel.setMethodCallHandler(null);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -167,11 +205,12 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
 
     authPage = launchAuth && (password || biometrics);
     if (Util.isAuthPage == false && authPage) {
-      Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
+      await Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
         return AuthPage(
           launch: false,
         );
       }));
+      receiveTorrents();
     }
   }
 

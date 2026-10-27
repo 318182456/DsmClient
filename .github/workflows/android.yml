@@ -119,6 +119,7 @@ jobs:
           lib/pages/dashborad/applications.dart
           lib/pages/packages/torrent_program.dart lib/util/torrent_client.dart
           lib/pages/packages/torrent_detail.dart lib/models/torrent_presentation.dart lib/util/service_credentials.dart
+          lib/pages/packages/torrent_import.dart lib/pages/home.dart
           lib/pages/packages/snapshots.dart
           lib/pages/setting/about.dart lib/pages/setting/license.dart lib/pages/setting/privacy.dart
           lib/pages/dashborad/shortcut_list.dart lib/pages/packages/package_shortcut.dart

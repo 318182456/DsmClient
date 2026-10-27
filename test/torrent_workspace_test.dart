@@ -9,6 +9,9 @@ import 'package:dsm_client/themes/light.dart';
 import 'package:dsm_client/util/torrent_client.dart';
 import 'package:dsm_client/util/service_credentials.dart';
 import 'package:dsm_client/util/dockhand_credentials.dart';
+import 'package:dsm_client/pages/packages/torrent_import.dart';
+import 'dart:io';
+import 'dart:convert';
 
 class FixtureTorrentClient extends TorrentClient {
   final calls = <List>[];
@@ -79,12 +82,61 @@ class FixtureTorrentClient extends TorrentClient {
   Future<void> limits(dynamic id, int down, int up) async {
     calls.add([id, down, up]);
   }
+
+  @override
+  Future<void> addFile(List<int> bytes) async {
+    calls.add(['upload', utf8.decode(bytes)]);
+  }
 }
 
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
+  });
+  testWidgets(
+      'External seed selection forwards the file and waits for explicit upload confirmation',
+      (tester) async {
+    final folder =
+        Directory.systemTemp.createTempSync('DsmClient-torrent-test-');
+    final file = File('${folder.path}/example.torrent')
+      ..writeAsStringSync('d4:name4:teste!');
+    addTearDown(() => folder.deleteSync(recursive: true));
+    await tester.pumpWidget(MaterialApp(
+        theme: lightTheme,
+        home: TorrentImport(path: file.path, name: 'example.torrent')));
+    await tester.tap(find.text('Transmission'));
+    await tester.pumpAndSettle();
+    final route = tester.widget<TorrentProgram>(find.byType(TorrentProgram));
+    expect(route.transmission, isTrue);
+    expect(route.torrentPath, file.path);
+    final client = FixtureTorrentClient();
+    await tester.pumpWidget(MaterialApp(
+        key: UniqueKey(),
+        theme: lightTheme,
+        home: TorrentProgram('fixture',
+            torrentPath: file.path,
+            torrentName: 'example.torrent',
+            clientFactory: (_, __) => client)));
+    await tester.enterText(
+        find.byType(TextField).first, 'https://example.test');
+    await tester.pump(Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('连接'));
+    await tester.tap(find.text('连接'));
+    await tester.pumpAndSettle();
+    expect(client.calls, isEmpty);
+    expect(find.text('example.torrent'), findsOneWidget);
+    await tester.runAsync(() async {
+      await tester.tap(find.text('确认添加'));
+      await Future.delayed(Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+    expect(client.calls.single, ['upload', 'd4:name4:teste!']);
+    expect(find.text('确认添加'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(SizedBox());
+    await tester.pumpAndSettle();
   });
   testWidgets(
       'Credentials remain isolated by backend, NAS and URL, including existing Dockhand keys',
