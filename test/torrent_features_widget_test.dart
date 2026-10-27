@@ -165,6 +165,53 @@ void main() {
     await tester.pumpWidget(SizedBox());
     await tester.pumpAndSettle();
   });
+  testWidgets('Home Add selects programs and saves without opening them', (tester) async {
+    final oldBase = Util.baseUrl; Util.baseUrl = ''; addTearDown(() => Util.baseUrl = oldBase);
+    Future<Map> packages() async => {'success':true,'data':{'packages':[]}};
+    Future<Map> containers() async => {'success':true,'data':{'containers':[]}};
+    await tester.pumpWidget(MaterialApp(theme:lightTheme,home:Scaffold(body:SingleChildScrollView(
+      child:ApplicationList(['SYNO.SDS.AdminCenter.Application','SYNO.SDS.ResourceMonitor.Instance'],{},[],[],{},
+        pinnedOnly:true,packageLoader:packages,containerLoader:containers)))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加')); await tester.pumpAndSettle();
+    expect(find.text('选择常用程序'),findsOneWidget);
+    await tester.tap(find.byKey(ValueKey('program-card:SYNO.SDS.AdminCenter.Application')));await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('program-card:SYNO.SDS.ResourceMonitor.Instance')));await tester.pumpAndSettle();
+    expect(find.byType(ControlPanel),findsNothing);
+    expect(await ProgramPins.read(),isEmpty);
+    expect(find.text('保存（2）'),findsOneWidget);
+    await tester.tap(find.byKey(ValueKey('save-home-programs')));await tester.pumpAndSettle();
+    expect(find.text('选择常用程序'),findsNothing);
+    expect(find.byKey(ValueKey('pinned-program:SYNO.SDS.AdminCenter.Application')),findsOneWidget);
+    expect(find.byKey(ValueKey('pinned-program:SYNO.SDS.ResourceMonitor.Instance')),findsOneWidget);
+    expect(await ProgramPins.read(),['SYNO.SDS.AdminCenter.Application','SYNO.SDS.ResourceMonitor.Instance']);
+    expect(tester.takeException(),isNull);
+    await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+  });
+  testWidgets('Cancel discards selection and Clear only persists after Save', (tester) async {
+    final oldBase = Util.baseUrl; Util.baseUrl = ''; addTearDown(() => Util.baseUrl = oldBase);
+    await ProgramPins.replace(['SYNO.SDS.AdminCenter.Application']);
+    Future<Map> packages() async => {'success':true,'data':{'packages':[]}};
+    Future<Map> containers() async => {'success':true,'data':{'containers':[]}};
+    await tester.pumpWidget(MaterialApp(theme:lightTheme,home:Scaffold(body:SingleChildScrollView(
+      child:ApplicationList(['SYNO.SDS.AdminCenter.Application','SYNO.SDS.ResourceMonitor.Instance'],{},[],[],{},
+        pinnedOnly:true,packageLoader:packages,containerLoader:containers)))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加'));await tester.pumpAndSettle();
+    expect(find.text('保存（1）'),findsOneWidget);
+    await tester.tap(find.text('清空'));await tester.pumpAndSettle();
+    expect(await ProgramPins.read(),['SYNO.SDS.AdminCenter.Application']);
+    await tester.pageBack();await tester.pumpAndSettle();
+    expect(await ProgramPins.read(),['SYNO.SDS.AdminCenter.Application']);
+    await tester.tap(find.text('添加'));await tester.pumpAndSettle();
+    expect(find.text('保存（1）'),findsOneWidget);
+    await tester.tap(find.text('清空'));await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('save-home-programs')));await tester.pumpAndSettle();
+    expect(await ProgramPins.read(),isEmpty);
+    expect(find.byKey(ValueKey('pinned-program:SYNO.SDS.AdminCenter.Application')),findsNothing);
+    expect(tester.takeException(),isNull);
+    await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+  });
   testWidgets(
       'Advanced filters retain independent category, tag and Tracker values',
       (tester) async {

@@ -24,6 +24,12 @@ class ProgramPins {
     await Util.setStorage(scope, jsonEncode(ids));
     changed.value++;
   }
+  static Future<void> replace(List<String> ids, {String scope}) async {
+    final target = scope ?? key;
+    if (target != key) throw StateError('NAS 账号已改变，请重新选择');
+    await Util.setStorage(target, jsonEncode(ids.toSet().toList()));
+    changed.value++;
+  }
 
   static Future<void> move(String id, int delta) async {
     final scope = key, ids = await read(key);

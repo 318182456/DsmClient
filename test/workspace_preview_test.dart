@@ -98,7 +98,11 @@ void main() {
         await tester.longPress(find.text('测试歌曲'));
         await tester.pumpAndSettle();
       }
-      if (name == 'program-cards' || name == 'program-pins') {
+      if (name == 'program-picker') {
+        await tester.tap(find.text('添加')); await tester.pumpAndSettle();
+        await tester.tap(find.byKey(ValueKey('program-card:SYNO.SDS.AdminCenter.Application'))); await tester.pumpAndSettle();
+      }
+      if (name == 'program-cards' || name == 'program-pins' || name == 'program-picker') {
         await tester.runAsync(() async {
           for (final icon in [
             'control_panel',
@@ -201,6 +205,9 @@ void main() {
                     })),
         lightTheme);
     await ProgramPins.toggle('SYNO.SDS.AdminCenter.Application');
+    await capture('program-picker', Scaffold(appBar:AppBar(title:Text('控制台')),
+      body:SingleChildScrollView(child:ApplicationList(['SYNO.SDS.AdminCenter.Application','SYNO.SDS.ResourceMonitor.Instance'],{},[],[],{},pinnedOnly:true,
+        packageLoader:()async=>{'success':true,'data':{'packages':[]}},containerLoader:()async=>{'success':true,'data':{'containers':[]}}))),lightTheme);
     await capture(
         'torrent-light',
         TorrentProgram('review',

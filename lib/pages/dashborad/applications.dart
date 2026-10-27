@@ -25,15 +25,14 @@ class ApplicationList extends StatefulWidget {
   final List volumes, disks;
   final Map appNotify;
   final Future<Map> Function() packageLoader, containerLoader;
-  final bool pinnedOnly;
-  final VoidCallback onManage;
+  final bool pinnedOnly, selectForHome;
   const ApplicationList(
       this.applications, this.system, this.volumes, this.disks, this.appNotify,
       {Key key,
       this.packageLoader,
       this.containerLoader,
       this.pinnedOnly = false,
-      this.onManage})
+      this.selectForHome = false})
       : super(key: key);
   @override
   State<ApplicationList> createState() => _ApplicationListState();
@@ -58,18 +57,21 @@ class _ApplicationListState extends State<ApplicationList> {
   int generation = 0;
   List<String> pins = [];
   bool catalogLoaded = false;
+  bool pinsLoaded = false, saving = false;
+  String selectionScope;
   @override
   void initState() {
     super.initState();
     connection = '${Util.baseUrl}|${Util.sid}';
-    ProgramPins.changed.addListener(readPins);
+    selectionScope = ProgramPins.key;
+    if (!widget.selectForHome) ProgramPins.changed.addListener(readPins);
     readPins();
     if (!widget.pinnedOnly) load();
   }
 
   @override
   void dispose() {
-    ProgramPins.changed.removeListener(readPins);
+    if (!widget.selectForHome) ProgramPins.changed.removeListener(readPins);
     super.dispose();
   }
 
@@ -80,11 +82,29 @@ class _ApplicationListState extends State<ApplicationList> {
       if (!mounted || scope != ProgramPins.key) return;
       setState(() {
         pins = value;
+        pinsLoaded = true;
         if (widget.pinnedOnly && pins.isEmpty) loading = false;
       });
       if (widget.pinnedOnly && pins.isNotEmpty && !catalogLoaded) load();
     } catch (_) {
       if (mounted) setState(() => loading = false);
+    }
+  }
+  void openHomePicker() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => Scaffold(
+      appBar: AppBar(title: Text('选择常用程序')),
+      body: ApplicationList(widget.applications, widget.system, widget.volumes,
+        widget.disks, widget.appNotify, selectForHome: true,
+        packageLoader: widget.packageLoader, containerLoader: widget.containerLoader))));
+  }
+  Future<void> saveHomeSelection() async {
+    if (saving || !pinsLoaded) return;
+    setState(() => saving = true);
+    try {
+      await ProgramPins.replace(pins, scope: selectionScope);
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) setState(() {saving = false; error = '快捷方式保存失败，请确认 NAS 账号后重试';});
     }
   }
 
@@ -145,19 +165,20 @@ class _ApplicationListState extends State<ApplicationList> {
         child: Padding(
             padding: EdgeInsets.all(12),
             child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(children: [
                     Expanded(
                         child: Text('常用程序',
                             style: Theme.of(context).textTheme.subtitle1)),
-                    TextButton(onPressed: widget.onManage, child: Text('添加'))
+                    TextButton(onPressed: openHomePicker, child: Text('添加'))
                   ]),
                   if (loading) LinearProgressIndicator(minHeight: 2),
                   if (apps.isEmpty && !loading)
                     Padding(
                         padding: EdgeInsets.all(12),
-                        child: Text('长按程序卡片，添加到首页。',
+                        child: Text('点击“添加”选择常用程序。',
                             style: Theme.of(context).textTheme.caption)),
                   if (apps.isNotEmpty)
                     SizedBox(
@@ -365,11 +386,14 @@ class _ApplicationListState extends State<ApplicationList> {
         .where((a) =>
             '${a.title} ${a.id}'.toLowerCase().contains(query.toLowerCase()))
         .toList();
+    final panelWidth = MediaQuery.of(context).size.width * (widget.selectForHome ? 1 : .8);
     return Container(
-        width: MediaQuery.of(context).size.width * .8,
+        width: panelWidth,
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
             child: Column(children: [
+          if (widget.selectForHome) Padding(padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
+            child: Text('点击卡片勾选程序，保存后显示在控制台首页。', style: Theme.of(context).textTheme.caption)),
           Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 12, 16),
               child: Row(children: [
@@ -381,6 +405,7 @@ class _ApplicationListState extends State<ApplicationList> {
                 IconButton(
                     icon: Icon(Icons.refresh),
                     onPressed: loading ? null : load),
+                if (widget.selectForHome) TextButton(onPressed: saving ? null : () => setState(() => pins = []),child: Text('清空')),
               ])),
           if (loading) LinearProgressIndicator(),
           if (error.isNotEmpty)
@@ -396,10 +421,16 @@ class _ApplicationListState extends State<ApplicationList> {
                         .map((app) => Semantics(
                             key: ValueKey('program-card:${app.id}'),
                             button: true,
+                            selected: widget.selectForHome ? pins.contains(app.id) : null,
                             label: app.title,
                             child: GestureDetector(
-                                onLongPress: () => pinMenu(app),
+                                onLongPress: widget.selectForHome ? null : () => pinMenu(app),
                                 onTap: () {
+                                  if (widget.selectForHome) {
+                                    if (!pinsLoaded || saving) return;
+                                    setState(() {if (pins.contains(app.id)) pins.remove(app.id);else pins.add(app.id);});
+                                    return;
+                                  }
                                   final navigator = Navigator.of(context);
                                   navigator.pop();
                                   navigator.push(MaterialPageRoute(
@@ -408,15 +439,14 @@ class _ApplicationListState extends State<ApplicationList> {
                                 },
                                 child: Container(
                                   width:
-                                      (MediaQuery.of(context).size.width * .8 -
-                                              60) /
+                                      (panelWidth - 60) /
                                           2,
                                   padding: EdgeInsets.symmetric(
                                       vertical: 20, horizontal: 8),
                                   decoration: BoxDecoration(
                                       border: Border.all(
                                           color:
-                                              Theme.of(context).dividerColor),
+                                              widget.selectForHome && pins.contains(app.id) ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor),
                                       color: Theme.of(context).cardColor,
                                       borderRadius: BorderRadius.circular(20)),
                                   child: Column(children: [
@@ -465,7 +495,10 @@ class _ApplicationListState extends State<ApplicationList> {
                                         height: 20 *
                                             MediaQuery.of(context)
                                                 .textScaleFactor,
-                                        child: Text(
+                                        child: widget.selectForHome ? Row(mainAxisAlignment: MainAxisAlignment.center,children:[
+                                          Icon(pins.contains(app.id) ? Icons.check_circle : Icons.radio_button_unchecked,size:16,color:pins.contains(app.id)?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
+                                          SizedBox(width:4),Text(pins.contains(app.id)?'已选择':'点击选择',style:Theme.of(context).textTheme.caption),
+                                        ]) : Text(
                                             app.caption ??
                                                 (app.id.startsWith('container:')
                                                     ? '容器'
@@ -481,6 +514,9 @@ class _ApplicationListState extends State<ApplicationList> {
                 if (shown.isEmpty && !loading)
                   Padding(padding: EdgeInsets.all(24), child: Text('没有匹配的程序')),
               ])),
+          if (widget.selectForHome) Padding(padding: EdgeInsets.all(20),child:SizedBox(width:double.infinity,
+            child: ElevatedButton(key:ValueKey('save-home-programs'),onPressed:loading||!pinsLoaded||saving?null:saveHomeSelection,
+              child:Text(saving?'正在保存…':'保存（${pins.length}）')))),
         ])));
   }
 }

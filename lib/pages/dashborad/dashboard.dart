@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dsm_client/models/shortcut_item_model.dart';
 import 'package:dsm_client/models/wallpaper_model.dart';
 import 'package:dsm_client/pages/control_panel/external_device/external_device.dart';
 import 'package:dsm_client/pages/control_panel/info/info.dart';
 import 'package:dsm_client/pages/control_panel/task_scheduler/task_scheduler.dart';
 import 'package:dsm_client/pages/dashborad/applications.dart';
 import 'package:dsm_client/pages/dashborad/media_converter.dart';
-import 'package:dsm_client/pages/dashborad/shortcut_list.dart';
 import 'package:dsm_client/pages/dashborad/widget_setting.dart';
 import 'package:dsm_client/pages/log_center/log_center.dart';
 import 'package:dsm_client/pages/notify/notify.dart';
@@ -50,7 +48,6 @@ class DashboardState extends State<Dashboard> {
   List widgets = [];
   List applications = [];
   List fileLogs = [];
-  List<ShortcutItemModel> shortcutItems = [];
   List validAppViewOrder = [];
   WallpaperModel wallpaperModel;
   List esatas = [];
@@ -168,7 +165,6 @@ class DashboardState extends State<Dashboard> {
           if (init['data']['UserSettings']['Desktop'] != null) {
             applications = init['data']['UserSettings']['Desktop']['valid_appview_order'] ?? init['data']['UserSettings']['Desktop']['appview_order'] ?? [];
 
-            shortcutItems = ShortcutItemModel.fromList(init['data']['UserSettings']['Desktop']['ShortcutItems']);
             validAppViewOrder = List.from(applications);
             wallpaperModel = WallpaperModel.fromJson(init['data']['UserSettings']['Desktop']['wallpaper']);
           }
@@ -1876,18 +1872,8 @@ class DashboardState extends State<Dashboard> {
               ? ListView(
                   padding: EdgeInsets.symmetric(vertical: 20),
                   children: [
-                    if (shortcutItems.where((element) => supportedShortcuts.contains(element.className)).length > 0 && Util.notReviewAccount && shortcutProvider.showShortcut)
-                      ShortcutList(
-                        shortcutItems,
-                        system,
-                        volumes,
-                        disks,
-                        appNotify,
-                        context,
-                        validAppViewOrder: validAppViewOrder,
-                      ),
                     if(Util.notReviewAccount&&shortcutProvider.showShortcut)
-                      ApplicationList(validAppViewOrder,system,volumes,disks,appNotify,pinnedOnly:true,onManage:()=>_scaffoldKey.currentState.openDrawer()),
+                      ApplicationList(validAppViewOrder,system,volumes,disks,appNotify,pinnedOnly:true),
                     if (widgets != null && widgets.length > 0)
                       ...widgets.map((widget) {
                         return _buildWidgetItem(widget);
