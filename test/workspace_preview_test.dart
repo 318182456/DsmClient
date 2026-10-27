@@ -19,6 +19,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dsm_client/pages/packages/torrent_program.dart';
 import 'torrent_workspace_test.dart' show FixtureTorrentClient;
 import 'dockhand_stats_widget_test.dart' show FixtureDockhandClient;
+import 'torrent_features_widget_test.dart' show RssFixtureClient;
+import 'package:dsm_client/pages/packages/torrent_rss.dart';
+import 'package:dsm_client/util/program_pins.dart';
 
 void main() {
   testWidgets('Render temporary design review previews when requested',
@@ -67,6 +70,10 @@ void main() {
               theme: reviewTheme(theme),
               home: page)));
       await tester.pumpAndSettle();
+      if (name == 'rss-articles') {
+        await tester.tap(find.text('Linux'));
+        await tester.pumpAndSettle();
+      }
       if (name == 'dockhand-stats') {
         await tester.enterText(
             find.byType(TextField).first, 'https://example.test');
@@ -91,7 +98,7 @@ void main() {
         await tester.longPress(find.text('测试歌曲'));
         await tester.pumpAndSettle();
       }
-      if (name == 'program-cards') {
+      if (name == 'program-cards' || name == 'program-pins') {
         await tester.runAsync(() async {
           for (final icon in [
             'control_panel',
@@ -172,6 +179,28 @@ void main() {
             });
     await capture('music-light', music(), lightTheme);
     await capture('music-dark', music(), darkTheme);
+    await capture(
+        'rss-articles',
+        TorrentRssPage(client: RssFixtureClient(), profile: 'preview'),
+        lightTheme);
+    await ProgramPins.toggle('SYNO.SDS.AdminCenter.Application');
+    await capture(
+        'program-pins',
+        Scaffold(
+            appBar: AppBar(title: Text('控制台')),
+            body: ApplicationList(
+                ['SYNO.SDS.AdminCenter.Application'], {}, [], [], {},
+                pinnedOnly: true,
+                packageLoader: () async => {
+                      'success': true,
+                      'data': {'packages': []}
+                    },
+                containerLoader: () async => {
+                      'success': true,
+                      'data': {'containers': []}
+                    })),
+        lightTheme);
+    await ProgramPins.toggle('SYNO.SDS.AdminCenter.Application');
     await capture(
         'torrent-light',
         TorrentProgram('review',

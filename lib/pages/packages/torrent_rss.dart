@@ -199,8 +199,12 @@ class _TorrentRssState extends State<TorrentRssPage> {
   Future<void> download(Map article) async {
     final torrent = '${article['torrentURL'] ?? ''}';
     final link = torrent.isNotEmpty ? torrent : '${article['link'] ?? ''}';
-    if (link.isEmpty ||
-        !await confirm('添加下载任务',
+    if (link.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('该文章没有种子或磁力链接')));
+      return;
+    }
+    if (!await confirm('添加下载任务',
             '${article['title'] ?? '未命名文章'}\n将提交到 ${local ? 'Transmission' : 'qBittorrent'}。') ||
         !mounted) return;
     await execute(() async {

@@ -154,7 +154,7 @@ void main() {
     await tester.tap(shortcut);
     await tester.pumpAndSettle();
     expect(find.byType(ControlPanel), findsOneWidget);
-    await tester.pageBack();
+    Navigator.of(tester.element(find.byType(ControlPanel))).pop();
     await tester.pumpAndSettle();
     await tester.longPress(shortcut);
     await tester.pumpAndSettle();

@@ -184,6 +184,12 @@ class TorrentClient {
       if (metadata is Map && metadata['trackers'] is Map)
         trackerIndex = metadata['trackers'];
     } catch (_) {/* Older servers still expose the active tracker per task. */}
+    final byHash = <String, List<String>>{};
+    trackerIndex.forEach((url, hashes) {
+      if (hashes is List)
+        for (final hash in hashes)
+          byHash.putIfAbsent('$hash', () => []).add('$url');
+    });
     return (result as List)
         .whereType<Map>()
         .map<Map>((t) => {
@@ -195,11 +201,7 @@ class TorrentClient {
               'uploadSpeed': t['upspeed'],
               'state': t['state'],
               'raw': t,
-              'trackers': trackerIndex.entries
-                  .where((e) =>
-                      e.value is List && (e.value as List).contains(t['hash']))
-                  .map((e) => e.key)
-                  .toList(),
+              'trackers': byHash['${t['hash']}'] ?? [],
             })
         .toList();
   }
