@@ -158,9 +158,9 @@ Android 在进入主页时检查本仓库的 GitHub Releases，也可通过“�
 
 [Android CI](https://github.com/318182456/DsmClient/actions/workflows/android.yml) 在推送到 `main`、向 `main` 提交 Pull Request 或手动运行时触发。
 
-工作流使用 Flutter 3.7.12 和 JDK 11。`main` 构建固定签名的 ARM64 release APK，PR 构建隔离的临时签名 debug APK。成功后可在对应运行的 Artifacts 中下载 `DsmClient-arm64` 成果，保留 7 天。`main` 分支成功构建后还会自动创建 `dev-构建序号` 开发测试预发布并附上 APK；PR 构建不发布。
+工作流使用 Flutter 3.7.12；普通 `main` 提交和 PR 只执行检查。手动勾选 `build_apk` 后才使用 JDK 11 构建固定签名 ARM64 release APK，成果在 Artifacts 中保留 7 天。手动勾选 `publish_release` 才会在检查和构建成功后创建 `dev-构建序号` 开发预发布；发布仅允许 `main` 分支。
 
-仓库已配置专用固定签名，保存在 Actions Secrets：`ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`。不要替换这些密钥，否则新版本无法覆盖安装。PR 不使用这些密钥，也不会发版。iOS 构建尚未接入。
+仓库已配置专用固定签名，保存在 Actions Secrets：`ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`。不要替换这些密钥，否则新版本无法覆盖安装。仅检查的运行和 PR 不使用这些密钥，也不会发版。iOS 构建尚未接入。
 
 工作流复用 Flutter SDK 与 Pub 缓存，并缓存 Android SDK 平台、构建工具及 Gradle 依赖；Android SDK 安装成功后立即保存，编译失败也能保留该缓存。
 
