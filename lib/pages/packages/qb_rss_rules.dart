@@ -208,6 +208,7 @@ class _QbRssRulesState extends State<QbRssRulesPage> {
               onPressed: busy ? null : load)
         ]),
         floatingActionButton: FloatingActionButton(
+            elevation: 0,
             tooltip: '新增规则',
             onPressed: busy ? null : () => edit(),
             child: Icon(Icons.add)),
