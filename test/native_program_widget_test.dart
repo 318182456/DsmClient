@@ -32,7 +32,7 @@ void main() {
     await tester.tap(find.text('qbittorrent'));
     await tester.pumpAndSettle();
     expect(find.byType(TorrentProgram), findsOneWidget);
-    expect(find.text('连接 qBittorrent API'), findsOneWidget);
+    expect(find.text('连接 qBittorrent'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   testWidgets(
@@ -170,7 +170,7 @@ void main() {
         .tap(find.byKey(ValueKey('program-card:container:qbittorrent')));
     await tester.pumpAndSettle();
     expect(find.byType(TorrentProgram), findsOneWidget);
-    expect(find.text('连接 qBittorrent API'), findsOneWidget);
+    expect(find.text('连接 qBittorrent'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -226,6 +226,8 @@ void main() {
         tester.widgetList<TextField>(find.byType(TextField)).toList();
     expect(fields.last.obscureText, isTrue);
     await tester.enterText(find.byType(TextField).first, 'file:///private');
+    await tester.pump(Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('连接'));
     await tester.pumpAndSettle();
     expect(find.textContaining('请输入不含账号'), findsOneWidget);

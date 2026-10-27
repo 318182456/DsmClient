@@ -95,6 +95,7 @@ jobs:
           dart --no-sound-null-safety test/rr_icons_test.dart
           dart --no-sound-null-safety test/dockhand_client_test.dart
           dart --no-sound-null-safety test/torrent_client_test.dart
+          dart --no-sound-null-safety test/torrent_advanced_test.dart
           dart --no-sound-null-safety test/update_release_test.dart
           dart --no-sound-null-safety test/update_download_test.dart
 
@@ -107,7 +108,7 @@ jobs:
             curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
               https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
           fi
-          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart
+          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart test/torrent_workspace_test.dart
 
       - name: Analyze native program pages
         run: >-
@@ -117,6 +118,7 @@ jobs:
           lib/pages/packages/audio_station.dart lib/pages/packages/drive.dart
           lib/pages/dashborad/applications.dart
           lib/pages/packages/torrent_program.dart lib/util/torrent_client.dart
+          lib/pages/packages/torrent_detail.dart lib/models/torrent_presentation.dart lib/util/service_credentials.dart
           lib/pages/packages/snapshots.dart
           lib/pages/setting/about.dart lib/pages/setting/license.dart lib/pages/setting/privacy.dart
           lib/pages/dashborad/shortcut_list.dart lib/pages/packages/package_shortcut.dart
@@ -183,7 +185,11 @@ jobs:
             --v4-signing-enabled false \
             --out "$RUNNER_TEMP/dsmclient-artifacts/DsmClient-dev-$GITHUB_RUN_NUMBER-arm64.apk" \
             "build/app/outputs/flutter-apk/app-$build_mode.apk"
-          "$signer" verify --verbose --print-certs --Werr \
+          "$signer" verify --verbose --print-certs \
+            "$RUNNER_TEMP/dsmclient-artifacts/DsmClient-dev-$GITHUB_RUN_NUMBER-arm64.apk"
+          # META-INF/services must remain for Kotlin runtime service loading.
+          # v2/v3 cover these entries; apply strict warnings on Android 7+ verification.
+          "$signer" verify --verbose --min-sdk-version 24 --Werr \
             "$RUNNER_TEMP/dsmclient-artifacts/DsmClient-dev-$GITHUB_RUN_NUMBER-arm64.apk"
           python3 - <<'PY'
           import hashlib, json, os, pathlib, re, subprocess
@@ -247,7 +253,7 @@ jobs:
           提交：$GITHUB_SHA
           构建记录：https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
 
-          本版本使用固定签名和递增版本号，支持应用内检查、断点下载、SHA-256 校验及覆盖安装。此前使用临时签名的测试包需要首次卸载后换装，之后可覆盖更新。安装仍需在 Android 系统界面确认。
+          本版本使用 DsmClient 独立包名 io.github.user318182456.dsmclient 和固定签名。原版 DSM Helper 或 dev-28 及更早版本用户需首次手动安装为新应用并重新配置账号，数据不会自动迁移。后续同包名版本支持应用内检查、断点下载、SHA-256 校验及覆盖安装，安装仍需在 Android 系统界面确认。
           EOF
           if gh release view "$release_tag" >/dev/null 2>&1; then
             gh release upload "$release_tag" "$release_dir"/*.apk "$release_dir/update-arm64.json" --clobber

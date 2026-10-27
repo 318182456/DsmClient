@@ -15,6 +15,9 @@ import 'package:dsm_client/pages/login/login.dart';
 import 'package:dsm_client/widgets/surfaces.dart' as surfaces;
 import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
 import 'package:dsm_client/pages/dashborad/applications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dsm_client/pages/packages/torrent_program.dart';
+import 'torrent_workspace_test.dart' show FixtureTorrentClient;
 
 void main() {
   testWidgets('Render temporary design review previews when requested',
@@ -42,6 +45,7 @@ void main() {
       tester.binding.window.clearDevicePixelRatioTestValue();
     });
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
     final output = Directory(directory)..createSync(recursive: true);
     ThemeData reviewTheme(ThemeData theme) => theme.copyWith(
         textTheme: theme.textTheme.apply(fontFamily: 'ReviewFont'),
@@ -62,6 +66,15 @@ void main() {
               theme: reviewTheme(theme),
               home: page)));
       await tester.pumpAndSettle();
+      if (name.startsWith('torrent-')) {
+        await tester.enterText(
+            find.byType(TextField).first, 'https://example.test');
+        await tester.pump(Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('连接'));
+        await tester.tap(find.text('连接'));
+        await tester.pumpAndSettle();
+      }
       if (name == 'media-menu') {
         await tester.longPress(find.text('测试歌曲'));
         await tester.pumpAndSettle();
@@ -147,6 +160,17 @@ void main() {
             });
     await capture('music-light', music(), lightTheme);
     await capture('music-dark', music(), darkTheme);
+    await capture(
+        'torrent-light',
+        TorrentProgram('review',
+            clientFactory: (_, __) => FixtureTorrentClient()),
+        lightTheme);
+    await capture(
+        'torrent-dark',
+        TorrentProgram('review-dark',
+            transmission: true,
+            clientFactory: (_, __) => FixtureTorrentClient(transmission: true)),
+        darkTheme);
     await capture(
         'dockhand-connect', DockhandProgram(profile: 'review'), lightTheme);
     await capture('control-panel', ControlPanel({}, [], [], {}), lightTheme);

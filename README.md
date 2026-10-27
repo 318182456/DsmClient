@@ -43,7 +43,7 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 | Hyper Backup | 任务、存储库、备份日志、实时任务状态；立即备份、取消任务（操作前确认） |
 | Cloud Sync | 云端连接、同步任务、日志、连接设置、同步中文件、最近同步；暂停与恢复（操作前确认） |
 | Snapshot Replication | 共享文件夹快照列表、说明及锁定状态、创建普通快照、复制任务查看 |
-| qBittorrent / Transmission | 原生任务、进度速度、文件与 Tracker、添加磁力/种子链接、开始/暂停/校验、移除任务并保留文件；需在页面输入对应程序的地址与账号，凭据仅保留在本次页面会话 |
+| qBittorrent / Transmission | 原生任务与速率总览、搜索筛选排序、多选批量操作、文件优先级、Tracker/连接详情、任务限速、磁力/链接与本地 .torrent 添加、开始/暂停/强制开始/校验/更新 Tracker；移除可保留或确认删除文件。登录信息可选择加密保存。兼容 qBittorrent 空响应 204，按 Transdroid 的功能组织方式设计，未复制其代码 |
 | SAN Manager | LUN 与 Target 列表及详情 |
 | WebDAV Server | HTTP/HTTPS 开关状态、端口与连接参数查看 |
 | Hybrid Share | 共享信息查看 |

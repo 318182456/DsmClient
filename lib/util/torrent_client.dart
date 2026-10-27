@@ -36,9 +36,12 @@ class TorrentClient {
   }
 
   Future<_ServiceResponse> _request(Uri uri,
-      {String body, bool json = false}) async {
+      {String body,
+      bool json = false,
+      List<int> binary,
+      ContentType contentType}) async {
     final request = await _http
-        .openUrl(body == null ? 'GET' : 'POST', uri)
+        .openUrl(body == null && binary == null ? 'GET' : 'POST', uri)
         .timeout(Duration(seconds: 20));
     request.followRedirects = false;
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
@@ -57,6 +60,11 @@ class TorrentClient {
           'application', json ? 'json' : 'x-www-form-urlencoded',
           charset: 'utf-8');
       request.write(body);
+    }
+    if (binary != null) {
+      request.headers.contentType = contentType;
+      request.contentLength = binary.length;
+      request.add(binary);
     }
     final response = await request.close().timeout(Duration(seconds: 25));
     final bytes = <int>[];
@@ -81,7 +89,7 @@ class TorrentClient {
     final response = await _request(
         post ? uri : uri.replace(queryParameters: params),
         body: post ? Uri(queryParameters: params ?? {}).query : null);
-    if (response.status != 200)
+    if (response.status < 200 || response.status >= 300)
       throw HttpException('qBittorrent 请求失败（${response.status}）');
     if (response.body.trim().isEmpty) return null;
     try {
@@ -118,7 +126,8 @@ class TorrentClient {
       if (user.isNotEmpty || password.isNotEmpty) {
         final result = await qb('auth/login',
             post: true, params: {'username': user, 'password': password});
-        if ('$result'.trim() != 'Ok.') throw HttpException('qBittorrent 登录失败');
+        if (result != null && '$result'.trim() != 'Ok.')
+          throw HttpException('qBittorrent 登录失败');
       }
       version = '${await qb('app/version')}';
       if (!RegExp(r'^v?\d+\.\d+').hasMatch(version))
@@ -180,28 +189,132 @@ class TorrentClient {
         .toList();
   }
 
-  Future<void> control(String action, dynamic id) async {
-    if (id == null || '$id'.isEmpty) throw FormatException('缺少任务标识');
-    if (!['start', 'stop', 'verify', 'remove'].contains(action))
-      throw ArgumentError('Unsupported action');
+  Future<void> control(String action, dynamic id) => controlMany(action, [id]);
+  Future<void> controlMany(String action, List<dynamic> ids) async {
+    if (ids.isEmpty ||
+        ids.any((id) =>
+            id == null ||
+            '$id'.isEmpty ||
+            '$id' == 'all' ||
+            '$id'.contains('|'))) throw ArgumentError('请选择明确的下载任务');
+    const methods = {
+      'start': 'torrent-start',
+      'stop': 'torrent-stop',
+      'force': 'torrent-start-now',
+      'verify': 'torrent-verify',
+      'reannounce': 'torrent-reannounce',
+      'remove': 'torrent-remove',
+      'remove-data': 'torrent-remove'
+    };
+    if (!methods.containsKey(action))
+      throw ArgumentError('Unsupported torrent action');
     if (transmission) {
-      await rpc(action == 'remove' ? 'torrent-remove' : 'torrent-$action', {
-        'ids': [id],
-        if (action == 'remove') 'delete-local-data': false
+      await rpc(methods[action], {
+        'ids': ids,
+        if (action.startsWith('remove'))
+          'delete-local-data': action == 'remove-data'
       });
     } else {
-      final command = action == 'start'
+      final method = action == 'start'
           ? (_qb5 ? 'start' : 'resume')
           : action == 'stop'
               ? (_qb5 ? 'stop' : 'pause')
-              : action == 'verify'
-                  ? 'recheck'
-                  : 'delete';
-      await qb('torrents/$command', post: true, params: {
-        'hashes': '$id',
-        if (action == 'remove') 'deleteFiles': 'false'
+              : const {
+                  'force': 'setForceStart',
+                  'verify': 'recheck',
+                  'reannounce': 'reannounce',
+                  'remove': 'delete',
+                  'remove-data': 'delete'
+                }[action];
+      await qb('torrents/$method', post: true, params: {
+        'hashes': ids.join('|'),
+        if (action == 'force') 'value': 'true',
+        if (action.startsWith('remove'))
+          'deleteFiles': action == 'remove-data' ? 'true' : 'false'
       });
     }
+  }
+
+  Future<void> filePriority(dynamic id, int index, int priority) async {
+    if (index < 0 || ![0, 1, 6, 7].contains(priority))
+      throw ArgumentError('无效的文件优先级');
+    if (transmission) {
+      await rpc('torrent-set', {
+        'ids': [id],
+        priority == 0 ? 'files-unwanted' : 'files-wanted': [index],
+        if (priority != 0)
+          (priority >= 6 ? 'priority-high' : 'priority-normal'): [index]
+      });
+    } else
+      await qb('torrents/filePrio',
+          post: true,
+          params: {'hash': '$id', 'id': '$index', 'priority': '$priority'});
+  }
+
+  Future<void> limits(dynamic id, int downloadKiB, int uploadKiB) async {
+    if (downloadKiB < 0 ||
+        uploadKiB < 0 ||
+        downloadKiB > 10485760 ||
+        uploadKiB > 10485760) throw ArgumentError('限速值超出范围');
+    if (transmission) {
+      await rpc('torrent-set', {
+        'ids': [id],
+        'downloadLimited': downloadKiB > 0,
+        'downloadLimit': downloadKiB,
+        'uploadLimited': uploadKiB > 0,
+        'uploadLimit': uploadKiB
+      });
+    } else {
+      await qb('torrents/setDownloadLimit',
+          post: true,
+          params: {'hashes': '$id', 'limit': '${downloadKiB * 1024}'});
+      await qb('torrents/setUploadLimit',
+          post: true,
+          params: {'hashes': '$id', 'limit': '${uploadKiB * 1024}'});
+    }
+  }
+
+  Future<void> addTracker(dynamic id, String address) async {
+    final uri = Uri.tryParse(address.trim());
+    if (uri == null ||
+        !['http', 'https', 'udp'].contains(uri.scheme) ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty) throw FormatException('请输入有效的 Tracker 地址');
+    if (transmission)
+      await rpc('torrent-set', {
+        'ids': [id],
+        'trackerAdd': [address.trim()]
+      });
+    else
+      await qb('torrents/addTrackers',
+          post: true, params: {'hash': '$id', 'urls': address.trim()});
+  }
+
+  Future<void> addFile(List<int> bytes) async {
+    if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024)
+      throw ArgumentError('种子文件需小于 8 MB');
+    if (transmission) {
+      final result =
+          await rpc('torrent-add', {'metainfo': base64Encode(bytes)});
+      if (result['torrent-added'] == null &&
+          result['torrent-duplicate'] == null) throw HttpException('服务未返回新任务');
+      return;
+    }
+    final boundary = 'DsmClient${DateTime.now().microsecondsSinceEpoch}';
+    final body = <int>[
+      ...utf8.encode(
+          '--$boundary\r\nContent-Disposition: form-data; name="torrents"; filename="upload.torrent"\r\nContent-Type: application/x-bittorrent\r\n\r\n'),
+      ...bytes,
+      ...utf8.encode('\r\n--$boundary--\r\n')
+    ];
+    final result = await _request(endpoint('api/v2/torrents/add'),
+        binary: body,
+        contentType: ContentType('multipart', 'form-data',
+            parameters: {'boundary': boundary}));
+    if (result.status < 200 ||
+        result.status >= 300 ||
+        (result.body.trim().isNotEmpty && result.body.trim() != 'Ok.'))
+      throw HttpException('添加种子文件失败');
   }
 
   Future<void> add(String address) async {
@@ -231,18 +344,59 @@ class TorrentClient {
           'trackerStats',
           'peers',
           'downloadDir',
-          'errorString'
+          'errorString',
+          'downloadLimit',
+          'downloadLimited',
+          'uploadLimit',
+          'uploadLimited',
+          'uploadRatio',
+          'eta'
         ]
       });
       final items = result['torrents'] as List ?? [];
-      return items.isEmpty ? {} : items.first as Map;
+      if (items.isEmpty) return {};
+      final data = items.first as Map;
+      final files = data['files'] as List ?? [],
+          stats = data['fileStats'] as List ?? [];
+      return {
+        'properties': data,
+        'files': [
+          for (var i = 0; i < files.length; i++)
+            {
+              ...files[i] as Map,
+              'index': i,
+              'progress': (files[i]['length'] as num ?? 0) > 0
+                  ? (files[i]['bytesCompleted'] as num ?? 0) /
+                      files[i]['length']
+                  : 0,
+              'priority': i < stats.length
+                  ? (stats[i]['wanted'] == false
+                      ? 0
+                      : (stats[i]['priority'] as num ?? 0) > 0
+                          ? 6
+                          : 1)
+                  : 1
+            }
+        ],
+        'trackers': data['trackerStats'] ?? [],
+        'peers': data['peers'] ?? []
+      };
     }
     final values = await Future.wait([
       qb('torrents/properties', params: {'hash': '$id'}),
       qb('torrents/files', params: {'hash': '$id'}),
       qb('torrents/trackers', params: {'hash': '$id'}),
+      qb('sync/torrentPeers', params: {'hash': '$id'}),
     ]);
-    return {'任务': values[0], '文件': values[1], 'Tracker': values[2]};
+    final peers = values[3] is Map
+        ? ((values[3]['peers'] as Map ?? {}).values.toList())
+        : [];
+    return {
+      'properties': values[0],
+      'files': values[1],
+      'trackers': values[2],
+      'peers': peers
+    };
   }
 
   void close() {
