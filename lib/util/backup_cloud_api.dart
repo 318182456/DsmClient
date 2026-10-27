@@ -8,12 +8,7 @@ typedef BackupCloudRequest = Future<Map> Function(
 class BackupCloudApi {
   final BackupCloudRequest request;
   BackupCloudApi({BackupCloudRequest request})
-      : request = request ??
-            ((s, p) => ProgramApi.call(s,
-                params: p,
-                timeout: s.method == 'create' || s.method == 'create_link'
-                    ? 600
-                    : 60));
+      : request = request ?? ((s, p) => ProgramApi.call(s, params: p));
 
   Future<Map> call(String api, String method,
       [Map<String, dynamic> params = const {}]) async {

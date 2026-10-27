@@ -41,8 +41,8 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 | Synology Drive | 文件与控制台两个独立入口；我的文件、团队文件夹、分页浏览、上传下载、新建目录、重命名、移动、回收站删除、创建分享链接；控制台总览、客户端列表与断开、日志搜索与类型筛选、团队文件夹同步/版本保留/水印设置、高级功能激活及全局设置 |
 | Synology Office / AI Console | 字体列表、名称登记、从本地 TTF/OTF/TTC 读取字体家族、启用/停用/删除自定义字体；Office 版本轮换；已有 AI 集成详情/重命名/删除、应用策略与集成选择、请求日志搜索分页及日志保留设置 |
 | Audio Station | 歌曲、专辑、歌手、播放列表、文件夹、曲库搜索、分页加载、音频播放 |
-| Hyper Backup | 任务、存储库、备份日志、实时任务状态；立即备份、取消任务（操作前确认） |
-| Cloud Sync | 云端连接、同步任务、日志、连接设置、同步中文件、最近同步；暂停与恢复（操作前确认） |
+| Hyper Backup | 任务、存储库、备份日志、实时任务状态；立即备份、取消任务；创建本地共享文件夹多版本备份与存储库、数据压缩、每日计划（写操作前确认） |
+| Cloud Sync | 云端连接、同步任务、日志、连接设置、同步中文件、最近同步；暂停与恢复；原生创建 WebDAV / 百度网盘同步，官方授权、文件夹选择和同步方向（写操作前确认） |
 | Snapshot Replication | 共享文件夹快照列表、说明及锁定状态、创建普通快照、复制任务查看 |
 | qBittorrent / Transmission | 原生任务与速率总览、搜索筛选排序、多选批量操作、文件优先级、Tracker/连接详情、任务限速、磁力/链接与本地 .torrent 添加、开始/暂停/强制开始/校验/更新 Tracker；移除可保留或确认删除文件。登录信息可选择加密保存。兼容 qBittorrent 空响应 204，按 Transdroid 的功能组织方式设计，未复制其代码 |
 | SAN Manager | LUN 与 Target 列表及详情 |
@@ -52,7 +52,7 @@ DsmClient 是面向群晖 Synology DSM 的 Flutter 移动客户端，计划基�
 | RR Manager 4.x | 概览、引导配置编辑、Addons/Modules 选择、在线/本地 RR 与 RR Manager 更新、日志；修改操作须在应用内确认，本客户端不发送重启请求 |
 | 其他桌面套件 | 保留 NAS 原生图标和套件运行管理；纯运行库仅在套件中心显示 |
 
-以上为当前实现范围，尚未覆盖每个程序的完整功能。Drive 历史版本/回收站浏览、备份任务创建与恢复、云盘授权与任务创建、Office 在线编辑等仍待开发。新增读取接口已在 DSM 7.4.1 上进行只读验证；写操作按接口实现，未在用户 NAS 上执行破坏性或状态变更测试。音频流端点也已验证；移动端交互与音频解码仍需 Android 实机验证。qBittorrent 4/5 命令切换及 Transmission CSRF 协商已通过本地 HTTP 服务集成测试，尚未使用用户程序账号做真实任务变更。快照恢复/删除、第三方媒体库原生业务与 Tailscale 管理也尚未实现。套件运行管理不代表已实现对应程序全部业务功能。RR 只读日志已在 NAS 验证，未对用户引导执行写配置、升级或重启测试。Dockhand 使用独立认证；可选择记住账号密码或 API Token，使用 Android Keystore / iOS Keychain 加密保存，按 NAS 和服务地址隔离，验证码不保存，可随时清除。
+以上为当前实现范围，尚未覆盖每个程序的完整功能。Drive 历史版本/回收站浏览、远程目标备份创建与恢复、其他云服务的授权与任务创建、Office 在线编辑等仍待开发。新增读取接口已在 DSM 7.4.1 上进行只读验证；写操作按接口实现，未在用户 NAS 上执行破坏性或状态变更测试。音频流端点也已验证；移动端交互与音频解码仍需 Android 实机验证。qBittorrent 4/5 命令切换及 Transmission CSRF 协商已通过本地 HTTP 服务集成测试，尚未使用用户程序账号做真实任务变更。快照恢复/删除、第三方媒体库原生业务与 Tailscale 管理也尚未实现。套件运行管理不代表已实现对应程序全部业务功能。RR 只读日志已在 NAS 验证，未对用户引导执行写配置、升级或重启测试。Dockhand 使用独立认证；可选择记住账号密码或 API Token，使用 Android Keystore / iOS Keychain 加密保存，按 NAS 和服务地址隔离，验证码不保存，可随时清除。
 
 认证流程参考 [Synology DSM Login Web API Guide](https://global.download.synology.com/download/Document/Software/DeveloperGuide/Os/DSM/All/enu/DSM_Login_Web_API_Guide_enu.pdf)。
 
@@ -244,4 +244,4 @@ Hyper Backup / Cloud Sync：新增原生创建向导。Hyper Backup 可选择本
 
 其他程序的公共详情也补充中文字段及已知状态，包括备份、云同步、快照、SAN、WebDAV、存储管理、Docker 和虚拟机；用户自定义名称、路径、原始日志及未知服务字段保持原值。原始套件介绍可在“套件原始说明”展开查看。
 
-更新检查的版本 API 和更新清单优先使用 `https://edgeone.gh-proxy.org/`，代理不可用时回退 GitHub 直连；APK 下载继续按选择的线路执行并校验 SHA-256。更新网络客户端与 NAS 会话独立。
+更新检查的版本 API 和更新清单优先使用 `https://edgeone.gh-proxy.org/`，代理不可用时回退 GitHub 直连；APK 下载继续按选择的线路执行并校验 SHA-256。更新网络客户端与 NAS 会话独立。旧版检查器会被历史 DSM Helper 包名清单阻断，需要通过浏览器安装一次本修复版，之后可正常使用内部更新。

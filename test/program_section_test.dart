@@ -41,7 +41,12 @@ void main() {
     'sid': 'private',
     'SynoToken': 'private',
     'client_session_id': 'private',
-    'settings': {'password': 'private', 'max_upload_speed': 20},
+    'settings': {
+      'password': 'private',
+      'pwd': 'private',
+      'auth_pass': 'private',
+      'max_upload_speed': 20
+    },
     'records': [
       {'api_key_secret': 'private', 'status': 'running'}
     ],
