@@ -273,7 +273,11 @@ class _OfficeHistoryState extends State<OfficeHistoryPage> {
     setState(() => busy = true);
     try {
       await widget.api.setOfficeHistory(enabled);
-      if (mounted) setState(() => original = enabled);
+      if (mounted)
+        setState(() {
+          original = enabled;
+          error = '';
+        });
     } catch (e) {
       if (mounted) setState(() => error = driveError(e));
     } finally {

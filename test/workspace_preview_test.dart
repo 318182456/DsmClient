@@ -105,7 +105,7 @@ void main() {
         await tester.tap(find.text('连接 Dockhand'));
         await tester.pumpAndSettle();
       }
-      if (name.startsWith('torrent-')) {
+      if (name == 'torrent-light' || name == 'torrent-dark') {
         await tester.enterText(
             find.byType(TextField).first, 'https://example.test');
         await tester.pump(Duration(milliseconds: 400));

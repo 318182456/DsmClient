@@ -38,9 +38,9 @@ class TorrentImport extends StatelessWidget {
         ])
           Card(
               child: ListTile(
-                  leading: target == 'Download Station'
-                      ? Icon(Icons.download_outlined)
-                      : ServiceAppIcon(target.toLowerCase(), size: 36),
+                  leading: target == 'Transmission'
+                      ? ServiceAppIcon('transmission', size: 36)
+                      : Icon(Icons.download_outlined),
                   title: Text(target),
                   trailing: Icon(Icons.chevron_right),
                   onTap: () => Navigator.push(
