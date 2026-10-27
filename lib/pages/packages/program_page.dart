@@ -304,8 +304,8 @@ class _ProgramDataViewState extends State<ProgramDataView>
   }
 
   Widget row(Map item) {
-    final title =
-        '${item['title'] ?? item['name'] ?? item['task_display_name'] ?? item['client_name'] ?? item['file_name'] ?? item['local_sync_path'] ?? item['event'] ?? item['s1'] ?? item['share'] ?? item['path'] ?? item['time'] ?? item['id'] ?? '详细信息'}';
+    final title = widget.section.rowTitle(item);
+    final repository = widget.section.api == 'SYNO.Backup.Repository';
     final state = widget.packageId == 'HyperBackup'
         ? item['state'] ?? item['status']
         : item['status'] ??
@@ -313,6 +313,11 @@ class _ProgramDataViewState extends State<ProgramDataView>
             item['sync_status'] ??
             item['last_bkp_result'];
     final subtitle = [
+      if (repository && item['repo_id'] != null) '存储库 #${item['repo_id']}',
+      if (repository && '${item['share'] ?? ''}'.trim().isNotEmpty && item['share'] != title)
+        '共享文件夹：${item['share']}',
+      if (repository && '${item['transfer_type'] ?? ''}'.trim().isNotEmpty)
+        DisplayText.value('transfer_type', item['transfer_type'], context: 'HyperBackup'),
       state == null
           ? item['desc']
           : DisplayText.value('status', state, context: widget.packageId),

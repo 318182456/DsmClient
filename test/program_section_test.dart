@@ -37,6 +37,18 @@ void main() {
           'one',
       'Handle nested playlist records');
   expect(nested.rows({}).isEmpty, 'Handle missing optional collections');
+  const repository = ProgramSection('', 'SYNO.Backup.Repository', 'list');
+  final unnamed = {'name': '', 'share': 'Backup', 'repo_id': 7};
+  expect(repository.rowTitle(unnamed) == 'Backup',
+      'Empty repository names fall back to the shared folder');
+  expect(unnamed['name'] == '', 'A display fallback does not rename NAS data');
+  expect(repository.rowTitle({'title': '  ', 'name': '文档备份', 'share': 'Backup'}) == '文档备份',
+      'Whitespace labels cannot hide a valid user name');
+  expect(repository.rowTitle({'name': '', 'share': ' ', 'repo_id': 7}) == '存储库 #7',
+      'Missing labels retain a distinguishable repository identifier');
+  expect(repository.rowTitle({}) == '未命名存储库', 'Never render a blank repository title');
+  expect(section.rowTitle({'name': '', 'task_display_name': '同步任务'}) == '同步任务',
+      'Other package lists also skip empty name fields');
   final safe = ProgramSection.publicValue({
     'sid': 'private',
     'SynoToken': 'private',

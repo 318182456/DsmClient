@@ -29,6 +29,25 @@ class ProgramSection {
     return [];
   }
 
+  /// Some package APIs return an empty name rather than omitting the field.
+  /// Pick an actual nonblank label without changing the NAS record itself.
+  String rowTitle(Map record) {
+    final repository = api == 'SYNO.Backup.Repository';
+    final keys = repository
+        ? ['title', 'name', 'repo_name', 'target_id', 'share', 'path']
+        : ['title', 'name', 'task_display_name', 'task_name', 'client_name',
+            'file_name', 'local_sync_path', 'event', 's1', 'share', 'path', 'time', 'id'];
+    for (final key in keys) {
+      final value = record[key];
+      if ((value is String || value is num) && '$value'.trim().isNotEmpty)
+        return '$value';
+    }
+    final id = record['repo_id'];
+    return repository
+        ? (id != null && '$id'.trim().isNotEmpty ? '存储库 #$id' : '未命名存储库')
+        : '详细信息';
+  }
+
   static bool sensitive(String key) => RegExp(
           r'password|passwd|(^|_)(pwd|pass)(_|$)|secret|token|cookie|(^|_)sid$|session|private_key|auth_key|api[_-]?key|access[_-]?key|credential',
           caseSensitive: false)
