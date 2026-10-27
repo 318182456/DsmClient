@@ -13,6 +13,8 @@ import 'package:dsm_client/pages/docker/dockhand.dart';
 import 'package:dsm_client/pages/control_panel/control_panel.dart';
 import 'package:dsm_client/pages/login/login.dart';
 import 'package:dsm_client/widgets/surfaces.dart' as surfaces;
+import 'package:dsm_client/widgets/adaptive_tab_bar.dart';
+import 'package:dsm_client/pages/dashborad/applications.dart';
 
 void main() {
   testWidgets('Render temporary design review previews when requested',
@@ -60,6 +62,23 @@ void main() {
               theme: reviewTheme(theme),
               home: page)));
       await tester.pumpAndSettle();
+      if (name == 'media-menu') {
+        await tester.longPress(find.text('测试歌曲'));
+        await tester.pumpAndSettle();
+      }
+      if (name == 'program-cards') {
+        await tester.runAsync(() async {
+          for (final icon in [
+            'control_panel',
+            'storage_manager',
+            'resource_monitor'
+          ]) {
+            await precacheImage(AssetImage('assets/applications/7/$icon.png'),
+                key.currentContext);
+          }
+        });
+        await tester.pumpAndSettle();
+      }
       if (page is ControlPanel) {
         await tester.runAsync(() async {
           for (final icon in [
@@ -131,14 +150,99 @@ void main() {
     await capture(
         'dockhand-connect', DockhandProgram(profile: 'review'), lightTheme);
     await capture('control-panel', ControlPanel({}, [], [], {}), lightTheme);
-    SharedPreferences.setMockInitialValues({'agreement':'1','read':'1'});
-    Login login() => Login(server:{'https':true,'host':'nas.example.test','port':'65535',
-      'account':'demo-user','password':'fixture-only','note':'测试 NAS','auto_login':true,
-      'remember_password':true,'check_ssl':true,'cookie':'','sid':'','action':'edit'});
-    await capture('login-light',login(),lightTheme);
-    await capture('login-dark',login(),darkTheme);
-    await capture('legacy-form',Scaffold(appBar:AppBar(title:Text('表单边框检查')),body:Padding(padding:EdgeInsets.all(20),
-      child:surfaces.NeuCard(padding:EdgeInsets.symmetric(horizontal:16,vertical:8),
-        child:TextField(decoration:InputDecoration(border:InputBorder.none,labelText:'单层边框',hintText:'旧页面的输入框'))))),lightTheme);
+    SharedPreferences.setMockInitialValues({'agreement': '1', 'read': '1'});
+    Login login() => Login(server: {
+          'https': true,
+          'host': 'nas.example.test',
+          'port': '65535',
+          'account': 'demo-user',
+          'password': 'fixture-only',
+          'note': '测试 NAS',
+          'auto_login': true,
+          'remember_password': true,
+          'check_ssl': true,
+          'cookie': '',
+          'sid': '',
+          'action': 'edit'
+        });
+    await capture('login-light', login(), lightTheme);
+    await capture('login-dark', login(), darkTheme);
+    await capture(
+        'legacy-form',
+        Scaffold(
+            appBar: AppBar(title: Text('表单边框检查')),
+            body: Padding(
+                padding: EdgeInsets.all(20),
+                child: surfaces.NeuCard(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: TextField(
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            labelText: '单层边框',
+                            hintText: '旧页面的输入框'))))),
+        lightTheme);
+    await capture(
+        'button-tabs',
+        DefaultTabController(
+            length: 3,
+            child: Scaffold(
+                appBar: AppBar(title: Text('按钮与分类')),
+                body: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(children: [
+                      AdaptiveTabBar(tabs: [
+                        Tab(text: '文件'),
+                        Tab(text: '下载'),
+                        Tab(text: '设置')
+                      ]),
+                      SizedBox(height: 24),
+                      SizedBox(
+                          width: double.infinity,
+                          height: 64,
+                          child: surfaces.NeuButton(
+                              onPressed: () {}, child: Text('确认操作'))),
+                      SizedBox(height: 24),
+                      SizedBox(
+                          width: 96,
+                          height: 96,
+                          child: surfaces.NeuButton(
+                              onPressed: () {},
+                              decoration: surfaces.NeumorphicDecoration(
+                                  shape: BoxShape.circle),
+                              child: Text('取消'))),
+                    ])))),
+        lightTheme);
+    await capture(
+        'media-menu',
+        AudioLibrary('歌曲', 'Song', 'songs',
+            loader: (section, params) async => {
+                  'success': true,
+                  'data': {
+                    'total': 2,
+                    'songs': [
+                      {'id': 'a', 'title': '测试歌曲'},
+                      {'id': 'b', 'title': '下一首'}
+                    ]
+                  }
+                }),
+        lightTheme);
+    await capture(
+        'program-cards',
+        Scaffold(
+            appBar: AppBar(title: Text('程序卡片')),
+            body: ApplicationList([
+              'SYNO.SDS.AdminCenter.Application',
+              'SYNO.SDS.StorageManager.Instance',
+              'SYNO.SDS.ResourceMonitor.Instance'
+            ], {}, [], [], {},
+                packageLoader: () async => {
+                      'success': true,
+                      'data': {'packages': []}
+                    },
+                containerLoader: () async => {
+                      'success': true,
+                      'data': {'containers': []}
+                    })),
+        lightTheme);
   });
 }

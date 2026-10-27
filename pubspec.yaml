@@ -98,6 +98,7 @@ dependencies:
 #  flutter_filereader: ^3.0.0
 #  x5_webview: ^0.2.4
 dev_dependencies:
+  just_audio_platform_interface: ^4.2.0
   flutter_test:
     sdk: flutter
 

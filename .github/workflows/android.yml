@@ -107,7 +107,7 @@ jobs:
             curl --fail --location --retry 3 --output "$RUNNER_TEMP/dsm-review-font.otf" \
               https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
           fi
-          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart
+          flutter test --no-sound-null-safety test/native_program_widget_test.dart test/update_workspace_widget_test.dart test/workspace_design_test.dart test/workspace_preview_test.dart test/media_interaction_test.dart test/audio_queue_driver_test.dart
 
       - name: Analyze native program pages
         run: >-

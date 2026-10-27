@@ -266,7 +266,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
           //     fit: FijkFit.contain,
           //     player: player,
           //     color: Colors.black,
-          //     cover: widget.cover != null ? ExtendedNetworkImageProvider(Util.baseUrl + "/webapi/entry.cgi?path=${Uri.encodeComponent(widget.cover)}&size=original&api=SYNO.FileStation.Thumb&method=get&version=2&_sid=${Util.sid}&animate=true") : null,
+          //     cover: queueIndex==0 && widget.cover != null ? ExtendedNetworkImageProvider(Util.baseUrl + "/webapi/entry.cgi?path=${Uri.encodeComponent(widget.cover)}&size=original&api=SYNO.FileStation.Thumb&method=get&version=2&_sid=${Util.sid}&animate=true") : null,
           //   ),
           // ),
           FView(
@@ -276,14 +276,14 @@ class _VideoPlayerState extends State<VideoPlayer> {
             color: Colors.black,
             fsFit: FFit.contain, // 全屏模式下的填充
             fit: FFit.contain, // 正常模式下的填充
-            cover: widget.cover != null
+            cover: queueIndex == 0 && widget.cover != null
                 ? ExtendedNetworkImageProvider(Util.baseUrl +
                     "/webapi/entry.cgi?path=${Uri.encodeComponent(widget.cover)}&size=original&api=SYNO.FileStation.Thumb&method=get&version=2&_sid=${Util.sid}&animate=true")
                 : null,
 
             panelBuilder: fPanelBuilder(
               // 单视频配置
-              title: widget.name,
+              title: current.name,
               // subTitle: '视频副标题',
               // 右下方截屏按钮
               isSnapShot: false,

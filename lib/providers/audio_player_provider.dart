@@ -16,8 +16,8 @@ class AudioPlayerProvider with ChangeNotifier {
   String get name => _name;
   List<MediaTrack> get queue => List.unmodifiable(_queue);
   int get index => _player.currentIndex ?? 0;
-  AudioPlayerProvider() {
-    _player = AudioPlayer();
+  AudioPlayerProvider({AudioPlayer player}) {
+    _player = player ?? AudioPlayer();
     _observe();
   }
   void _observe() {
