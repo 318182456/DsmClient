@@ -21,9 +21,9 @@ OutlinedBorder _shape(BuildContext context, NeumorphicDecoration decoration,
       ? border.top
       : BorderSide(
           color: selected
-              ? Theme.of(context).colorScheme.primary
+              ? Theme.of(context).colorScheme.primary.withOpacity(.32)
               : Theme.of(context).dividerColor,
-          width: selected ? 1.5 : 1);
+          width: 1);
   return decoration?.shape == BoxShape.circle
       ? CircleBorder(side: side)
       : RoundedRectangleBorder(

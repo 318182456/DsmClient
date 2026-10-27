@@ -94,9 +94,8 @@ ThemeData buildDsmTheme(Brightness brightness) {
         fillColor: surface,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: outline,
-        enabledBorder: outline,
-        focusedBorder: outline.copyWith(
-            borderSide: BorderSide(color: scheme.primary, width: 1.5)),
+        // Keep state borders unset: legacy fields explicitly using InputBorder.none
+        // must not inherit an enabled/focused outline inside their own surface.
         hintStyle: TextStyle(fontSize: 14, color: muted),
         labelStyle: TextStyle(color: muted, fontSize: 14)),
     listTileTheme: ListTileThemeData(

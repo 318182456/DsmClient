@@ -611,552 +611,90 @@ class _LoginState extends State<Login> {
   //   await wol.wake().then((v) => print('sent'));
   // }
 
+  void changeProtocol(bool value) {
+    setState(() {
+      https = value;
+      if (https && port == '5000') port = '5001';
+      else if (!https && port == '5001') port = '5000';
+      _portController.text = port;
+    });
+  }
+
+  Widget input(String key, TextEditingController controller, String label,
+      {ValueChanged<String> onChanged, bool secret = false, TextInputType keyboard, List<TextInputFormatter> formatters, String hint}) {
+    return TextField(key: ValueKey(key), controller: controller, enabled: !login, onChanged: onChanged,
+      obscureText: secret, autocorrect: false, enableSuggestions: !secret,
+      keyboardType: keyboard, inputFormatters: formatters, textInputAction: TextInputAction.next,
+      style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize:16,fontWeight:FontWeight.w400,height:1.3),
+      decoration: InputDecoration(labelText:label,hintText:hint));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: updateInfo != null
-            ? Padding(
-                padding: EdgeInsets.only(left: 10, top: 8, bottom: 8),
-                child: NeuButton(
-                  decoration: NeumorphicDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: EdgeInsets.all(10),
-                  bevel: 5,
-                  onPressed: () {
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
-                      return Update(updateInfo);
-                    }));
-                  },
-                  child: Image.asset(
-                    "assets/icons/update.png",
-                    width: 20,
-                    height: 20,
-                    color: Colors.redAccent,
-                  ),
-                ),
-              )
-            : null,
-        title: Text(
-          widget.type == "login" ? "账号登录" : "添加账号",
-        ),
-        actions: [
-          // Padding(
-          //   padding: EdgeInsets.only(right: 10, top: 8, bottom: 8),
-          //   child: NeuButton(
-          //     decoration: NeumorphicDecoration(
-          //       color: Theme.of(context).scaffoldBackgroundColor,
-          //       borderRadius: BorderRadius.circular(10),
-          //     ),
-          //     padding: EdgeInsets.all(10),
-          //     bevel: 5,
-          //     onPressed: wakeup,
-          //     child: Image.asset(
-          //       "assets/icons/history.png",
-          //       width: 20,
-          //       height: 20,
-          //     ),
-          //   ),
-          // ),
-          if (servers.length > 0)
-            Padding(
-              padding: EdgeInsets.only(right: 10, top: 8, bottom: 8),
-              child: NeuButton(
-                decoration: NeumorphicDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: EdgeInsets.all(10),
-                bevel: 5,
-                onPressed: () {
-                  Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
-                    return Accounts();
-                  }));
-                },
-                child: Image.asset(
-                  "assets/icons/history.png",
-                  width: 20,
-                  height: 20,
-                ),
-              ),
-            )
+    final theme = Theme.of(context);
+    final showPort = host.contains('.') || host.contains(':');
+    final protocol = DropdownButtonFormField<bool>(key:ValueKey('login-protocol'),value:https,isExpanded:true,
+      decoration:InputDecoration(labelText:'连接协议'),items:[
+        DropdownMenuItem(value:false,child:Text('HTTP')),DropdownMenuItem(value:true,child:Text('HTTPS'))],
+      onChanged:login?null:changeProtocol);
+    final portField = input('login-port',_portController,'端口',keyboard:TextInputType.number,
+      formatters:[FilteringTextInputFormatter.digitsOnly,LengthLimitingTextInputFormatter(5)],onChanged:(v)=>port=v);
+    final stackConnection = MediaQuery.of(context).size.width < 360 || MediaQuery.of(context).textScaleFactor > 1.3;
+    return Scaffold(appBar: AppBar(title: Text(widget.type == 'login' ? '账号登录' : '添加账号'), actions: [
+      if (updateInfo != null) IconButton(tooltip:'软件更新', icon:Icon(Icons.system_update_outlined), onPressed:()=>
+        Navigator.push(context,CupertinoPageRoute(builder:(_)=>Update(updateInfo)))),
+      if (servers.isNotEmpty) IconButton(tooltip:'已保存的账号',icon:Icon(Icons.history),onPressed:()=>
+        Navigator.push(context,CupertinoPageRoute(builder:(_)=>Accounts()))),
+    ]), body: SafeArea(top:false,child:GestureDetector(onTap:()=>FocusScope.of(context).unfocus(),
+      child:ListView(padding:EdgeInsets.fromLTRB(20,24,20,28),children:[
+        Text('连接你的 NAS',style:theme.textTheme.headline5),SizedBox(height:6),
+        Text('输入服务器地址和 DSM 账号。',style:theme.textTheme.caption),SizedBox(height:28),
+        input('login-host',_hostController,'NAS 地址',keyboard:TextInputType.url,hint:'IP、域名或 QuickConnect ID',
+          onChanged:(v)=>setState(()=>host=v)),SizedBox(height:18),
+        if(stackConnection) Column(children:[protocol,if(showPort)...[SizedBox(height:18),portField]])
+        else Row(crossAxisAlignment:CrossAxisAlignment.start,children:[Expanded(child:protocol),
+          if(showPort)...[SizedBox(width:14),Expanded(child:portField)]]),
+        SizedBox(height:18),
+        input('login-account',_accountController,'账号',onChanged:(v)=>account=v),SizedBox(height:18),
+        input('login-password',_passwordController,'密码',secret:true,onChanged:(v)=>password=v),SizedBox(height:18),
+        input('login-note',_noteController,'备注（可选）',onChanged:(v)=>note=v),SizedBox(height:22),
+        if(needOtp)...[
+          input('login-otp',_otpController,'二步验证代码',keyboard:TextInputType.number,onChanged:(v)=>otpCode=v),SizedBox(height:18),
         ],
-      ),
-      body: GestureDetector(
-        onTap: () {
+        Card(child:Column(children:[
+          SwitchListTile.adaptive(title:Text('记住密码'),value:rememberPassword,onChanged:login?null:(v)=>setState((){
+            rememberPassword=v;if(!v)autoLogin=false;
+          })),
+          Divider(height:1,indent:16,endIndent:16),
+          SwitchListTile.adaptive(title:Text('自动登录'),value:autoLogin,onChanged:login?null:(v)=>setState((){
+            autoLogin=v;if(v)rememberPassword=true;
+          })),
+          if(https)...[Divider(height:1,indent:16,endIndent:16),
+            SwitchListTile.adaptive(title:Text('验证 SSL 证书'),value:checkSsl,onChanged:login?null:(v)=>setState(()=>checkSsl=v))],
+          if(needOtp)...[Divider(height:1,indent:16,endIndent:16),
+            SwitchListTile.adaptive(title:Text('记住设备'),value:rememberDevice,onChanged:login?null:(v)=>setState(()=>rememberDevice=v))],
+        ])),SizedBox(height:12),
+        ElevatedButton(key:ValueKey('login-submit'),onPressed:(){
           FocusScope.of(context).unfocus();
-        },
-        child: ListView(
-          padding: EdgeInsets.all(20),
-          children: <Widget>[
-            SizedBox(
-              height: 20,
-            ),
-            NeuCard(
-              decoration: NeumorphicDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              bevel: 20,
-              curveType: CurveType.flat,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 60,
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          https = !https;
-                          if (https && port == "5000") {
-                            port = "5001";
-                            _portController.value = TextEditingValue(text: port);
-                          } else if (!https && port == "5001") {
-                            port = "5000";
-                            _portController.value = TextEditingValue(text: port);
-                          }
-                        });
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            height: 4,
-                          ),
-                          Text(
-                            "协议",
-                            style: TextStyle(fontSize: 12, color: Colors.grey, height: 1),
-                          ),
-                          Text(
-                            https ? "https" : "http",
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      autocorrect: false,
-                      controller: _hostController,
-                      onChanged: (v) {
-                        setState(() {
-                          host = v;
-                        });
-                      },
-                      textInputAction: TextInputAction.next,
-                      onEditingComplete: () {
-                        FocusScope.of(context).nextFocus();
-                      },
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        labelText: '网址/IP/QuickConnect ID',
-                      ),
-                    ),
-                  ),
-                  if (host.contains(".") || host.contains(":"))
-                    Expanded(
-                      flex: 1,
-                      child: TextField(
-                        onChanged: (v) => port = v,
-                        controller: _portController,
-                        textInputAction: TextInputAction.next,
-                        onEditingComplete: () {
-                          FocusScope.of(context).nextFocus();
-                        },
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          labelText: '端口',
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: NeuCard(
-                    decoration: NeumorphicDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    bevel: 20,
-                    curveType: CurveType.flat,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    child: TextField(
-                      autocorrect: false,
-                      keyboardAppearance: Brightness.light,
-                      controller: _accountController,
-                      onChanged: (v) => account = v,
-                      textInputAction: TextInputAction.next,
-                      onEditingComplete: () {
-                        FocusScope.of(context).nextFocus();
-                      },
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        labelText: '账号',
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 20,
-                ),
-                Expanded(
-                  child: NeuCard(
-                    decoration: NeumorphicDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    bevel: 20,
-                    curveType: CurveType.flat,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    child: TextField(
-                      keyboardAppearance: Brightness.light,
-                      controller: _noteController,
-                      onChanged: (v) => note = v,
-                      textInputAction: TextInputAction.next,
-                      onEditingComplete: () {
-                        FocusScope.of(context).nextFocus();
-                      },
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        labelText: '备注',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            NeuCard(
-              decoration: NeumorphicDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              bevel: 12,
-              curveType: CurveType.flat,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-              child: TextField(
-                controller: _passwordController,
-                onChanged: (v) => password = v,
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                onEditingComplete: () {
-                  FocusScope.of(context).unfocus();
-                },
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  labelText: '密码',
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            if (needOtp) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: NeuCard(
-                      decoration: NeumorphicDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      bevel: 12,
-                      curveType: CurveType.flat,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                      child: TextField(
-                        controller: _otpController,
-                        onChanged: (v) => otpCode = v,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        onEditingComplete: () {
-                          FocusScope.of(context).unfocus();
-                        },
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          labelText: '二步验证代码',
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 10,
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        FocusScope.of(context).unfocus();
-                        setState(() {
-                          rememberDevice = !rememberDevice;
-                        });
-                      },
-                      child: NeuCard(
-                        decoration: NeumorphicDecoration(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        curveType: rememberDevice ? CurveType.emboss : CurveType.flat,
-                        bevel: 12,
-                        height: 68,
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Row(
-                          children: [
-                            Text("记住设备"),
-                            Spacer(),
-                            if (rememberDevice)
-                              Icon(
-                                CupertinoIcons.checkmark_alt,
-                                color: Color(0xffff9813),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 20,
-              ),
-            ],
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        rememberPassword = !rememberPassword;
-                        if (!rememberPassword) {
-                          autoLogin = false;
-                        }
-                      });
-                    },
-                    child: NeuCard(
-                      decoration: NeumorphicDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      curveType: rememberPassword ? CurveType.emboss : CurveType.flat,
-                      bevel: 12,
-                      height: 60,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                      child: Row(
-                        children: [
-                          Text("记住密码"),
-                          Spacer(),
-                          if (rememberPassword)
-                            Icon(
-                              CupertinoIcons.checkmark_alt,
-                              color: Color(0xffff9813),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 20,
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        autoLogin = !autoLogin;
-                        if (autoLogin) {
-                          rememberPassword = true;
-                        }
-                      });
-                    },
-                    child: NeuCard(
-                      decoration: NeumorphicDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      curveType: autoLogin ? CurveType.emboss : CurveType.flat,
-                      bevel: 12,
-                      height: 60,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                      child: Row(
-                        children: [
-                          Text("自动登录"),
-                          Spacer(),
-                          if (autoLogin)
-                            Icon(
-                              CupertinoIcons.checkmark_alt,
-                              color: Color(0xffff9813),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            if (https)
-              Padding(
-                padding: EdgeInsets.only(bottom: 20),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      checkSsl = !checkSsl;
-                    });
-                  },
-                  child: NeuCard(
-                    decoration: NeumorphicDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    curveType: checkSsl ? CurveType.emboss : CurveType.flat,
-                    bevel: 12,
-                    height: 60,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    child: Row(
-                      children: [
-                        Text("验证SSL证书"),
-                        Spacer(),
-                        if (checkSsl)
-                          Icon(
-                            CupertinoIcons.checkmark_alt,
-                            color: Color(0xffff9813),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            // SizedBox(
-            //   height: 20,
-            // ),
-
-            NeuButton(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              decoration: NeumorphicDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              onPressed: () {
-                print(login);
-                if (!read) {
-                  Util.toast("请先阅读并同意开源许可和隐私说明");
-                  return;
-                }
-                if (login) {
-                  cancelToken?.cancel("取消登录");
-                  cancelToken = CancelToken();
-                  setState(() {
-                    login = false;
-                  });
-                  return;
-                } else {
-                  _login();
-                }
-              },
-              child: login
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CupertinoActivityIndicator(
-                          radius: 13,
-                        ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        Text(
-                          "取消",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      widget.type == "login" ? ' 登录 ' : ' 添加 ',
-                      style: TextStyle(fontSize: 18),
-                    ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            if (Platform.isAndroid)
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    read = !read;
-                    Util.setStorage("read", read ? "1" : "0");
-                  });
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: read ? Color(0xffff9813) : Colors.grey),
-                      ),
-                      height: 20,
-                      width: 20,
-                      alignment: Alignment.center,
-                      child: read
-                          ? Icon(
-                              CupertinoIcons.checkmark_alt,
-                              color: Color(0xffff9813),
-                              size: 16,
-                            )
-                          : SizedBox(),
-                    ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(text: "我已阅读并同意 ${Util.appName}"),
-                          TextSpan(
-                            text: "开源许可",
-                            style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue, fontSize: 12),
-                            recognizer: _licenseRecognizer
-                              ..onTap = () {
-                                FocusScope.of(context).unfocus();
-                                Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
-                                  return License();
-                                }));
-                              },
-                          ),
-                          TextSpan(text: "和 "),
-                          TextSpan(
-                            text: "隐私说明",
-                            style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue, fontSize: 12),
-                            recognizer: _privacyRecognizer
-                              ..onTap = () {
-                                FocusScope.of(context).unfocus();
-                                Navigator.of(context).push(CupertinoPageRoute(builder: (context) {
-                                  return Privacy();
-                                }));
-                              },
-                          ),
-                        ],
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-          ],
-        ),
-      ),
-    );
+          if(login){cancelToken?.cancel('取消登录');cancelToken=CancelToken();setState(()=>login=false);return;}
+          if(!read){Util.toast('请先阅读并同意开源许可和隐私说明');return;}
+          _login();
+        },child:login?Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+          SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:theme.colorScheme.onPrimary)),
+          SizedBox(width:10),Text('取消登录')]):Text(widget.type=='login'?'登录':'添加账号')),
+        SizedBox(height:14),
+        Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          SizedBox(width:36,height:40,child:Checkbox(value:read,onChanged:login?null:(v)=>setState((){
+            read=v==true;Util.setStorage('read',read?'1':'0');
+          }))),SizedBox(width:4),
+          Expanded(child:Padding(padding:EdgeInsets.only(top:10),child:Text.rich(TextSpan(
+            style:theme.textTheme.caption,children:[TextSpan(text:'我已阅读并同意 DsmClient '),
+            TextSpan(text:'开源许可',style:TextStyle(color:theme.colorScheme.primary,decoration:TextDecoration.underline),
+              recognizer:_licenseRecognizer..onTap=()=>Navigator.push(context,CupertinoPageRoute(builder:(_)=>License()))),
+            TextSpan(text:'和'),TextSpan(text:'隐私说明',style:TextStyle(color:theme.colorScheme.primary,decoration:TextDecoration.underline),
+              recognizer:_privacyRecognizer..onTap=()=>Navigator.push(context,CupertinoPageRoute(builder:(_)=>Privacy()))),
+          ])))),
+        ]),
+      ]))));
   }
 }

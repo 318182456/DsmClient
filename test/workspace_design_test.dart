@@ -13,11 +13,53 @@ import 'package:dsm_client/util/dockhand_credentials.dart';
 import 'package:dsm_client/models/program_capabilities.dart';
 import 'package:dsm_client/pages/control_panel/control_panel.dart';
 import 'package:dsm_client/widgets/surfaces.dart' as surfaces;
+import 'package:dsm_client/pages/login/login.dart';
 
 double contrast(Color a, Color b) =>
     (max(a.computeLuminance(), b.computeLuminance()) + .05) /
     (min(a.computeLuminance(), b.computeLuminance()) + .05);
 void main() {
+  for (final theme in [lightTheme, darkTheme]) {
+    testWidgets('A legacy borderless field stays borderless while focused (${theme.brightness})', (tester) async {
+      await tester.pumpWidget(MaterialApp(theme:theme, home:Scaffold(body:surfaces.NeuCard(
+        padding:EdgeInsets.all(16),child:TextField(decoration:InputDecoration(border:InputBorder.none,labelText:'旧表单'))))));
+      await tester.tap(find.byType(TextField)); await tester.pumpAndSettle();
+      final decoration=tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
+      expect(decoration.border,InputBorder.none);
+      expect(decoration.enabledBorder,isNull);
+      expect(decoration.focusedBorder,isNull);
+      expect(tester.takeException(),isNull);
+      await tester.pumpWidget(SizedBox());
+    });
+    testWidgets('Login shows a full five-digit port at 320px and 160% text (${theme.brightness})', (tester) async {
+      tester.binding.window.physicalSizeTestValue=Size(320,900);
+      tester.binding.window.devicePixelRatioTestValue=1;
+      tester.binding.window.textScaleFactorTestValue=1.6;
+      addTearDown((){
+        tester.binding.window.clearPhysicalSizeTestValue();tester.binding.window.clearDevicePixelRatioTestValue();
+        tester.binding.window.clearTextScaleFactorTestValue();
+      });
+      SharedPreferences.setMockInitialValues({'agreement':'1','read':'1'});
+      await tester.pumpWidget(MaterialApp(theme:theme,home:Login(server:{
+        'https':true,'host':'nas.example.test','port':'65535','account':'demo-user','password':'fixture-only',
+        'note':'测试 NAS','auto_login':true,'remember_password':true,'check_ssl':true,'cookie':'','sid':'','action':'edit',
+      })));
+      await tester.pumpAndSettle();
+      final port=find.byKey(ValueKey('login-port'));
+      final field=tester.widget<TextField>(port);
+      final text=TextPainter(text:TextSpan(text:field.controller.text,style:field.style),textScaleFactor:1.6,textDirection:TextDirection.ltr)..layout();
+      expect(field.controller.text,'65535');
+      expect(tester.getSize(port).width,greaterThanOrEqualTo(text.width+36));
+      expect(find.ancestor(of:find.byKey(ValueKey('login-host')),matching:find.byType(surfaces.NeuCard)),findsNothing);
+      expect(tester.takeException(),isNull);
+      await tester.ensureVisible(find.text('记住密码'));await tester.pumpAndSettle();
+      await tester.tap(find.text('记住密码'));await tester.pumpAndSettle();
+      final switches=tester.widgetList<SwitchListTile>(find.byType(SwitchListTile)).toList();
+      expect(switches[0].value,isFalse);expect(switches[1].value,isFalse);
+      expect(tester.takeException(),isNull);
+      await tester.pumpWidget(SizedBox());await tester.pumpAndSettle();
+    });
+  }
   testWidgets(
       'Shared cards retain button taps and use the current theme surface',
       (tester) async {

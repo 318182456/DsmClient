@@ -11,6 +11,8 @@ import 'package:dsm_client/themes/dark.dart';
 import 'package:dsm_client/pages/packages/audio_station.dart';
 import 'package:dsm_client/pages/docker/dockhand.dart';
 import 'package:dsm_client/pages/control_panel/control_panel.dart';
+import 'package:dsm_client/pages/login/login.dart';
+import 'package:dsm_client/widgets/surfaces.dart' as surfaces;
 
 void main() {
   testWidgets('Render temporary design review previews when requested',
@@ -129,5 +131,14 @@ void main() {
     await capture(
         'dockhand-connect', DockhandProgram(profile: 'review'), lightTheme);
     await capture('control-panel', ControlPanel({}, [], [], {}), lightTheme);
+    SharedPreferences.setMockInitialValues({'agreement':'1','read':'1'});
+    Login login() => Login(server:{'https':true,'host':'nas.example.test','port':'65535',
+      'account':'demo-user','password':'fixture-only','note':'测试 NAS','auto_login':true,
+      'remember_password':true,'check_ssl':true,'cookie':'','sid':'','action':'edit'});
+    await capture('login-light',login(),lightTheme);
+    await capture('login-dark',login(),darkTheme);
+    await capture('legacy-form',Scaffold(appBar:AppBar(title:Text('表单边框检查')),body:Padding(padding:EdgeInsets.all(20),
+      child:surfaces.NeuCard(padding:EdgeInsets.symmetric(horizontal:16,vertical:8),
+        child:TextField(decoration:InputDecoration(border:InputBorder.none,labelText:'单层边框',hintText:'旧页面的输入框'))))),lightTheme);
   });
 }
